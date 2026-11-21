@@ -1,0 +1,678 @@
+<!-- Manage lead modal -->
+<div
+    class="modal fade"
+    id="manageLeadModal"
+    tabindex="-1"
+    aria-labelledby="manageLeadModalLabel"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-dialog-centered"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5
+                        class="modal-title"
+                        id="manageLeadModalLabel"
+                    >
+                        Add Response / Manage Lead
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1" id="manageLeadModalSubtitle">
+                        Lead -- • Loading...
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="manageLeadUuidInput" name="lead_uuid" value="">
+
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label
+                            class="form-label fw-semibold"
+                            for="manageLeadStatus"
+                        >
+                            Lead Status <span class="text-danger">*</span>
+                        </label>
+
+                        <select
+                            class="form-select"
+                            id="manageLeadStatus"
+                            required
+                        >
+                            <option value="" disabled selected>-- Select Status --</option>
+                            {% for filter in filters %}
+                                {% if filter.name == 'status' %}
+                                    {% for opt in filter.options %}
+                                        {% if opt.value and opt.value != 'no_status' and opt.value != 'all' %}
+                                            <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">
+                            Please select a valid Lead Status before taking any action.
+                        </div>
+                    </div>
+
+                    <div class="col-12" id="manageLeadPrevCommentContainer" style="display: none;">
+                        <label class="form-label text-muted fs-12 mb-1">
+                            Previous Comment / Remark (Read-Only)
+                        </label>
+                        <div
+                            class="p-2 bg-light-subtle border rounded text-secondary fs-13"
+                            id="manageLeadPrevCommentText"
+                            style="min-height: 40px; white-space: pre-wrap;"
+                        ></div>
+                    </div>
+
+                    <div class="col-12">
+                        <label
+                            class="form-label fw-semibold"
+                            for="manageLeadComment"
+                        >
+                            New Comment / Remark
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="manageLeadComment"
+                            rows="3"
+                            placeholder="Enter new lead comment or remark"
+                        ></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer d-flex align-items-center justify-content-between">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <div class="d-flex align-items-center gap-2">
+                    {% if has_permission('leads', 'dispose') %}
+                    <button
+                        type="button"
+                        class="btn btn-danger text-white fw-medium"
+                        id="btnDisposeLead"
+                    >
+                        <i class="mdi mdi-account-remove me-1"></i>
+                        Dispose Lead
+                    </button>
+                    {% endif %}
+
+                    {% if has_permission('leads', 'edit') %}
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        id="btnSaveLeadResponse"
+                    >
+                        <i class="mdi mdi-content-save-outline me-1"></i>
+                        Save Response
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div
+    class="modal fade"
+    id="assignLeadModal"
+    tabindex="-1"
+    aria-labelledby="assignLeadModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="assignLeadModalLabel"
+                >
+                    Assign Leads
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label
+                        class="form-label text-dark fw-semibold"
+                        for="assignLeadOwner"
+                    >
+                        Assign To User
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="assignLeadOwner"
+                    >
+                        <option value="" selected disabled>-- Select Target User --</option>
+                        <option value="keep_same">-- Keep Current Owner --</option>
+                        <option value="unassigned">-- Unassigned (No Assign / Remove Owner) --</option>
+                        {% if filters %}
+                            {% for filter in filters %}
+                                {% if filter.name == 'owner' %}
+                                    {% for opt in filter.options %}
+                                        {% if opt.value and opt.value != 'all' %}
+                                            <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        {% elif owners %}
+                            {% for o in owners %}
+                                <option value="{{ o.user_uuid }}">{{ o.full_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                {% if has_permission('global_access_scope', 'global_data_access') %}
+                <div class="mb-3">
+                    <label
+                        class="form-label text-dark fw-semibold"
+                        for="assignLeadSource"
+                    >
+                        Lead Source
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="assignLeadSource"
+                    >
+                        <option value="" selected>-- Keep Current Source --</option>
+                        {% if filters %}
+                            {% for filter in filters %}
+                                {% if filter.name == 'source' %}
+                                    {% for opt in filter.options %}
+                                        <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        {% elif lead_sources %}
+                            {% for src in lead_sources %}
+                                <option value="{{ src.id }}">{{ src.source_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="assignResetLeadData">
+                        <label class="form-check-label fw-semibold text-dark" for="assignResetLeadData">
+                            Reset Lead Data
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="assignAllMatchingLeads">
+                        <label class="form-check-label fw-semibold text-dark" for="assignAllMatchingLeads">
+                            Apply to All Filtered Leads
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnConfirmAssignLeads"
+                >
+                    <i class="mdi mdi-account-check-outline me-1"></i>
+                    Assign Leads
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div
+    class="modal fade"
+    id="deleteLeadModal"
+    tabindex="-1"
+    aria-labelledby="deleteLeadModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="deleteLeadModalLabel"
+                >
+                    Delete Leads
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="avatar-md mx-auto mb-3">
+                        <span
+                            class="avatar-title rounded-circle bg-danger-subtle text-danger fs-2"
+                        >
+                            <i class="mdi mdi-delete-alert-outline"></i>
+                        </span>
+                    </div>
+
+                    <h5 id="deleteLeadModalTitle">
+                        Delete selected leads?
+                    </h5>
+
+                    <p class="text-muted mb-0" id="deleteLeadModalMessage">
+                        This action cannot be undone.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                    id="btnConfirmDeleteLead"
+                >
+                    <i class="mdi mdi-delete-outline me-1"></i>
+                    Delete Leads
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Save Contact Modal -->
+<div
+    class="modal fade"
+    id="saveContactModal"
+    tabindex="-1"
+    aria-labelledby="saveContactModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="saveContactModalTitle">Save Contact</h5>
+                    <p class="text-muted mb-0 mt-1 fs-13" id="saveContactModalSubtitle">
+                        Save contact details and service interest.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="saveContactLeadUuid" value="">
+
+                <div class="mb-3" id="saveContactStatusContainer">
+                    <label class="form-label text-dark fw-semibold" for="saveContactStatus">
+                        Lead Status <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="saveContactStatus" required>
+                        <option value="" selected>-- Select Status --</option>
+                        {% for filter in filters %}
+                            {% if filter.name == 'status' %}
+                                {% for opt in filter.options %}
+                                    {% if opt.value not in ['all', 'no_status'] %}
+                                        <option value="{{ opt.label }}">{{ opt.label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="saveContactName">
+                        Full Name <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="saveContactName" placeholder="Enter contact full name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="saveContactEmail">
+                        Email Address
+                    </label>
+                    <input type="email" class="form-control" id="saveContactEmail" placeholder="Enter email address">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="saveContactAddress">
+                        Address
+                    </label>
+                    <input type="text" class="form-control" id="saveContactAddress" placeholder="Enter full address">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="saveContactProduct">
+                        Product / Service Interested
+                    </label>
+                    <select class="form-select" id="saveContactProduct">
+                        <option value="" selected>-- Select Product --</option>
+                        {% if products %}
+                            {% for p in products %}
+                                <option value="{{ p.id }}">
+                                    {{ p.product_name }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="saveContactPlan">
+                        Plan Type
+                    </label>
+                    <select class="form-select" id="saveContactPlan">
+                        <option value="" selected>-- Select Plan --</option>
+                        <option value="Weekly">Weekly</option>
+                        <option value="Two Weekly">Two Weekly</option>
+                        <option value="Monthly">Monthly</option>
+                        <option value="Two Monthly">Two Monthly</option>
+                        <option value="Quarterly">Quarterly</option>
+                        <option value="Six Monthly">Six Monthly</option>
+                        <option value="Nine Monthly">Nine Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                        <option value="Eighteen Monthly">Eighteen Monthly</option>
+                        <option value="Twenty Four Monthly">Twenty Four Monthly</option>
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label text-dark fw-semibold" for="saveContactNotes">
+                        Notes / Remarks
+                    </label>
+                    <textarea class="form-control" id="saveContactNotes" rows="2" placeholder="Optional contact notes..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="btnConfirmSaveContact">
+                    <i class="mdi mdi-content-save-outline me-1"></i>
+                    Save Contact
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Add Follow-up Modal -->
+<div class="modal fade" id="addFollowupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">Add Follow-up</h5>
+                    <p class="text-muted mb-0 mt-1 fs-13" id="addFollowupModalSubtitle">Schedule a follow-up task or reminder for this lead.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="addFollowupLeadUuid" value="">
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="addFollowupLeadStatus">Lead Status <span class="text-danger">*</span></label>
+                    <select class="form-select bg-white" id="addFollowupLeadStatus" required>
+                        <option value="" disabled selected>-- Select Lead Status --</option>
+                        {% if lead_statuses %}
+                            {% for st in lead_statuses %}
+                                <option value="{{ st.id }}">{{ st.status_name }}</option>
+                            {% endfor %}
+                        {% elif filters %}
+                            {% for filter in filters %}
+                                {% if filter.name == 'status' %}
+                                    {% for opt in filter.options %}
+                                        {% if opt.value and opt.value != 'no_status' and opt.value != 'all' %}
+                                            <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold" for="addFollowupName">Lead Name <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="mdi mdi-account-outline"></i></span>
+                            <input type="text" class="form-control" id="addFollowupName" placeholder="Enter Lead Name..." required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold" for="addFollowupEmail">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="mdi mdi-email-outline"></i></span>
+                            <input type="email" class="form-control" id="addFollowupEmail" placeholder="Enter Email Address...">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="addFollowupAddress">Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="mdi mdi-map-marker-outline"></i></span>
+                        <input type="text" class="form-control" id="addFollowupAddress" placeholder="Enter Address...">
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-7">
+                        <label class="form-label text-dark fw-semibold" for="addFollowupDate">Follow-up Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control bg-white" id="addFollowupDate" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label text-dark fw-semibold" for="addFollowupTime">Follow-up Time <span class="text-danger">*</span></label>
+                        <select class="form-select bg-white" id="addFollowupTime" required>
+                            <option value="" disabled selected>Select Time</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label text-dark fw-semibold" for="addFollowupRemarks">Remarks / Instruction</label>
+                    <textarea class="form-control" id="addFollowupRemarks" rows="3" placeholder="Enter follow-up details..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmAddFollowup">
+                    <i class="mdi mdi-calendar-check me-1"></i> Save Follow-up
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Free Trial Modal -->
+<div class="modal fade" id="addFreeTrialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">Add Free Trial</h5>
+                    <p class="text-muted mb-0 mt-1 fs-13" id="addFreeTrialModalSubtitle">Activate free trial access for this lead.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="addFreeTrialLeadUuid" value="">
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="addFreeTrialLeadStatus">Lead Status <span class="text-danger">*</span></label>
+                    <select class="form-select bg-white" id="addFreeTrialLeadStatus" required>
+                        <option value="" disabled selected>-- Select Lead Status --</option>
+                        {% if lead_statuses %}
+                            {% for st in lead_statuses %}
+                                <option value="{{ st.id }}">{{ st.status_name }}</option>
+                            {% endfor %}
+                        {% elif filters %}
+                            {% for filter in filters %}
+                                {% if filter.name == 'status' %}
+                                    {% for opt in filter.options %}
+                                        {% if opt.value and opt.value != 'no_status' and opt.value != 'all' %}
+                                            <option value="{{ opt.value }}">{{ opt.label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="addFreeTrialName">Lead Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="mdi mdi-account-outline"></i></span>
+                        <input type="text" class="form-control" id="addFreeTrialName" placeholder="Enter Lead Name..." required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-dark fw-semibold" for="addFreeTrialProduct">Product Interested <span class="text-danger">*</span></label>
+                    <select class="form-select" id="addFreeTrialProduct" required>
+                        <option value="" selected>-- Select Product --</option>
+                        {% if products %}
+                            {% for prod in products %}
+                                <option value="{{ prod.id }}">{{ prod.product_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold" for="addFreeTrialStartDate">Start Free Trial <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control bg-white" id="addFreeTrialStartDate" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-dark fw-semibold" for="addFreeTrialExpiryDate">Expiry Date <small class="text-muted">(Auto-Calculated)</small></label>
+                        <input type="date" class="form-control bg-light fw-bold text-success" id="addFreeTrialExpiryDate" placeholder="Auto-calculated..." readonly>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label text-dark fw-semibold" for="addFreeTrialNotes">Notes / Special Instructions</label>
+                    <textarea class="form-control" id="addFreeTrialNotes" rows="2" placeholder="Optional trial details..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info text-white" id="btnConfirmAddFreeTrial">
+                    <i class="mdi mdi-flask-outline me-1"></i> Start Free Trial
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Edit Lead Modal -->
+<div class="modal fade" id="quickEditLeadModal" tabindex="-1" aria-labelledby="quickEditLeadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="quickEditLeadModalLabel">
+                    <i class="mdi mdi-pencil-outline me-1 text-primary"></i>Edit Lead Info <span class="badge bg-soft-primary text-primary ms-1 fs-12" id="quickEditLeadCodeBadge"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="quickEditLeadUuid">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="quickEditLeadName">Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="quickEditLeadName" placeholder="Enter Lead Name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="quickEditLeadEmail">Email</label>
+                    <input type="email" class="form-control" id="quickEditLeadEmail" placeholder="Enter Lead Email">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="quickEditLeadAddress">Address</label>
+                    <textarea class="form-control" id="quickEditLeadAddress" rows="2" placeholder="Enter Address"></textarea>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="quickEditLeadState">State</label>
+                        <select class="form-select" id="quickEditLeadState">
+                            <option value="">-- Select State --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="quickEditLeadCity">City</label>
+                        <select class="form-select" id="quickEditLeadCity">
+                            <option value="">-- Select City --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnSaveQuickEditLead" onclick="saveQuickEditLead()">
+                    <i class="mdi mdi-check-circle-outline me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+

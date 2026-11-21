@@ -1,0 +1,42 @@
+// chat.scss
+
+.email-navigation {
+    width: 100%;
+    @include media-breakpoint-up(xl) {
+        width: 30%;
+    }
+    .nav-link {
+        color: $text-muted;
+        &.active,
+        &:hover {
+            color: var(--#{$prefix}body-color);
+        }
+    }
+}
+.email-items {
+    .rich-list-subtitle {
+        max-width: 900px;
+    }
+}
+.mail-item-list {
+    min-height: calc(100vh - 60px);
+    max-height: calc(100vh - 60px);
+    @include media-breakpoint-up(xl) {
+        min-height: calc(100vh - 260px);
+        max-height: calc(100vh - 260px);
+    }
+}
+.mail-content {
+    max-height: calc(100vh - 260px);
+
+    @include media-breakpoint-up(xl) {
+        min-height: calc(100vh - 520px);
+        max-height: calc(100vh - 520px);
+    }
+}
+.mailbox-content {
+    @include media-breakpoint-up(xl) {
+        min-height: calc(100vh - 280px);
+        max-height: calc(100vh - 280px);
+    }
+}

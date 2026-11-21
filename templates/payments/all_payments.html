@@ -1,0 +1,826 @@
+{% extends 'base.html' %}
+
+{% from 'partials/lead_macros.html' import render_lead_status_badge, render_click_to_call_button %}
+
+{% block content %}
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{{ page_heading }}</h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">{{ page_heading }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Filter Bar Partial -->
+            {% include 'partials/payment_filter_bar.html' %}
+
+            <!-- Table Container -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="paymentsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 40px;">
+                                        <input type="checkbox" id="selectAllLeads" class="form-check-input">
+                                    </th>
+                                    <th class="text-nowrap">Lead Code</th>
+                                    <th class="text-nowrap">Order / Payment No</th>
+                                    <th class="text-nowrap">Lead / Client</th>
+                                    <th class="text-nowrap" style="min-width: 170px;">Address / City - State</th>
+                                    <th class="text-nowrap" style="min-width: 110px;">PAN Card</th>
+                                    <th class="text-nowrap" style="min-width: 105px;">DOB</th>
+                                    <th class="text-nowrap">Product</th>
+                                    <th class="text-nowrap">Plan</th>
+                                    <th class="text-nowrap">Start & Expiry Date</th>
+                                    <th class="text-nowrap">Payment Mode</th>
+                                    <th class="text-nowrap">Grand Total</th>
+                                    <th class="text-nowrap">Tax Amount</th>
+                                    <th class="text-nowrap">Gross Amount</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">KYC Status</th>
+                                    <th class="text-nowrap">Owner</th>
+                                    <th class="text-nowrap">Manager</th>
+                                    <th class="lead-comment-col">Recent Activity</th>
+                                    <th class="text-center" style="min-width: 240px;">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="paymentsTableBody">
+                                <!-- 10 Skeleton Shimmer Rows for Instant Page Opening -->
+                                {% for i in range(10) %}
+                                <tr class="crm-table-skeleton-row">
+                                    <td class="text-center"><div class="skeleton-box" style="width: 18px; height: 16px; margin: auto;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 65px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 110px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 80px; height: 12px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 120px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 90px; height: 14px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 130px; height: 14px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 90px; height: 12px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 85px; height: 20px; border-radius: 4px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 80px; height: 20px; border-radius: 4px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 90px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 70px; height: 18px; border-radius: 4px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 80px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 80px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 80px; height: 18px; border-radius: 4px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 75px; height: 18px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 65px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 75px; height: 16px;"></div></td>
+                                    <td class="text-center"><div class="skeleton-box" style="width: 80px; height: 20px; margin: auto; border-radius: 4px;"></div></td>
+                                    <td class="text-center"><div class="skeleton-box" style="width: 65px; height: 20px; margin: auto; border-radius: 4px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 90px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 80px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box" style="width: 140px; height: 14px;"></div></td>
+                                    <td class="text-center"><div class="skeleton-box" style="width: 120px; height: 24px; margin: auto; border-radius: 4px;"></div></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Pagination Container -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">
+                            Rows
+                        </label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 100px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                        </select>
+                    </div>
+
+                    <div class="text-muted" id="paginationInfo">
+                        Showing 0 to 0 of 0 records
+                    </div>
+
+                </div>
+
+                <nav aria-label="Payments pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav">
+                        <!-- Rendered dynamically by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Manage Sales Order Action Modal (Status & KYC Management) -->
+<div class="modal fade" id="manageSoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title text-white fw-bold" id="manageSoModalLabel">
+                    <i class="mdi mdi-shield-account-outline me-1"></i> Manage Sales Order
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="manageSoUuid">
+                
+                <!-- Order Summary Tile -->
+                <div class="p-3 bg-light-subtle rounded border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-primary fs-15" id="manageSoNumber">SO-...</span>
+                        <span class="badge bg-soft-info text-info" id="manageSoLeadCode">LEAD...</span>
+                    </div>
+                    <div class="fs-14 fw-semibold text-dark mb-1" id="manageSoClientName">Client Name</div>
+                    <div class="fs-12 text-muted" id="manageSoProductPlan">Product - Plan</div>
+                </div>
+
+                <!-- SO Status Dropdown -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark" for="manageSoStatus">Order Status <span class="text-danger">*</span></label>
+                    <select class="form-select" id="manageSoStatus">
+                        {% if has_permission('payments', 'so_approve') %}
+                            <option value="approved">Approved / Received</option>
+                        {% endif %}
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected / Cancelled</option>
+                    </select>
+                </div>
+
+                <!-- KYC Status Check -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-dark" for="manageSoKycStatus">KYC Status Check <span class="text-danger">*</span></label>
+                    <select class="form-select" id="manageSoKycStatus">
+                        <option value="Verified">Verified / KYC Done</option>
+                        <option value="Pending">Pending KYC</option>
+                        <option value="Rejected">Rejected KYC</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer bg-light-subtle">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary fw-semibold" id="btnSaveManageSo" onclick="saveManageSoModal()">
+                    <i class="mdi mdi-content-save-outline me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Sales Order Details Modal -->
+<div class="modal fade" id="viewSoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title text-white fw-bold" id="viewSoTitle">
+                    <i class="mdi mdi-eye-outline me-1"></i> Sales Order Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="viewSoBody">
+                <!-- Dynamically loaded -->
+            </div>
+            <div class="modal-footer bg-light-subtle">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function () {
+    const savedFilters = {{ saved_filters | tojson | safe if saved_filters else '{}' }};
+    const canSoApprove = {{ 'true' if has_permission('payments', 'so_approve') else 'false' }};
+    const canEdit = {{ 'true' if has_permission('payments', 'edit') else 'false' }};
+    const canDelete = {{ 'true' if has_permission('payments', 'delete') else 'false' }};
+    const routeMode = "{{ mode or 'all' }}";
+
+    let currentPage = parseInt(savedFilters.page) || 1;
+    let totalPages = 1;
+    let totalRecords = 0;
+    let searchDebounceTimer = null;
+    let activeSalesOrdersList = [];
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function titleCase(str) {
+        if (!str) return '';
+        return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+    }
+
+    if (savedFilters && Object.keys(savedFilters).length > 0) {
+        if (savedFilters.status && document.getElementById('statusFilter')) document.getElementById('statusFilter').value = savedFilters.status;
+        if (savedFilters.mode && document.getElementById('modeFilter')) document.getElementById('modeFilter').value = savedFilters.mode;
+        if (savedFilters.product && document.getElementById('productFilter')) document.getElementById('productFilter').value = savedFilters.product;
+        if (savedFilters.owner && document.getElementById('ownerFilter')) document.getElementById('ownerFilter').value = savedFilters.owner;
+        if (savedFilters.date_preset && document.getElementById('datePresetFilter')) {
+            document.getElementById('datePresetFilter').value = savedFilters.date_preset;
+            if (savedFilters.date_preset === 'custom' && document.getElementById('customDateContainer')) {
+                document.getElementById('customDateContainer').classList.remove('d-none');
+            }
+        }
+        if (savedFilters.start_date && document.getElementById('startDateInput')) document.getElementById('startDateInput').value = savedFilters.start_date;
+        if (savedFilters.end_date && document.getElementById('endDateInput')) document.getElementById('endDateInput').value = savedFilters.end_date;
+        if (savedFilters.search && document.getElementById('paymentSearch')) document.getElementById('paymentSearch').value = savedFilters.search;
+        if (savedFilters.page_size && document.getElementById('pageSize')) document.getElementById('pageSize').value = savedFilters.page_size;
+    }
+
+    function showSalesOrdersSkeleton(show) {
+        const tbody = document.getElementById('paymentsTableBody');
+        if (!tbody) return;
+        if (show) {
+            let skelHtml = '';
+            for (let i = 0; i < 10; i++) {
+                skelHtml += `
+                    <tr class="crm-table-skeleton-row">
+                        <td class="text-center"><div class="skeleton-box" style="width: 18px; height: 16px; margin: auto;"></div></td>
+                        <td><div class="skeleton-box" style="width: 65px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 110px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 80px; height: 12px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 120px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 90px; height: 14px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 130px; height: 14px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 90px; height: 12px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 85px; height: 20px; border-radius: 4px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 80px; height: 20px; border-radius: 4px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 90px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 70px; height: 18px; border-radius: 4px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 80px; height: 16px; margin-bottom: 4px;"></div><div class="skeleton-box" style="width: 80px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 80px; height: 18px; border-radius: 4px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 75px; height: 18px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 65px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 75px; height: 16px;"></div></td>
+                        <td class="text-center"><div class="skeleton-box" style="width: 80px; height: 20px; margin: auto; border-radius: 4px;"></div></td>
+                        <td class="text-center"><div class="skeleton-box" style="width: 65px; height: 20px; margin: auto; border-radius: 4px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 90px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 80px; height: 16px;"></div></td>
+                        <td><div class="skeleton-box" style="width: 140px; height: 14px;"></div></td>
+                        <td class="text-center"><div class="skeleton-box" style="width: 120px; height: 24px; margin: auto; border-radius: 4px;"></div></td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = skelHtml;
+        }
+    }
+
+    function renderPaymentsRows(payments) {
+        const tbody = document.getElementById('paymentsTableBody');
+        if (!tbody) return;
+
+        if (!payments || payments.length === 0) {
+            tbody.innerHTML = `
+                <tr id="noPaymentsRow">
+                    <td colspan="20" class="text-center py-4 text-muted">
+                        No payment records found matching active filters.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        activeSalesOrdersList = payments;
+
+        let rowsHtml = '';
+        payments.forEach(function (p) {
+            let phoneBtnHtml = '';
+            const dispNum = p.mobile_display || p.decrypted_mobile || p.mobile_number || 'NA';
+            if (p.click_to_call_active) {
+                if (p.is_last_dialed) {
+                    phoneBtnHtml = `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${p.lead_uuid}" data-lead-code="${p.client_code || ''}" data-lead-name="${escapeHtml(p.lead_name)}" onclick="makeClickToCall(this)" title="Last Dialed Call: ${dispNum}"><span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span>${dispNum}</button>`;
+                } else if (p.call_status == 1) {
+                    phoneBtnHtml = `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${p.lead_uuid}" data-lead-code="${p.client_code || ''}" data-lead-name="${escapeHtml(p.lead_name)}" onclick="makeClickToCall(this)" title="Called: ${dispNum}"><i class="mdi mdi-phone-check-outline me-1"></i>${dispNum}</button>`;
+                } else {
+                    phoneBtnHtml = `<button type="button" class="btn btn-outline-primary btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${p.lead_uuid}" data-lead-code="${p.client_code || ''}" data-lead-name="${escapeHtml(p.lead_name)}" onclick="makeClickToCall(this)" title="Click to Call ${escapeHtml(p.lead_name)}"><i class="mdi mdi-phone-outline me-1"></i>${dispNum}</button>`;
+                }
+            } else {
+                phoneBtnHtml = `<span class="fw-medium text-dark">${dispNum}</span>`;
+            }
+
+            let statusBadge = '';
+            if (p.order_status === 'approved') {
+                statusBadge = '<span class="badge bg-success-subtle text-success">Approved / Received</span>';
+            } else if (p.order_status === 'pending') {
+                statusBadge = '<span class="badge bg-info-subtle text-info">Pending</span>';
+            } else if (p.order_status === 'rejected' || p.order_status === 'cancelled') {
+                statusBadge = `<span class="badge bg-danger-subtle text-danger">${titleCase(p.order_status)}</span>`;
+            } else {
+                statusBadge = `<span class="badge bg-secondary-subtle text-secondary">${titleCase(p.order_status || 'Pending')}</span>`;
+            }
+
+            const kycLower = (p.kyc_status || 'pending').toLowerCase();
+            let kycBadge = '';
+            if (kycLower === 'verified' || kycLower === 'approved') {
+                kycBadge = '<span class="badge bg-success-subtle text-success">Verified</span>';
+            } else if (kycLower === 'rejected') {
+                kycBadge = '<span class="badge bg-danger-subtle text-danger">Rejected</span>';
+            } else {
+                kycBadge = '<span class="badge bg-info-subtle text-info">Pending</span>';
+            }
+
+            const netAmt = parseFloat(p.net_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const taxAmt = parseFloat(p.tax_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const grossAmt = parseFloat(p.gross_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            let actionButtonsHtml = `
+                <a href="/leads/view-sales-order/${p.sales_order_uuid}" class="btn btn-sm btn-info text-white px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" title="View Sales Order Details">
+                    <i class="mdi mdi-eye me-1"></i>View
+                </a>
+            `;
+
+            if (canSoApprove) {
+                actionButtonsHtml += `
+                    <button type="button" class="btn btn-sm btn-primary px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" onclick='openManageSoModalByUuid("${p.sales_order_uuid}")' title="Manage Status & KYC">
+                        Action
+                    </button>
+                `;
+
+                if (p.order_status === 'approved') {
+                    actionButtonsHtml += `
+                        <a href="/sales-orders/download-invoice/${p.sales_order_uuid}" target="_blank" class="btn btn-sm btn-info text-white px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" title="Print / Download Invoice">
+                            <i class="mdi mdi-file-download-outline me-1"></i>Invoice
+                        </a>
+                    `;
+
+                    if (p.email_sent) {
+                        actionButtonsHtml += `
+                            <button type="button" class="btn btn-sm btn-success px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" onclick="sendInvoiceEmail('${p.sales_order_uuid}')" title="Resend Invoice Email">
+                                <i class="mdi mdi-email-check-outline me-1"></i>Resent
+                            </button>
+                        `;
+                    } else {
+                        actionButtonsHtml += `
+                            <button type="button" class="btn btn-sm btn-danger px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" onclick="sendInvoiceEmail('${p.sales_order_uuid}')" title="Send Invoice Email">
+                                <i class="mdi mdi-email-send-outline me-1"></i>Send Invoice
+                            </button>
+                        `;
+                    }
+                }
+            }
+
+            if (canEdit) {
+                actionButtonsHtml += `
+                    <a href="/leads/edit-sales-order/${p.sales_order_uuid}" class="btn btn-sm btn-info text-white px-2 py-1 me-1 shadow-sm fw-semibold waves-effect waves-light" title="Full Edit Sales Order">
+                        Edit
+                    </a>
+                `;
+            }
+
+            if (canDelete && p.order_status !== 'approved') {
+                actionButtonsHtml += `
+                    <button type="button" class="btn btn-sm btn-outline-danger px-2 py-1 shadow-sm fw-semibold waves-effect waves-light" onclick="deleteSalesOrder('${p.sales_order_uuid}', '${escapeHtml(p.order_number)}')" title="Delete Sales Order">
+                        <i class="mdi mdi-trash-can-outline"></i>
+                    </button>
+                `;
+            }
+
+            const noteVal = p.notes || '';
+            let noteHtml = '<span class="text-muted fs-12">No Notes</span>';
+            if (noteVal && noteVal.trim() && !['no notes', 'no note', 'none', 'null', 'na'].includes(noteVal.trim().toLowerCase())) {
+                noteHtml = `<span class="text-truncate d-inline-block w-100" title="${escapeHtml(noteVal)}">${escapeHtml(noteVal)}</span>`;
+            }
+
+            rowsHtml += `
+                <tr class="payment-row">
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input lead-checkbox" value="${p.lead_uuid}" data-sales-order-uuid="${p.sales_order_uuid}">
+                    </td>
+                    <td class="text-nowrap fw-bold text-dark">
+                        ${p.client_code || p.lead_id || ''}
+                    </td>
+                    <td class="text-nowrap">
+                        <div class="fw-bold text-primary fs-13">${p.order_number}</div>
+                        <small class="text-muted fs-11 d-block"><i class="mdi mdi-calendar-outline me-1"></i>${p.service_start_date_fmt || p.payment_date_fmt || 'N/A'}</small>
+                    </td>
+                    <td class="fw-medium">
+                        <div class="text-nowrap">${escapeHtml(p.lead_name)}</div>
+                        ${p.email ? `<div class="text-muted fs-12">${escapeHtml(p.email)}</div>` : ''}
+                        <div class="mt-1">${phoneBtnHtml}</div>
+                    </td>
+                    <td class="fs-12">
+                        ${p.full_address ? `<div class="fw-medium text-dark text-truncate" style="max-width: 180px;" title="${escapeHtml(p.full_address)}">${escapeHtml(p.full_address)}</div>` : ''}
+                        ${p.city_state ? `<div class="text-muted fs-11"><i class="mdi mdi-map-marker-outline me-1 text-primary"></i>${escapeHtml(p.city_state)}</div>` : (!p.full_address ? '<span class="text-muted fs-12">N/A</span>' : '')}
+                    </td>
+                    <td class="text-nowrap">
+                        ${p.pan_number && p.pan_number !== 'N/A' ? `<span class="badge bg-light text-dark border font-monospace fs-12 fw-semibold">${escapeHtml(p.pan_number)}</span>` : '<span class="text-muted fs-12">N/A</span>'}
+                    </td>
+                    <td class="text-nowrap">
+                        ${(p.dob_fmt || p.dob) && (p.dob_fmt || p.dob) !== 'N/A' ? `<span class="badge bg-light text-dark border font-monospace fs-12 fw-medium">${p.dob_fmt || p.dob}</span>` : '<span class="text-muted fs-12">N/A</span>'}
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-dark">${escapeHtml(p.product_name || 'N/A')}</span>
+                    </td>
+                    <td>
+                        ${p.plan_label && p.plan_label !== 'N/A' ? `<span class="badge bg-soft-info text-info">${escapeHtml(p.plan_label)}</span>` : '<span class="text-muted fs-12">N/A</span>'}
+                    </td>
+                    <td class="text-nowrap fs-12">
+                        <div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-medium px-2 py-1 fs-11">
+                                ${p.service_start_date_fmt || p.payment_date_fmt || 'N/A'}
+                            </span>
+                        </div>
+                        <div class="mt-1">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-medium px-2 py-1 fs-11">
+                                ${p.service_expiry_date_fmt || p.service_expiry_date || 'N/A'}
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">${escapeHtml(p.payment_mode || 'N/A')}</span>
+                        ${p.reference_number ? `<div class="text-muted fs-11">Ref: ${escapeHtml(p.reference_number)}</div>` : ''}
+                    </td>
+                    <td class="text-nowrap fw-bold text-success fs-14">
+                        ₹${netAmt}
+                    </td>
+                    <td class="text-nowrap text-muted fs-13">
+                        ₹${taxAmt}
+                        ${p.tax_percentage > 0 ? `<small class="text-muted">(${p.tax_percentage}%)</small>` : ''}
+                    </td>
+                    <td class="text-nowrap fw-semibold text-dark fs-13">
+                        ₹${grossAmt}
+                    </td>
+                    <td class="text-center">
+                        ${statusBadge}
+                    </td>
+                    <td class="text-center">
+                        ${kycBadge}
+                    </td>
+                    <td class="text-nowrap">
+                        ${escapeHtml(p.owner_name || 'Unassigned')}
+                    </td>
+                    <td class="text-nowrap">
+                        ${escapeHtml(p.manager_name || 'N/A')}
+                    </td>
+                    <td class="lead-comment-col align-middle">
+                        <div style="max-width: 235px;">
+                            ${noteHtml}
+                        </div>
+                    </td>
+                    <td class="text-center text-nowrap align-middle">
+                        ${actionButtonsHtml}
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = rowsHtml;
+    }
+
+    function saveSalesOrdersFiltersToSession() {
+        const searchInput = document.getElementById('paymentSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const modeFilter = document.getElementById('modeFilter');
+        const productFilter = document.getElementById('productFilter');
+        const ownerFilter = document.getElementById('ownerFilter');
+        const datePresetFilter = document.getElementById('datePresetFilter');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const startDateInput = document.getElementById('startDateInput');
+        const endDateInput = document.getElementById('endDateInput');
+
+        fetch('/api/sales-orders/save-filters', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                status: statusFilter ? statusFilter.value : 'all',
+                mode: modeFilter ? modeFilter.value : 'all',
+                product: productFilter ? productFilter.value : 'all',
+                owner: ownerFilter ? ownerFilter.value : 'all',
+                date_preset: datePresetFilter ? datePresetFilter.value : 'all',
+                start_date: startDateInput ? startDateInput.value : '',
+                end_date: endDateInput ? endDateInput.value : '',
+                search: searchInput ? searchInput.value : '',
+                page_size: pageSizeSelect ? parseInt(pageSizeSelect.value) || 10 : 10,
+                page: currentPage || 1
+            })
+        }).catch(err => console.error('Failed to save sales orders filters:', err));
+    }
+
+    function loadSalesOrdersData(page = 1) {
+        currentPage = page;
+        showSalesOrdersSkeleton(true);
+
+        const searchInput = document.getElementById('paymentSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const modeFilter = document.getElementById('modeFilter');
+        const productFilter = document.getElementById('productFilter');
+        const ownerFilter = document.getElementById('ownerFilter');
+        const datePresetFilter = document.getElementById('datePresetFilter');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const startDateInput = document.getElementById('startDateInput');
+        const endDateInput = document.getElementById('endDateInput');
+
+        const pageSize = pageSizeSelect ? parseInt(pageSizeSelect.value) || 10 : 10;
+
+        const payload = {
+            page: currentPage,
+            page_size: pageSize,
+            mode: routeMode,
+            status: statusFilter ? statusFilter.value : 'all',
+            payment_mode: modeFilter ? modeFilter.value : 'all',
+            product: productFilter ? productFilter.value : 'all',
+            owner: ownerFilter ? ownerFilter.value : 'all',
+            date_preset: datePresetFilter ? datePresetFilter.value : 'all',
+            start_date: startDateInput ? startDateInput.value : '',
+            end_date: endDateInput ? endDateInput.value : '',
+            search: searchInput ? searchInput.value.trim() : ''
+        };
+
+        fetch('/api/sales-orders/list', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                totalRecords = data.total_records || 0;
+                totalPages = data.total_pages || 1;
+                currentPage = data.current_page || 1;
+
+                renderPaymentsRows(data.payments);
+
+                const infoEl = document.getElementById('paginationInfo');
+                if (infoEl) {
+                    if (totalRecords === 0) {
+                        infoEl.textContent = 'Showing 0 to 0 of 0 records';
+                    } else {
+                        const start = (currentPage - 1) * pageSize + 1;
+                        const end = Math.min(currentPage * pageSize, totalRecords);
+                        infoEl.textContent = `Showing ${start} to ${end} of ${totalRecords} records`;
+                    }
+                }
+
+                renderPaginationNav();
+                saveSalesOrdersFiltersToSession();
+            } else {
+                const tbody = document.getElementById('paymentsTableBody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="20" class="text-center py-4 text-danger">${data.message || 'Error loading records.'}</td></tr>`;
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Sales orders fetch error:', err);
+            const tbody = document.getElementById('paymentsTableBody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="20" class="text-center py-4 text-danger">An error occurred while loading sales orders.</td></tr>`;
+            }
+        });
+    }
+
+    function renderPaginationNav() {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+
+        if (totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage - 1}">Previous</button></li>`;
+
+        const startP = Math.max(1, currentPage - 2);
+        const endP = Math.min(totalPages, currentPage + 2);
+
+        if (startP > 1) {
+            navHtml += `<li class="page-item"><button type="button" class="page-link btn-page-nav" data-page="1">1</button></li>`;
+            if (startP > 2) navHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+
+        for (let i = startP; i <= endP; i++) {
+            const activeC = i === currentPage ? 'active' : '';
+            navHtml += `<li class="page-item ${activeC}"><button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button></li>`;
+        }
+
+        if (endP < totalPages) {
+            if (endP < totalPages - 1) navHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            navHtml += `<li class="page-item"><button type="button" class="page-link btn-page-nav" data-page="${totalPages}">${totalPages}</button></li>`;
+        }
+
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage + 1}">Next</button></li>`;
+
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetP = parseInt(this.getAttribute('data-page'));
+                if (targetP && targetP >= 1 && targetP <= totalPages && targetP !== currentPage) {
+                    loadSalesOrdersData(targetP);
+                }
+            });
+        });
+    }
+
+    const datePresetFilter = document.getElementById('datePresetFilter');
+    const customDateContainer = document.getElementById('customDateContainer');
+
+    if (datePresetFilter && customDateContainer) {
+        datePresetFilter.addEventListener('change', function () {
+            if (this.value === 'custom') {
+                customDateContainer.classList.remove('d-none');
+            } else {
+                customDateContainer.classList.add('d-none');
+                loadSalesOrdersData(1);
+            }
+        });
+    }
+
+    ['statusFilter', 'modeFilter', 'productFilter', 'ownerFilter', 'pageSize'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                loadSalesOrdersData(1);
+            });
+        }
+    });
+
+    ['startDateInput', 'endDateInput'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                loadSalesOrdersData(1);
+            });
+        }
+    });
+
+    const searchInput = document.getElementById('paymentSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function () {
+                loadSalesOrdersData(1);
+            }, 350);
+        });
+    }
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            const ids = ['paymentSearch', 'modeFilter', 'productFilter', 'ownerFilter', 'datePresetFilter', 'startDateInput', 'endDateInput'];
+            ids.forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.tagName === 'SELECT') {
+                        el.value = 'all';
+                    } else {
+                        el.value = '';
+                    }
+                }
+            });
+            const stFilter = document.getElementById('statusFilter');
+            if (stFilter) stFilter.value = 'all';
+            if (customDateContainer) customDateContainer.classList.add('d-none');
+            loadSalesOrdersData(1);
+        });
+    }
+
+    const selectAllCb = document.getElementById('selectAllLeads');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function () {
+            const isChecked = this.checked;
+            document.querySelectorAll('#paymentsTable tbody .lead-checkbox').forEach(function (cb) {
+                cb.checked = isChecked;
+            });
+        });
+    }
+
+    // Initial async fetch
+    loadSalesOrdersData(currentPage);
+
+    // Modals & Action Handlers
+    window.openManageSoModalByUuid = function(soUuid) {
+        const o = activeSalesOrdersList.find(item => item.sales_order_uuid === soUuid);
+        if (o) window.openManageSoModal(o);
+    };
+
+    window.openManageSoModal = function(o) {
+        if (!o) return;
+        document.getElementById('manageSoUuid').value = o.sales_order_uuid || '';
+        document.getElementById('manageSoNumber').textContent = o.order_number || 'Sales Order';
+        document.getElementById('manageSoLeadCode').textContent = o.client_code || '';
+        document.getElementById('manageSoClientName').textContent = o.lead_name || 'Client';
+        document.getElementById('manageSoProductPlan').textContent = (o.product_name || '') + ' - ' + (o.plan_label || o.plan_name || '');
+        
+        document.getElementById('manageSoStatus').value = (o.order_status || 'pending').toLowerCase();
+        
+        let kycVal = (o.kyc_status || 'Pending');
+        if (kycVal.toLowerCase() === 'approved') kycVal = 'Verified';
+        document.getElementById('manageSoKycStatus').value = kycVal;
+        
+        const bsModal = new bootstrap.Modal(document.getElementById('manageSoModal'));
+        bsModal.show();
+    };
+
+    window.saveManageSoModal = function() {
+        const soUuid = document.getElementById('manageSoUuid').value;
+        const statusVal = document.getElementById('manageSoStatus').value;
+        const kycVal = document.getElementById('manageSoKycStatus').value;
+        const btn = document.getElementById('btnSaveManageSo');
+        
+        if (!soUuid) return;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+        
+        fetch('/api/leads/update-sales-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sales_order_uuid: soUuid,
+                order_status: statusVal,
+                kyc_status: kycVal
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="mdi mdi-content-save-outline me-1"></i> Save Changes';
+            if (data.success) {
+                const modalEl = document.getElementById('manageSoModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                loadSalesOrdersData(currentPage);
+            } else {
+                alert(data.message || 'Failed to update Sales Order.');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="mdi mdi-content-save-outline me-1"></i> Save Changes';
+            alert('An error occurred while updating Sales Order.');
+        });
+    };
+
+    window.sendInvoiceEmail = function(soUuid) {
+        if (!soUuid) return;
+        if (!confirm('Are you sure you want to send the invoice email to the client?')) return;
+        
+        fetch('/api/sales-orders/send-invoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sales_order_uuid: soUuid })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Invoice email sent successfully!');
+                loadSalesOrdersData(currentPage);
+            } else {
+                alert(data.message || 'Failed to send invoice email.');
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while sending invoice email.');
+        });
+    };
+
+    window.deleteSalesOrder = function(soUuid, orderNum) {
+        if (!soUuid) return;
+        if (!confirm(`Are you sure you want to permanently delete Sales Order '${orderNum || ''}'? This action cannot be undone.`)) return;
+
+        fetch('/api/sales-orders/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sales_order_uuid: soUuid })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message || 'Sales Order deleted successfully.');
+                loadSalesOrdersData(currentPage);
+            } else {
+                alert(data.message || 'Failed to delete Sales Order.');
+            }
+        })
+        .catch(err => {
+            alert('An error occurred while deleting Sales Order.');
+        });
+    };
+});
+</script>
+{% endblock %}

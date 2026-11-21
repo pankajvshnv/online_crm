@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{% if role %}Edit Role{% else %}Add Role{% endif %}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('setting_roles') }}">Roles & Permissions</a></li>
+                        <li class="breadcrumb-item active">{% if role %}Edit Role{% else %}Add Role{% endif %}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section Card -->
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">
+                Role Information
+            </h5>
+            <a href="{{ url_for('setting_roles') }}" class="btn btn-sm btn-outline-primary">
+                <i class="mdi mdi-shield-account-outline me-1"></i> View All Roles
+            </a>
+        </div>
+        <div class="card-body">
+            <form id="roleForm" method="POST" action="javascript:void(0);">
+                <input type="hidden" name="record_uuid" id="recordUuid" value="{{ role.role_uuid if role else '' }}">
+                
+                <div class="row g-4">
+                    <!-- Role Name -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Role Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               value="{{ role.role_name if role else '' }}" 
+                               class="form-control" 
+                               id="roleName"
+                               name="role_name" 
+                               required 
+                               placeholder="e.g. Sales Manager, Support Agent">
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Status <span class="text-danger">*</span></label>
+                        <select class="form-select" id="roleStatus" name="status" required>
+                            <option value="1" {% if not role or role.status == 1 %}selected{% endif %}>Active</option>
+                            <option value="0" {% if role and role.status == 0 %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Divider Header for Permissions -->
+                    <div class="col-12 mt-4">
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
+                            <h6 class="fw-bold mb-0 text-primary">
+                                <i class="mdi mdi-key-variant me-1"></i> Role Permissions
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-soft-secondary" id="selectAllPerms">Select All</button>
+                        </div>
+
+                        <!-- Hierarchical Permissions Layout -->
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mt-2">
+                            {% for block in permission_structure %}
+                                {% set menu_key = block.key %}
+                                {% set role_perms = (role.permissions if role and role.permissions else {}) %}
+                                {% set mod_perms = (role_perms.get(menu_key, []) if role_perms is mapping else []) %}
+                                
+                                <div class="col">
+                                    <div class="card h-100 border shadow-none permission-card-box">
+                                        <div class="card-header bg-transparent border-bottom py-2 d-flex align-items-center">
+                                            {% if block.is_menu is not defined or block.is_menu %}
+                                                <div class="form-check form-switch form-switch-md mb-0">
+                                                    <input class="form-check-input menu-access-cb" 
+                                                           type="checkbox" 
+                                                           id="menu_{{ menu_key }}" 
+                                                           data-module="{{ menu_key }}" 
+                                                           data-action="view"
+                                                           {% if "view" in mod_perms %}checked{% endif %}>
+                                                    <label class="form-check-label fw-bold ms-2" for="menu_{{ menu_key }}">
+                                                        {{ block.menu }}
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                <h6 class="mb-0 fw-bold ms-2">{{ block.menu }}</h6>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="card-body py-2">
+                                            {% if block.actions %}
+                                                <div class="row g-2 mt-1">
+                                                    {% for action in block.actions %}
+                                                        <div class="col-6">
+                                                            <div class="form-check m-0">
+                                                                <input class="form-check-input perm-cb sub-perm-cb" 
+                                                                       type="checkbox" 
+                                                                       id="perm_{{ menu_key }}_{{ action.key }}" 
+                                                                       data-module="{{ menu_key }}" 
+                                                                       data-action="{{ action.key }}"
+                                                                       {% if action.key in mod_perms %}checked{% endif %}>
+                                                                <label class="form-check-label text-muted fs-13" for="perm_{{ menu_key }}_{{ action.key }}">
+                                                                    {{ action.label }}
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <div class="text-muted fs-13 mt-2 fst-italic">
+                                                    Menu view access only.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+</div>
+
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 pt-3">
+                        <button type="button" class="btn btn-primary" id="btnSaveRole">
+                            <i class="mdi mdi-content-save-outline me-1"></i>
+                            {% if role %}Save Role Changes{% else %}Create Role{% endif %}
+                        </button>
+                        <a href="{{ url_for('setting_roles') }}" class="btn btn-light ms-2">Cancel</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Global select all
+    const selectAllBtn = document.getElementById('selectAllPerms');
+    if(selectAllBtn) {
+        let allSelected = false;
+        selectAllBtn.addEventListener('click', function() {
+            allSelected = !allSelected;
+            document.querySelectorAll('.menu-access-cb, .perm-cb').forEach(function(cb) {
+                cb.checked = allSelected;
+            });
+            this.textContent = allSelected ? 'Deselect All' : 'Select All';
+        });
+    }
+
+    // Auto-check Menu Access if a sub-permission is checked
+    document.querySelectorAll('.sub-perm-cb').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            if(this.checked) {
+                const mod = this.getAttribute('data-module');
+                const menuSwitch = document.getElementById(`menu_${mod}`);
+                if(menuSwitch && !menuSwitch.checked) {
+                    menuSwitch.checked = true;
+                }
+            }
+        });
+    });
+
+    // Save functionality
+    document.getElementById('btnSaveRole').addEventListener('click', function() {
+        const roleName = document.getElementById('roleName').value.trim();
+        const roleStatus = document.getElementById('roleStatus').value;
+        const recordUuid = document.getElementById('recordUuid').value;
+
+        if(!roleName) {
+            alert('Role Name is required!');
+            return;
+        }
+
+        // Build permissions object
+        const permissions = {};
+        document.querySelectorAll('.menu-access-cb:checked, .perm-cb:checked').forEach(function(cb) {
+            const mod = cb.getAttribute('data-module');
+            const action = cb.getAttribute('data-action');
+            if(!permissions[mod]) permissions[mod] = [];
+            permissions[mod].push(action);
+        });
+
+        const payload = {
+            record_uuid: recordUuid,
+            role_name: roleName,
+            status: roleStatus,
+            permissions: permissions
+        };
+
+        const btn = this;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+        btn.disabled = true;
+
+        fetch('{{ url_for("save_role") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to save role');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Server error occurred.');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

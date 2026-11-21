@@ -1,0 +1,1079 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+.page-content {
+    margin-bottom: 45px;
+}
+
+/* Shimmer Skeleton Animation */
+@keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #f0f2f5 25%, #e2e5e9 37%, #f0f2f5 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Hero KPI Metric Cards Styling */
+/* Hero KPI Metric Cards Styling - Compact, High Contrast & Clean */
+.metric-hero-card {
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    min-height: 90px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.metric-hero-card:hover {
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+.metric-hero-card .hero-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #475569;
+    letter-spacing: 0.3px;
+}
+.metric-hero-card .hero-num {
+    font-size: 20.5px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 3px 0 2px 0;
+    letter-spacing: -0.3px;
+}
+.metric-hero-card .hero-sub {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 4px;
+    margin-top: 2px;
+}
+
+/* Clean Top Filter Card */
+.sales-filter-card {
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+.sales-filter-card .form-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 3px;
+}
+.sales-filter-card .form-select-sm, 
+.sales-filter-card .form-control-sm {
+    border-color: #cbd5e1;
+    font-size: 12.5px;
+    border-radius: 6px;
+}
+.sales-filter-card .form-select-sm:focus, 
+.sales-filter-card .form-control-sm:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+/* Chart Container Cards */
+.chart-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    background: #ffffff;
+    transition: box-shadow 0.15s ease;
+}
+.chart-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.chart-card .card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 10px 16px;
+}
+.chart-card .card-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.chart-card .card-body {
+    padding: 12px 14px;
+    position: relative;
+    min-height: 280px;
+}
+.chart-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 8px;
+}
+
+/* ApexCharts Toolbar Clean Positioning (Prevents Overlap) */
+.apexcharts-toolbar {
+    top: 4px !important;
+    right: 8px !important;
+    z-index: 5 !important;
+}
+</style>
+
+<!-- Page Header -->
+<div class="row mb-3 align-items-center">
+    <div class="col-12">
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="mb-0 font-size-18 fw-bold">Sales Report</h4>
+            <ol class="breadcrumb m-0 d-flex align-items-center ms-2 fs-12">
+                <li class="breadcrumb-item text-muted">Reports</li>
+                <li class="breadcrumb-item active text-dark fw-semibold">Sales Report</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MAIN SECTION: 8 HERO KPI CARDS (9 COLS) + FILTERS CARD (3 COLS) ================= -->
+<div class="row g-2 mb-3 align-items-stretch">
+    <!-- Left 9 Columns: 8 Metric Hero Cards (Equal height, flush with Filters card) -->
+    <div class="col-12 col-xl-9 col-lg-8 d-flex flex-column">
+        <div class="row g-2 flex-grow-1">
+            <!-- Row 1: 4 Cards -->
+            <!-- Card 1: Total Net Sales -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #2563eb !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Total Net</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5" style="font-size: 10px;">Net Sales</span>
+                    </div>
+                    <div class="hero-num" style="color: #1d4ed8;" id="kpiTotalRevenue">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub d-flex align-items-center justify-content-between">
+                        <span>Orders: <b class="text-dark" id="kpiTotalOrders">-</b></span>
+                        <span class="text-primary fw-bold" id="kpiAvgDeal">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Approved Sales -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #16a34a !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Approved</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-1.5 py-0.5" style="font-size: 10px;">Realized</span>
+                    </div>
+                    <div class="hero-num" style="color: #15803d;" id="kpiApprovedRevenue">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub d-flex align-items-center justify-content-between">
+                        <span>Deals: <b class="text-dark" id="kpiApprovedOrders">-</b></span>
+                        <span class="text-success fw-bold" id="kpiApprovedPct">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Pending Pipeline -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #d97706 !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Pending</span>
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-1.5 py-0.5" style="font-size: 10px;">Pipeline</span>
+                    </div>
+                    <div class="hero-num" style="color: #b45309;" id="kpiPendingRevenue">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub d-flex align-items-center justify-content-between">
+                        <span>Pending: <b class="text-dark" id="kpiPendingOrders">-</b></span>
+                        <span class="badge bg-warning-subtle text-warning px-1">Review</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Avg Deal Size -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #0891b2 !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Avg Ticket</span>
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-1.5 py-0.5" style="font-size: 10px;">Per Deal</span>
+                    </div>
+                    <div class="hero-num" style="color: #0e7490;" id="kpiAvgDealSize">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub">
+                        <span>Per Approved Deal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: 4 Cards -->
+            <!-- Card 5: Total Gross -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #475569 !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Total Gross</span>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-1.5 py-0.5" style="font-size: 10px;">Invoiced</span>
+                    </div>
+                    <div class="hero-num" style="color: #1e293b;" id="kpiTotalGross">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub">
+                        <span>Pre-Tax Invoiced</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Top Product -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #9333ea !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Top Product</span>
+                        <span class="badge border px-1.5 py-0.5" style="font-size: 10px; background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe !important;">Best Seller</span>
+                    </div>
+                    <div class="hero-num text-truncate" id="kpiTopProduct" style="color: #7e22ce; font-size: 15.5px;" title="-">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub">
+                        <span>Rev: <b style="color: #7e22ce;" id="kpiTopProductSales">-</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 7: Top Closer -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #ea580c !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Top Closer</span>
+                        <span class="badge border px-1.5 py-0.5" style="font-size: 10px; background: #ffedd5; color: #c2410c; border-color: #fed7aa !important;">Top Rep</span>
+                    </div>
+                    <div class="hero-num text-dark text-truncate" id="kpiTopRep" style="font-size: 15.5px;" title="-">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub">
+                        <span>Sales: <b class="text-success" id="kpiTopRepSales">-</b></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 8: Lost / Cancelled -->
+            <div class="col-6 col-sm-3 d-flex">
+                <div class="metric-hero-card w-100" style="border-top: 3px solid #dc2626 !important;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="hero-card-title">Lost / Rej.</span>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-1.5 py-0.5" style="font-size: 10px;">Lost</span>
+                    </div>
+                    <div class="hero-num" style="color: #b91c1c;" id="kpiRejectedRevenue">
+                        <span class="skeleton-shimmer" style="width: 65px; height: 18px;"></span>
+                    </div>
+                    <div class="hero-sub d-flex align-items-center justify-content-between">
+                        <span>Lost: <b class="text-dark" id="kpiRejectedOrders">-</b></span>
+                        <span class="badge bg-danger-subtle text-danger px-1">Cancelled</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right 3 Columns: Filters Card (Matches 8 cards height cleanly) -->
+    <div class="col-12 col-xl-3 col-lg-4 d-flex">
+        <div class="card w-100 mb-0 border shadow-sm d-flex flex-column justify-content-between" style="border-radius: 8px; border-color: #cbd5e1 !important; background: #ffffff;">
+            <div class="card-header py-1.5 px-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                <span class="fs-12 fw-bold text-dark">Filters</span>
+                <div class="d-flex align-items-center gap-1.5">
+                    <span class="fs-11 text-muted" id="filterStatusIndicator">
+                        <i class="mdi mdi-check-circle text-success"></i>
+                    </span>
+                    <button type="button" class="btn btn-xs btn-outline-secondary py-0.5 px-2 rounded fs-11" id="resetFiltersBtn" title="Reset filters">
+                        <i class="mdi mdi-refresh"></i>Reset
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-2.5 d-flex flex-column justify-content-between">
+                <!-- Time Period Section -->
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <label class="form-label fs-11 fw-bold text-dark mb-0">Time Period</label>
+                        <span class="badge bg-light text-primary border border-secondary-subtle fs-10 fw-semibold px-2 py-0.5" id="activeDateRangeLabel">
+                            01 Sep 2026 - 30 Sep 2026
+                        </span>
+                    </div>
+                    <select class="form-select form-select-sm fw-semibold text-primary border-primary-subtle bg-primary-subtle" 
+                            id="filterPeriod" 
+                            style="font-size: 11.5px; padding: 4px 8px; cursor: pointer; border-radius: 6px;">
+                        <option value="this_month" selected>This Month</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="this_week">This Week</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="all_time">All Time</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+
+                    <!-- Custom Range Inputs (spacious, with From Date and To Date labels) -->
+                    <div id="customDateCol" style="display: none;" class="mt-1.5 p-1.5 bg-light border rounded">
+                        <div class="row g-1.5 align-items-center">
+                            <div class="col-6">
+                                <label class="form-label fs-10 fw-semibold text-muted text-uppercase mb-0.5">From</label>
+                                <input type="date" class="form-control form-control-sm px-1.5 py-0.5" id="filterStartDate" style="font-size: 10.5px;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fs-10 fw-semibold text-muted text-uppercase mb-0.5">To</label>
+                                <input type="date" class="form-control form-control-sm px-1.5 py-0.5" id="filterEndDate" style="font-size: 10.5px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-1.5 border-secondary-subtle opacity-50">
+
+                <!-- 2x2 Filter Dropdowns -->
+                <div class="row g-1.5">
+                    <!-- Filter 1: Order Status -->
+                    <div class="col-6">
+                        <label class="form-label fs-11 fw-semibold text-muted mb-0.5">Status</label>
+                        <select class="form-select form-select-sm" id="filterStatus" style="font-size: 11px; padding: 3px 6px;">
+                            <option value="all">All Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter 2: Sales Rep -->
+                    <div class="col-6">
+                        <label class="form-label fs-11 fw-semibold text-muted mb-0.5">Sales Rep</label>
+                        <select class="form-select form-select-sm" id="filterRep" style="font-size: 11px; padding: 3px 6px;">
+                            <option value="all">All Reps</option>
+                            {% for rep in reps %}
+                            <option value="{{ rep.id }}">{{ rep.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filter 3: Product -->
+                    <div class="col-6">
+                        <label class="form-label fs-11 fw-semibold text-muted mb-0.5">Product</label>
+                        <select class="form-select form-select-sm" id="filterProduct" style="font-size: 11px; padding: 3px 6px;">
+                            <option value="all">All Products</option>
+                            {% for p in products %}
+                            <option value="{{ p }}">{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Filter 4: Payment Mode -->
+                    <div class="col-6">
+                        <label class="form-label fs-11 fw-semibold text-muted mb-0.5">Payment</label>
+                        <select class="form-select form-select-sm" id="filterPaymentMode" style="font-size: 11px; padding: 3px 6px;">
+                            <option value="all">All Modes</option>
+                            {% for pm in payment_modes %}
+                            <option value="{{ pm }}">{{ pm }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= 3. 8-COLUMN OVERALL SALES CHART + 4-COLUMN RECENT 5 SALES ORDERS ================= -->
+<div class="row g-3 mb-3 align-items-stretch">
+    <!-- 8-Column Section: Overall Sales Trend -->
+    <div class="col-12 col-xl-8 col-lg-8 d-flex flex-column">
+        <div class="card chart-card h-100 flex-grow-1">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title">
+                    <i class="mdi mdi-chart-areaspline text-primary"></i>
+                    Overall Sales
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="timelineOverlay" class="chart-loading-overlay">
+                    <span class="spinner-border spinner-border-sm text-primary mb-2"></span>
+                    <span class="fs-12 text-muted">Loading overall sales trend...</span>
+                </div>
+                <div id="salesTimelineChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4-Column Section: Recent 5 Sales Orders -->
+    <div class="col-12 col-xl-4 col-lg-4 d-flex flex-column">
+        <div class="card chart-card h-100 flex-grow-1 d-flex flex-column">
+            <div class="card-header d-flex align-items-center justify-content-between py-2.5 px-3">
+                <h5 class="card-title fs-13 mb-0">
+                    <i class="mdi mdi-history text-primary"></i>
+                    Recent 5 Sales Orders
+                </h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-10">Latest Deals</span>
+            </div>
+            <div class="card-body p-0 position-relative flex-grow-1 d-flex flex-column justify-content-between" style="min-height: 350px;">
+                <div id="recentOrdersOverlay" class="chart-loading-overlay">
+                    <span class="spinner-border spinner-border-sm text-primary mb-2"></span>
+                    <span class="fs-12 text-muted">Loading recent orders...</span>
+                </div>
+                <div class="list-group list-group-flush flex-grow-1" id="recentOrdersList">
+                    <!-- Populated dynamically with 5 recent sales orders -->
+                </div>
+                <div class="p-2 px-3 bg-light border-top d-flex align-items-center justify-content-between text-muted fs-11">
+                    <span>Showing last 5 orders</span>
+                    <span class="text-primary fw-medium" id="recentOrdersSummary">Live</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= 4. REDESIGNED PERFORMANCE & PRODUCT ANALYTICS ================= -->
+<div class="row g-3 mb-4 align-items-stretch">
+    <!-- Redesigned Card 1: Top Sales Executives Performance Leaderboard (7 Cols) -->
+    <div class="col-12 col-lg-7 d-flex flex-column">
+        <div class="card chart-card h-100 flex-grow-1">
+            <div class="card-header py-2 px-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="card-title mb-0 fs-12 fw-bold text-dark text-truncate">
+                    Top Sales Executives Performance Leaderboard
+                </h6>
+                <span class="badge bg-success-subtle text-success border border-success-subtle fs-10" id="repsTopPerformerBadge">
+                    Ranked by Revenue
+                </span>
+            </div>
+            <div class="card-body p-3 position-relative">
+                <div id="repsOverlay" class="chart-loading-overlay">
+                    <span class="spinner-border spinner-border-sm text-success mb-2"></span>
+                    <span class="fs-12 text-muted">Loading rep performance...</span>
+                </div>
+
+                <!-- ApexCharts Horizontal Bar Ranking -->
+                <div id="salesRepsChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Redesigned Card 2: Revenue Share by Product / Service (5 Cols) -->
+    <div class="col-12 col-lg-5 d-flex flex-column">
+        <div class="card chart-card h-100 flex-grow-1">
+            <div class="card-header py-2 px-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="card-title mb-0 fs-12 fw-bold text-dark text-truncate">
+                    Revenue Share by Product / Service
+                </h6>
+                <span class="badge bg-info-subtle text-info border border-info-subtle fs-10">
+                    Products
+                </span>
+            </div>
+            <div class="card-body p-3 position-relative">
+                <div id="productsOverlay" class="chart-loading-overlay">
+                    <span class="spinner-border spinner-border-sm text-info mb-2"></span>
+                    <span class="fs-12 text-muted">Loading product distribution...</span>
+                </div>
+
+                <!-- Donut Chart -->
+                <div id="salesProductsChart" style="min-height: 320px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include ApexCharts Library -->
+<script src="{{ url_for('static', filename='assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Default preset is This Month as requested
+    let currentPreset = "this_month";
+    let isFetching = false;
+
+    // Charts instances storage
+    let timelineChart = null;
+    let repsChart = null;
+    let productsChart = null;
+
+    // Currency Formatter
+    function formatINR(amount) {
+        if (amount === null || amount === undefined || isNaN(amount)) return "₹0.00";
+        return "₹" + Number(amount).toLocaleString("en-IN", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    // Compact Currency Formatter (e.g. ₹5.1L / ₹25K)
+    function formatCompactINR(amount) {
+        if (!amount || isNaN(amount)) return "₹0";
+        const val = Number(amount);
+        if (val >= 10000000) return "₹" + (val / 10000000).toFixed(2) + " Cr";
+        if (val >= 100000) return "₹" + (val / 100000).toFixed(2) + " L";
+        if (val >= 1000) return "₹" + (val / 1000).toFixed(1) + " K";
+        return "₹" + val.toFixed(0);
+    }
+
+    // Build Current Filter Query String
+    function getFilterParams() {
+        const params = new URLSearchParams();
+        params.append("preset", currentPreset);
+        params.append("page", 1);
+        params.append("per_page", 100);
+
+        const startDate = document.getElementById("filterStartDate").value.trim();
+        const endDate = document.getElementById("filterEndDate").value.trim();
+        if (currentPreset === "custom") {
+            if (startDate) params.append("start_date", startDate);
+            if (endDate) params.append("end_date", endDate);
+        }
+
+        const status = document.getElementById("filterStatus").value;
+        if (status && status !== "all") params.append("status", status);
+
+        const repId = document.getElementById("filterRep").value;
+        if (repId && repId !== "all") params.append("rep_id", repId);
+
+        const product = document.getElementById("filterProduct").value;
+        if (product && product !== "all") params.append("product", product);
+
+        const paymentMode = document.getElementById("filterPaymentMode").value;
+        if (paymentMode && paymentMode !== "all") params.append("payment_mode", paymentMode);
+
+        return params;
+    }
+
+    // Show/Hide Chart Overlays
+    function toggleOverlays(show) {
+        const overlays = [
+            "timelineOverlay", "recentOrdersOverlay", "repsOverlay", "productsOverlay"
+        ];
+        overlays.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = show ? "flex" : "none";
+        });
+    }
+
+    // Fetch and Render All Charts
+    function fetchAndRenderCharts() {
+        if (isFetching) return;
+        isFetching = true;
+        toggleOverlays(true);
+        document.getElementById("filterStatusIndicator").innerHTML = '<span class="spinner-border spinner-border-sm text-primary me-1" style="width:12px;height:12px;"></span>Updating...';
+
+        const params = getFilterParams();
+
+        fetch("/api/reports/sales-data?" + params.toString())
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                isFetching = false;
+                toggleOverlays(false);
+                document.getElementById("filterStatusIndicator").innerHTML = '<i class="mdi mdi-check-circle text-success me-1"></i>Live Data';
+
+                if (!data.success) {
+                    alert(data.message || "Failed to load sales data.");
+                    return;
+                }
+
+                // 1. Update Hero Card and KPI Metric Cards at Page Top
+                const kpis = data.kpis || {};
+                const totalRevFmt = Number(kpis.total_revenue || 0).toLocaleString("en-IN", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+                document.getElementById("kpiTotalRevenue").textContent = "₹" + totalRevFmt;
+                document.getElementById("kpiTotalRevenue").title = formatINR(kpis.total_revenue);
+                document.getElementById("kpiTotalOrders").textContent = kpis.total_orders || 0;
+                document.getElementById("kpiAvgDeal").textContent = formatCompactINR(kpis.avg_deal_size);
+
+                document.getElementById("kpiApprovedRevenue").textContent = formatCompactINR(kpis.approved_revenue);
+                document.getElementById("kpiApprovedOrders").textContent = kpis.approved_orders || 0;
+                const apprPct = kpis.total_revenue > 0 ? ((kpis.approved_revenue / kpis.total_revenue) * 100).toFixed(1) : "0";
+                document.getElementById("kpiApprovedPct").textContent = apprPct + "% Realized";
+
+                document.getElementById("kpiPendingRevenue").textContent = formatCompactINR(kpis.pending_revenue);
+                document.getElementById("kpiPendingOrders").textContent = kpis.pending_orders || 0;
+
+                document.getElementById("kpiAvgDealSize").textContent = formatCompactINR(kpis.avg_deal_size);
+                document.getElementById("kpiTotalGross").textContent = formatCompactINR(kpis.total_gross);
+
+                document.getElementById("kpiRejectedRevenue").textContent = formatCompactINR(kpis.rejected_revenue);
+                document.getElementById("kpiRejectedOrders").textContent = kpis.rejected_orders || 0;
+
+                // Top Performer
+                const reps = data.reps_breakdown || [];
+                if (reps.length > 0) {
+                    const topRep = reps[0];
+                    document.getElementById("kpiTopRep").textContent = topRep.rep_name || "N/A";
+                    document.getElementById("kpiTopRep").title = topRep.rep_name || "";
+                    document.getElementById("kpiTopRepSales").textContent = formatCompactINR(topRep.approved_revenue);
+                } else {
+                    document.getElementById("kpiTopRep").textContent = "None";
+                    document.getElementById("kpiTopRepSales").textContent = "₹0";
+                }
+
+                // Top Product
+                const prods = data.products_breakdown || [];
+                if (prods.length > 0) {
+                    const topProd = prods[0];
+                    document.getElementById("kpiTopProduct").textContent = topProd.product_name || "N/A";
+                    document.getElementById("kpiTopProduct").title = topProd.product_name || "";
+                    document.getElementById("kpiTopProductSales").textContent = formatCompactINR(topProd.approved_net);
+                } else {
+                    document.getElementById("kpiTopProduct").textContent = "None";
+                    document.getElementById("kpiTopProductSales").textContent = "₹0";
+                }
+
+                // 2. Render Recent 5 Sales Orders
+                const recentOrders = (data.orders && data.orders.data) ? data.orders.data.slice(0, 5) : [];
+                renderRecentOrders(recentOrders);
+                const summaryEl = document.getElementById("recentOrdersSummary");
+                if (summaryEl) {
+                    summaryEl.textContent = (kpis.total_orders || 0) + " total orders";
+                }
+
+                // 3. Render / Update Analytics Charts
+                renderTimelineChart(data.timeline || []);
+                renderRepsLeaderboardChart(reps);
+                renderProductsChart(prods);
+            })
+            .catch(err => {
+                isFetching = false;
+                toggleOverlays(false);
+                document.getElementById("filterStatusIndicator").innerHTML = '<i class="mdi mdi-alert-circle text-danger me-1"></i>Error';
+                console.error("Sales chart data error:", err);
+            });
+    }
+
+    // WIDGET: Recent 5 Sales Orders List (kis user ka order hai and kitne amount ka hai)
+    function renderRecentOrders(ordersList) {
+        const listEl = document.getElementById("recentOrdersList");
+        if (!listEl) return;
+
+        if (!ordersList || ordersList.length === 0) {
+            listEl.innerHTML = `
+                <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 py-5 text-muted">
+                    <i class="mdi mdi-receipt-text-outline fs-32 text-secondary opacity-50 mb-1"></i>
+                    <span class="fs-12">No recent sales orders in this period.</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = "";
+        ordersList.forEach((order, idx) => {
+            const repName = order.rep_name || "Unknown Rep";
+            const initials = repName.split(" ").filter(Boolean).map(n => n[0]).join("").substring(0, 2).toUpperCase() || "SO";
+            const leadName = order.lead_name || "Customer";
+            const orderNum = order.order_number || ("#" + order.id);
+            const orderDate = order.order_date || "";
+            const amountFormatted = formatINR(order.net_amount);
+            const status = (order.order_status || "pending").toLowerCase();
+
+            let statusBadge = `<span class="badge bg-warning-subtle text-warning fs-10 px-1.5 py-0.5">Pending</span>`;
+            if (status === "approved") {
+                statusBadge = `<span class="badge bg-success-subtle text-success fs-10 px-1.5 py-0.5">Approved</span>`;
+            } else if (status === "rejected" || status === "cancelled") {
+                statusBadge = `<span class="badge bg-danger-subtle text-danger fs-10 px-1.5 py-0.5">Rejected</span>`;
+            }
+
+            const borderClass = idx < ordersList.length - 1 ? "border-bottom" : "";
+
+            html += `
+                <div class="list-group-item px-3 py-2.5 d-flex align-items-center justify-content-between ${borderClass}">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+                        <div class="flex-shrink-0" style="width: 32px; height: 32px;">
+                            <span class="rounded-circle bg-light text-primary fw-bold fs-11 border border-primary-subtle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                ${initials}
+                            </span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="d-flex align-items-center gap-1.5">
+                                <span class="fw-semibold text-dark fs-12 text-truncate" title="Closed by: ${repName}">
+                                    ${repName}
+                                </span>
+                                ${statusBadge}
+                            </div>
+                            <div class="text-muted fs-11 text-truncate mt-0.5">
+                                <span class="text-dark fw-medium">${leadName}</span> • <span class="text-secondary">${orderNum}</span>
+                                ${orderDate ? ` • <span>${orderDate}</span>` : ""}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <div class="fw-bold text-success fs-13">${amountFormatted}</div>
+                        <div class="text-muted fs-10">Net Amount</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        listEl.innerHTML = html;
+    }
+
+    // CHART 1: Overall Sales Trend (Area + Column Combo, Toolbar without overlap)
+    function renderTimelineChart(timeline) {
+        const dates = timeline.map(t => t.date_label || t.sale_date);
+        const approvedAmounts = timeline.map(t => Math.round(t.approved_amount || 0));
+        const totalAmounts = timeline.map(t => Math.round(t.total_amount || 0));
+        const ordersCounts = timeline.map(t => t.orders_count || 0);
+
+        const options = {
+            series: [
+                { name: "Approved Sales (₹)", type: "area", data: approvedAmounts },
+                { name: "Total Pipeline (₹)", type: "line", data: totalAmounts },
+                { name: "Orders Closed", type: "column", data: ordersCounts }
+            ],
+            chart: {
+                height: 350,
+                type: "line",
+                stacked: false,
+                toolbar: {
+                    show: true,
+                    offsetY: 0,
+                    tools: {
+                        download: true,
+                        selection: false,
+                        zoom: true,
+                        zoomin: true,
+                        zoomout: true,
+                        pan: false,
+                        reset: true
+                    }
+                },
+                zoom: { enabled: true }
+            },
+            colors: ["#0ab39c", "#4361ee", "#cbd5e1"],
+            stroke: { width: [3, 2, 0], curve: "smooth", dashArray: [0, 4, 0] },
+            fill: {
+                type: ["gradient", "solid", "solid"],
+                gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 90, 100] }
+            },
+            plotOptions: {
+                bar: { columnWidth: "25%", borderRadius: 3 }
+            },
+            labels: dates.length > 0 ? dates : ["No Data"],
+            markers: { size: [4, 3, 0], strokeWidth: 2, hover: { size: 6 } },
+            yaxis: [
+                {
+                    title: { text: "Sales Revenue (₹)", style: { color: "#0ab39c", fontWeight: 600 } },
+                    labels: {
+                        formatter: function(val) { return formatCompactINR(val); }
+                    }
+                },
+                {
+                    show: false,
+                    labels: { formatter: function(val) { return formatCompactINR(val); } }
+                },
+                {
+                    opposite: true,
+                    title: { text: "Deals Count", style: { color: "#64748b", fontWeight: 600 } },
+                    labels: { formatter: function(val) { return Math.round(val); } }
+                }
+            ],
+            xaxis: {
+                type: "category",
+                labels: { rotate: -45, rotateAlways: dates.length > 15, style: { fontSize: "11px" } }
+            },
+            tooltip: {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: function(val, { seriesIndex }) {
+                        if (seriesIndex === 2) return val + " Deals";
+                        return formatINR(val);
+                    }
+                }
+            },
+            // Align legend to left so it NEVER overlaps with the toolbar icons on the right!
+            legend: {
+                position: "top",
+                horizontalAlign: "left",
+                offsetY: 0
+            },
+            noData: { text: "No sales records in selected date range.", align: "center", verticalAlign: "middle" }
+        };
+
+        if (timelineChart) {
+            timelineChart.updateOptions(options);
+        } else {
+            timelineChart = new ApexCharts(document.querySelector("#salesTimelineChart"), options);
+            timelineChart.render();
+        }
+    }
+
+    // CHART 2: Sales Reps Leaderboard (Horizontal Stacked Bar)
+    function renderRepsLeaderboardChart(reps) {
+        const topReps = reps.slice(0, 8);
+        const names = topReps.map(r => r.rep_name || "Unknown");
+        const approved = topReps.map(r => Math.round(r.approved_revenue || 0));
+        const pending = topReps.map(r => Math.round(r.pending_revenue || 0));
+
+        const options = {
+            series: [
+                { name: "Approved Sales (₹)", data: approved },
+                { name: "Pending Pipeline (₹)", data: pending }
+            ],
+            chart: {
+                type: "bar",
+                height: 330,
+                stacked: true,
+                toolbar: { show: false }
+            },
+            plotOptions: {
+                bar: { horizontal: true, borderRadius: 4, barHeight: "55%" }
+            },
+            colors: ["#10b981", "#f59e0b"],
+            stroke: { width: 1, colors: ["#fff"] },
+            xaxis: {
+                categories: names.length > 0 ? names : ["No Reps"],
+                labels: { formatter: function(val) { return formatCompactINR(val); } }
+            },
+            yaxis: {
+                labels: { style: { fontSize: "11.5px", fontWeight: 600 } }
+            },
+            tooltip: {
+                y: { formatter: function(val) { return formatINR(val); } }
+            },
+            fill: { opacity: 1 },
+            legend: { position: "top", horizontalAlign: "right" },
+            noData: { text: "No representative sales found.", align: "center", verticalAlign: "middle" }
+        };
+
+        if (repsChart) {
+            repsChart.updateOptions(options);
+        } else {
+            repsChart = new ApexCharts(document.querySelector("#salesRepsChart"), options);
+            repsChart.render();
+        }
+    }
+
+    // CHART 3: Product Revenue Share (Donut Chart)
+    function renderProductsChart(prods) {
+        const labels = prods.map(p => p.product_name || "Unspecified");
+        const series = prods.map(p => Math.round(p.approved_net || 0));
+
+        const options = {
+            series: series.length > 0 ? series : [1],
+            labels: labels.length > 0 ? labels : ["No Products"],
+            chart: {
+                type: "donut",
+                height: 330
+            },
+            colors: ["#4361ee", "#0ab39c", "#f7b84b", "#f06548", "#8b5cf6", "#3bc0c3"],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: "70%",
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: "Total Net",
+                                formatter: function(w) {
+                                    const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                    return formatCompactINR(total);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            dataLabels: { enabled: true, formatter: function(val) { return val.toFixed(1) + "%"; } },
+            legend: { position: "bottom", horizontalAlign: "center" },
+            tooltip: {
+                y: { formatter: function(val) { return formatINR(val); } }
+            },
+            noData: { text: "No product data available.", align: "center", verticalAlign: "middle" }
+        };
+
+        if (productsChart) {
+            productsChart.updateOptions(options);
+        } else {
+            productsChart = new ApexCharts(document.querySelector("#salesProductsChart"), options);
+            productsChart.render();
+        }
+    }
+
+    // Update Pre-filled Active Date Range Label in Filters Card
+    function updateDateRangeLabel() {
+        const labelEl = document.getElementById("activeDateRangeLabel");
+        if (!labelEl) return;
+
+        const now = new Date();
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        function fmt(d) {
+            const dd = String(d.getDate()).padStart(2, "0");
+            const mm = monthNames[d.getMonth()];
+            const yyyy = d.getFullYear();
+            return `${dd} ${mm} ${yyyy}`;
+        }
+
+        if (currentPreset === "this_month") {
+            const start = new Date(now.getFullYear(), now.getMonth(), 1);
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            labelEl.textContent = `${fmt(start)} - ${fmt(end)}`;
+        } else if (currentPreset === "last_month") {
+            const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const end = new Date(now.getFullYear(), now.getMonth(), 0);
+            labelEl.textContent = `${fmt(start)} - ${fmt(end)}`;
+        } else if (currentPreset === "today") {
+            labelEl.textContent = `${fmt(now)}`;
+        } else if (currentPreset === "yesterday") {
+            const yest = new Date(now);
+            yest.setDate(yest.getDate() - 1);
+            labelEl.textContent = `${fmt(yest)}`;
+        } else if (currentPreset === "this_week") {
+            const day = now.getDay() || 7; // Monday = 1
+            const start = new Date(now);
+            start.setDate(now.getDate() - day + 1);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            labelEl.textContent = `${fmt(start)} - ${fmt(end)}`;
+        } else if (currentPreset === "all_time") {
+            labelEl.textContent = "All Time";
+        } else if (currentPreset === "custom") {
+            const s = document.getElementById("filterStartDate").value;
+            const e = document.getElementById("filterEndDate").value;
+            if (s && e) {
+                const sDate = new Date(s + "T00:00:00");
+                const eDate = new Date(e + "T00:00:00");
+                if (!isNaN(sDate.getTime()) && !isNaN(eDate.getTime())) {
+                    labelEl.textContent = `${fmt(sDate)} - ${fmt(eDate)}`;
+                } else {
+                    labelEl.textContent = `${s} - ${e}`;
+                }
+            } else if (s) {
+                labelEl.textContent = `From ${s}`;
+            } else if (e) {
+                labelEl.textContent = `To ${e}`;
+            } else {
+                labelEl.textContent = "Custom Range";
+            }
+        }
+    }
+
+    // Date Constraint Validation (Prevents From > To, e.g. From 2026 and To 2024)
+    const startDateInput = document.getElementById("filterStartDate");
+    const endDateInput = document.getElementById("filterEndDate");
+
+    function enforceDateConstraints() {
+        const sVal = startDateInput.value;
+        const eVal = endDateInput.value;
+
+        if (sVal) {
+            endDateInput.min = sVal;
+            // If user selected an end date earlier than start date, auto-align it
+            if (eVal && eVal < sVal) {
+                endDateInput.value = sVal;
+            }
+        } else {
+            endDateInput.removeAttribute("min");
+        }
+
+        if (eVal) {
+            startDateInput.max = eVal;
+            // If user selected a start date later than end date, auto-align it
+            if (sVal && sVal > eVal) {
+                startDateInput.value = eVal;
+            }
+        } else {
+            startDateInput.removeAttribute("max");
+        }
+    }
+
+    // Time Period Dropdown Change
+    const periodSelect = document.getElementById("filterPeriod");
+    if (periodSelect) {
+        periodSelect.addEventListener("change", function() {
+            currentPreset = this.value;
+            const customCol = document.getElementById("customDateCol");
+            if (currentPreset === "custom") {
+                if (customCol) customCol.style.display = "block";
+                // Pre-populate with current month start/end if empty
+                if (!startDateInput.value || !endDateInput.value) {
+                    const now = new Date();
+                    const yyyy = now.getFullYear();
+                    const mm = String(now.getMonth() + 1).padStart(2, "0");
+                    const lastDay = new Date(yyyy, now.getMonth() + 1, 0).getDate();
+                    startDateInput.value = `${yyyy}-${mm}-01`;
+                    endDateInput.value = `${yyyy}-${mm}-${String(lastDay).padStart(2, "0")}`;
+                }
+                enforceDateConstraints();
+                updateDateRangeLabel();
+                fetchAndRenderCharts();
+            } else {
+                if (customCol) customCol.style.display = "none";
+                updateDateRangeLabel();
+                fetchAndRenderCharts();
+            }
+        });
+    }
+
+    // Custom Date Change triggers fetch with validation
+    startDateInput.addEventListener("change", function() {
+        enforceDateConstraints();
+        if (currentPreset === "custom") {
+            updateDateRangeLabel();
+            fetchAndRenderCharts();
+        }
+    });
+    endDateInput.addEventListener("change", function() {
+        enforceDateConstraints();
+        if (currentPreset === "custom") {
+            updateDateRangeLabel();
+            fetchAndRenderCharts();
+        }
+    });
+
+    // Filter Dropdown Changes
+    ["filterStatus", "filterRep", "filterProduct", "filterPaymentMode"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("change", function() {
+                fetchAndRenderCharts();
+            });
+        }
+    });
+
+    // Reset Filters Button
+    document.getElementById("resetFiltersBtn").addEventListener("click", function() {
+        currentPreset = "this_month";
+        document.getElementById("filterPeriod").value = "this_month";
+        const customCol = document.getElementById("customDateCol");
+        if (customCol) customCol.style.display = "none";
+        startDateInput.value = "";
+        endDateInput.value = "";
+        startDateInput.removeAttribute("max");
+        endDateInput.removeAttribute("min");
+        document.getElementById("filterStatus").value = "all";
+        document.getElementById("filterRep").value = "all";
+        document.getElementById("filterProduct").value = "all";
+        document.getElementById("filterPaymentMode").value = "all";
+        updateDateRangeLabel();
+        fetchAndRenderCharts();
+    });
+
+    // Initial Load - updates pre-filled date range and loads This Month data by default
+    updateDateRangeLabel();
+    fetchAndRenderCharts();
+});
+</script>
+{% endblock %}

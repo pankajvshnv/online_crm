@@ -1,0 +1,98 @@
+// Calendar.scss
+
+.fc {
+    .fc-button-group {
+        position: absolute;
+        top: 15px;
+        left: 42.3%;
+        width: 240px;
+        display: flex;
+        justify-content: space-between;
+        .fc-button {
+            background-color: var(--#{$variable-prefix}primary) !important;
+            &.fc-button-primary {
+                flex: 0 !important;
+                background-color: transparent !important;
+                border-color: transparent !important;
+                color: $text-muted !important;
+            }
+            &:focus {
+                box-shadow: none !important;
+            }
+        }
+    }
+    .fc-highlight{
+        background-color: var(--#{$prefix}light-bg-subtle) !important;
+    }
+    .fc-today-button {
+        background-color: transparent !important;
+        box-shadow: var(--#{$prefix}box-shadow-sm);
+        border-color: var(--#{$prefix}border-color) !important;
+        color: var(--#{$prefix}body-color) !important;
+    }
+    .fc-dayGridMonth-button,
+    .fc-timeGridWeek-button {
+        display: none !important;
+    }
+    .fc-toolbar-title {
+        font-size: 1.0625rem;
+    }
+    .fc-scrollgrid-sync-inner {
+        padding: 8px;
+    }
+    .fc-col-header-cell-cushion,
+    .fc-daygrid-day-number {
+        color: var(--#{$prefix}body-color) !important;
+    }
+    .fc-timegrid-slot {
+        display: none !important;
+    }
+    .fc-daygrid-day {
+        &.fc-day-today {
+            background-color: var(--#{$prefix}tertiary-bg) !important;
+        }
+    }
+}
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+    border-color: var(--#{$prefix}border-color);
+}
+.fc-theme-standard th {
+    background-color: rgba(var(--#{$prefix}tertiary-bg-rgb), 0.1);
+}
+.fc-event {
+    &.fc-daygrid-dot-event {
+        display: none;
+    }
+    &.fc-h-event {
+        padding: 6px 10px;
+    }
+}
+.fc-daygrid-event{
+    font-size: var(--#{$prefix}font-size-base);
+}
+.fc-timeGridDay-button{
+    display: none !important;
+}
+.calendar-card,
+.hospital-schedule{
+    .datepicker{
+        width: 100%;
+        border-color: var(--#{$prefix}secondary-bg) !important;
+        padding: 0;
+        .table-condensed{
+            width: 100%;
+            > thead{
+                > tr > th{
+                    padding: 8px 7px;
+                }
+            } 
+            > tbody{
+                > tr > td{
+                    padding: 8px 7px;
+                }
+            } 
+        }
+    }
+}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Paste Leads</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">Paste Leads</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Grid Layout (Form on Left, Table on Right) -->
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN: Paste Mobile Numbers Form Card -->
+        <div class="col-lg-6">
+            <div class="card h-100 mb-0">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">Paste Mobile Numbers</h5>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('sample_csv_download') }}" class="btn btn-sm btn-outline-success">
+                            <i class="mdi mdi-file-download-outline me-1"></i> Sample CSV
+                        </a>
+                        <a href="{{ url_for('all_leads') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="mdi mdi-arrow-left me-1"></i> Back to Leads
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('lead_upload_quick_paste') }}">
+                        <div class="row g-3">
+
+                            <!-- Batch Name -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Batch Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="batch_name" 
+                                       maxlength="160" 
+                                       value="{{ default_batch_name }}" 
+                                       placeholder="Auto: Lead Batch #ID">
+                            </div>
+
+                            <!-- Lead Source -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Lead Source <span class="text-danger">*</span></label>
+                                <select class="form-select" name="lead_source" required>
+                                    <option value="">Select Lead Source</option>
+                                    {% for source in options.sources %}
+                                        <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Lead Status -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Lead Status</label>
+                                <select class="form-select" name="lead_status">
+                                    <option value="">No Lead Status</option>
+                                    {% for status in options.statuses %}
+                                        <option value="{{ status.id }}">{{ status.status_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Assign To -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Assign To</label>
+                                <select class="form-select" name="assign_to_user_uuid">
+                                    <option value="">Unassigned</option>
+                                    {% for user in options.users %}
+                                        <option value="{{ user.user_uuid }}">{{ user.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Paste Numbers Textarea -->
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Paste Mobile Numbers <span class="text-danger">*</span></label>
+                                <textarea class="form-control" 
+                                          name="paste_numbers" 
+                                          rows="6" 
+                                          required 
+                                          placeholder="Enter or paste mobile numbers separated by spaces, commas, or line breaks&#10;e.g. 9876543210, 8123456789&#10;7012345678 6123456789"></textarea>
+                                <div id="paste-error-msg" class="invalid-feedback d-none mt-2 fw-medium fs-13"></div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 pt-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="mdi mdi-content-save-outline me-1"></i> Upload Leads
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Last Uploads Table -->
+        <div class="col-lg-6">
+            {% include 'leads/_last_uploads_table.html' %}
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const pasteForm = document.querySelector('form[action="{{ url_for("lead_upload_quick_paste") }}"]');
+    const textarea = document.querySelector('textarea[name="paste_numbers"]');
+    const errorDiv = document.getElementById('paste-error-msg');
+
+    if (!pasteForm || !textarea) return;
+
+    function validatePastedNumbers() {
+        const text = textarea.value.trim();
+        if (!text) {
+            showError('Please enter or paste at least one mobile number.');
+            return false;
+        }
+
+        const tokens = text.split(/[\s,;]+/).filter(Boolean);
+        const invalidTokens = [];
+
+        tokens.forEach(token => {
+            let cleaned = token.replace(/[\s\-\+\(\)]/g, '');
+            if (cleaned.startsWith('91') && cleaned.length === 12) {
+                cleaned = cleaned.substring(2);
+            } else if (cleaned.startsWith('0') && cleaned.length === 11) {
+                cleaned = cleaned.substring(1);
+            }
+
+            if (!/^[6-9]\d{9}$/.test(cleaned)) {
+                invalidTokens.push(token);
+            }
+        });
+
+        if (invalidTokens.length > 0) {
+            const preview = invalidTokens.slice(0, 5).join(', ');
+            const extra = invalidTokens.length > 5 ? ` and ${invalidTokens.length - 5} more` : '';
+            showError(`Invalid mobile number(s) detected: "${preview}${extra}". Only 10-digit mobile numbers starting with 6, 7, 8, or 9 are allowed.`);
+            return false;
+        }
+
+        clearError();
+        return true;
+    }
+
+    function showError(msg) {
+        textarea.classList.add('is-invalid');
+        if (errorDiv) {
+            errorDiv.innerHTML = `<i class="mdi mdi-alert-circle me-1"></i> ${msg}`;
+            errorDiv.classList.remove('d-none');
+            errorDiv.classList.add('d-block');
+        }
+    }
+
+    function clearError() {
+        textarea.classList.remove('is-invalid');
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-block');
+            errorDiv.innerHTML = '';
+        }
+    }
+
+    textarea.addEventListener('input', function() {
+        if (textarea.classList.contains('is-invalid')) {
+            validatePastedNumbers();
+        }
+    });
+
+    pasteForm.addEventListener('submit', function (e) {
+        if (!validatePastedNumbers()) {
+            e.preventDefault();
+            e.stopPropagation();
+            textarea.focus();
+        }
+    });
+});
+</script>
+
+{% endblock %}

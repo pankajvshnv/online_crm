@@ -1,0 +1,163 @@
+// avatar
+
+@each $color, $value in $theme-colors {
+  .avatar-#{$color} {
+    background-color: var(--#{$prefix}#{$color}) !important;
+    color: $white !important;
+  }
+  .avatar-label-#{$color} {
+    background-color: rgba(var(--#{$prefix}#{$color}-rgb), 0.15) !important;
+    color: var(--#{$prefix}#{$color}) !important;
+  }
+}
+.avatar-2xs {
+  height: 24px;
+  width: 24px;
+  font-size: $font-size-base;
+}
+
+.avatar-xs {
+  height: 34px;
+  width: 34px;
+  font-size: 16px;
+}
+
+.avatar-sm {
+  height: 40px;
+  width: 40px;
+  font-size: 20px;
+}
+
+.avatar-md {
+  height: 48px;
+  width: 48px;
+  font-size: 32px;
+}
+
+.avatar-lg {
+  height: 56px;
+  width: 56px;
+  font-size: 2.25rem;
+}
+
+.avatar-xl {
+  height: 72px;
+  width: 72px;
+  font-size: 2.875rem;
+}
+
+.avatar-xxl {
+  height: 6rem;
+  width: 6rem;
+  font-size: 54px;
+}
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--#{$prefix}body-color);
+  background: var(--#{$prefix}light);
+  border-radius: $border-radius;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+  img{
+    object-fit: cover;
+  }
+}
+
+.avatar-border{
+  border: 1px solid var(--#{$prefix}border-color);
+  background-color: var(--#{$prefix}secondary-bg) !important;
+}
+
+.avatar-circle {
+  border-radius: 50%;
+  img{
+    border-radius: 50%;
+  }
+}
+
+// avatar group
+.avatar-group {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  > .avatar {
+    margin: 0;
+    font-size: 1rem;
+    border: 2px solid var(--#{$prefix}secondary-bg);
+    width: 3rem;
+    height: 3rem;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    &:hover{
+      z-index: 1;
+      transform: scale(1.03);
+    }
+  }
+  > .avatar + .avatar {
+    margin-left: -0.6875rem;
+  }
+}
+.avatar-group-lg {
+  > .avatar {
+    font-size: 1.5rem;
+    width: 56px;
+    height: 56px;
+  }
+}
+.avatar-group-sm {
+  > .avatar {
+    font-size: $font-size-base;
+    width: 2.125rem;
+    height: 2.125rem;
+  }
+}
+
+.avatar-addon {
+  z-index: 1;
+  position: absolute;
+}
+
+.avatar-addon-top {
+  top: calc(-1 * 0.55rem);
+  left: calc(-1 * 0.55rem);
+}
+.avatar-addon-bottom {
+  bottom: calc(-1 * 0.7rem);
+  right: calc(-1 * 0.45rem);
+}
+
+.avatar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--#{$prefix}body-color);
+  background: var(--#{$prefix}body-bg);
+  border-radius: 50%;
+}
+
+.avatar-badge,
+.avatar-icon {
+  position: relative;
+  border: 2px solid var(--#{$prefix}secondary-bg);
+}
+
+.avatar-badge {
+  line-height: 0.5 !important;
+  padding-left: 0.35rem !important;
+  padding-right: 0.35rem !important;
+}
+.avatar-icon > i {
+  font-size: 0.5rem;
+}
+
+.avatar-light {
+  color: var(--#{$prefix}body-color) !important;
+  background-color: var(--#{$prefix}light) !important;
+}

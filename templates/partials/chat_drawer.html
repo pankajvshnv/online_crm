@@ -1,0 +1,787 @@
+<!-- Internal CRM Chat Offcanvas Drawer -->
+<style>
+/* Chat Drawer Specific Dark Mode Overrides */
+[data-bs-theme="dark"] #crmChatDrawer {
+    background-color: #212529 !important;
+    color: #e9ecef !important;
+    border-left: 1px solid #32383e !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .bg-white {
+    background-color: #212529 !important;
+    color: #e9ecef !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .bg-light,
+[data-bs-theme="dark"] #crmChatDrawer .bg-light-subtle {
+    background-color: #1a1d21 !important;
+    color: #e9ecef !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .text-dark {
+    color: #e9ecef !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .border,
+[data-bs-theme="dark"] #crmChatDrawer .border-top,
+[data-bs-theme="dark"] #crmChatDrawer .border-bottom,
+[data-bs-theme="dark"] #crmChatDrawer .border-end {
+    border-color: #32383e !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .drawer-user-item {
+    border-bottom: 1px solid #2c3239 !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .drawer-user-item:hover,
+[data-bs-theme="dark"] #crmChatDrawer .drawer-user-item.active {
+    background-color: #2c3239 !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .msg-item .bg-white {
+    background-color: #2c3239 !important;
+    color: #e9ecef !important;
+    border-color: #3a4149 !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .form-control {
+    background-color: #1a1d21 !important;
+    color: #e9ecef !important;
+    border-color: #32383e !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .form-control::placeholder {
+    color: #878a99 !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .btn-light {
+    background-color: #2c3239 !important;
+    color: #e9ecef !important;
+    border-color: #3a4149 !important;
+}
+[data-bs-theme="dark"] #crmChatDrawer .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+</style>
+<div class="offcanvas offcanvas-end shadow" tabindex="-1" id="crmChatDrawer" aria-labelledby="crmChatDrawerLabel" style="width: 400px; max-width: 96vw;">
+    
+    <!-- Offcanvas Header -->
+    <div class="offcanvas-header bg-white border-bottom px-3 py-2 align-items-center justify-content-between">
+        <!-- Main Directory Header (Default) -->
+        <div class="d-flex align-items-center gap-2" id="drawerHeaderMain">
+            <i class="mdi mdi-forum text-primary fs-18"></i>
+            <h6 class="text-dark fw-bold mb-0 fs-14">Chat</h6>
+        </div>
+
+        <!-- Thread Header (Active when chatting with a specific user) -->
+        <div class="d-none align-items-center gap-2 min-w-0" id="drawerHeaderThread">
+            <button type="button" class="btn btn-sm btn-light border p-1 rounded-circle d-flex align-items-center justify-content-center" onclick="closeDrawerChatThread()" title="Back to team members" style="width: 30px; height: 30px;">
+                <i class="mdi mdi-arrow-left fs-14"></i>
+            </button>
+            <div class="position-relative flex-shrink-0">
+                <div class="avatar avatar-xs bg-primary-subtle text-primary border rounded-circle d-flex align-items-center justify-content-center fw-bold fs-11" id="drawerActiveAvatar">U</div>
+                <span class="position-absolute bottom-0 end-0 p-1 border border-1 border-white rounded-circle bg-danger" id="drawerActiveDot" style="width: 9px; height: 9px;"></span>
+            </div>
+            <div class="min-w-0">
+                <h6 class="mb-0 fs-13 text-truncate fw-bold text-dark" id="drawerActiveName">User</h6>
+                <small class="fs-11 text-muted d-block text-truncate" id="drawerActiveStatus">Offline</small>
+            </div>
+        </div>
+
+        <!-- Close Drawer Button -->
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <!-- Offcanvas Body -->
+    <div class="offcanvas-body p-0 d-flex flex-column h-100 bg-white">
+        
+        <!-- 1. Member List View (Default) -->
+        <div id="drawerMembersListView" class="d-flex flex-column h-100">
+            <!-- Search Box -->
+            <div class="p-3 border-bottom bg-light-subtle">
+                <div class="position-relative">
+                    <i class="mdi mdi-magnify position-absolute top-50 translate-middle-y text-muted fs-16" style="left: 12px; pointer-events: none;"></i>
+                    <input type="text" id="drawerChatSearchInput" class="form-control form-control-sm border bg-white" style="padding-left: 36px;" placeholder="Search team member...">
+                </div>
+            </div>
+
+            <!-- Members List (Recent Conversations at the TOP) -->
+            <div class="flex-grow-1 overflow-auto bg-white" id="drawerMembersListContainer">
+                <div class="text-center py-5 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading team members...
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Active Chat Thread View (Hidden by default) -->
+        <div id="drawerActiveThreadView" class="d-none flex-column h-100 bg-light-subtle position-relative">
+            <!-- Messages Stream -->
+            <div class="flex-grow-1 overflow-auto p-3 d-flex flex-column" id="drawerMessageStream" style="max-height: calc(100vh - 130px);">
+                <!-- Messages rendered dynamically here (50 rows per batch) -->
+            </div>
+
+            <!-- Message Input Area -->
+            <div class="p-2 bg-white border-top">
+                <form id="drawerMessageForm" onsubmit="sendDrawerChatMessage(event)" class="d-flex align-items-center gap-1">
+                    <input type="hidden" id="drawerReceiverUuid" name="receiver_uuid" value="">
+                    
+                    <!-- Attachment button (5MB limit & whitelisted docs/images) -->
+                    <label class="btn btn-sm btn-light border text-muted mb-0 px-2 d-flex align-items-center justify-content-center flex-shrink-0" title="Attach Document / Image (Max 5MB)" style="height: 34px;">
+                        <i class="mdi mdi-paperclip fs-15"></i>
+                        <input type="file" id="drawerAttachmentInput" name="attachment" class="d-none" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,.gif">
+                    </label>
+
+                    <!-- Text input -->
+                    <input type="text" id="drawerMessageInput" name="message_text" class="form-control form-control-sm border px-3" placeholder="Type a message..." autocomplete="off">
+                    
+                    <!-- Send button -->
+                    <button type="submit" class="btn btn-sm btn-primary px-3 flex-shrink-0" id="drawerSendBtn" style="height: 34px;">
+                        <i class="mdi mdi-send"></i>
+                    </button>
+                </form>
+
+                <!-- Attachment preview badge -->
+                <div id="drawerFilePreview" class="badge bg-info-subtle text-info border border-info-subtle d-none align-items-center gap-1 fs-11 py-1 px-2 mt-1">
+                    <i class="mdi mdi-file-document-outline"></i>
+                    <span id="drawerFileName" class="text-truncate" style="max-width: 220px;">file.pdf</span>
+                    <i class="mdi mdi-close text-danger ms-1 cursor-pointer" onclick="clearDrawerAttachment()" title="Remove file"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script data-crm-base-script="true">
+(function() {
+    let currentDrawerSelectedUserUuid = null;
+    let drawerPollInterval = null;
+    let isDrawerSending = false;
+    let previousTotalUnread = null;
+    let audioCtxInstance = null;
+
+    // Pagination state (50 rows per batch using UUIDs)
+    let drawerOldestMessageUuid = null;
+    let drawerNewestMessageUuid = null;
+    let drawerHasMoreMessages = false;
+    let isLoadingEarlier = false;
+    let currentLoadedMessages = [];
+
+    const drawerMembersListContainer = document.getElementById('drawerMembersListContainer');
+    const drawerChatSearchInput = document.getElementById('drawerChatSearchInput');
+
+    const drawerHeaderMain = document.getElementById('drawerHeaderMain');
+    const drawerHeaderThread = document.getElementById('drawerHeaderThread');
+    const drawerMembersListView = document.getElementById('drawerMembersListView');
+    const drawerActiveThreadView = document.getElementById('drawerActiveThreadView');
+
+    const drawerActiveAvatar = document.getElementById('drawerActiveAvatar');
+    const drawerActiveDot = document.getElementById('drawerActiveDot');
+    const drawerActiveName = document.getElementById('drawerActiveName');
+    const drawerActiveStatus = document.getElementById('drawerActiveStatus');
+
+    const drawerMessageStream = document.getElementById('drawerMessageStream');
+    const drawerMessageForm = document.getElementById('drawerMessageForm');
+    const drawerReceiverUuid = document.getElementById('drawerReceiverUuid');
+    const drawerMessageInput = document.getElementById('drawerMessageInput');
+    const drawerAttachmentInput = document.getElementById('drawerAttachmentInput');
+    const drawerFilePreview = document.getElementById('drawerFilePreview');
+    const drawerFileName = document.getElementById('drawerFileName');
+
+    // ---------------------------------------------------------
+    // Notification Sound Function (Pleasant 2-Tone Chime)
+    // ---------------------------------------------------------
+    function playChatNotificationSound() {
+        if (typeof window.playChatNotificationSound === 'function' && window.playChatNotificationSound !== playChatNotificationSound) {
+            window.playChatNotificationSound();
+            return;
+        }
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            if (!audioCtxInstance) {
+                audioCtxInstance = new AudioCtx();
+            }
+            if (audioCtxInstance.state === 'suspended') {
+                audioCtxInstance.resume();
+            }
+
+            const ctx = audioCtxInstance;
+            const now = ctx.currentTime;
+
+            // Tone 1: 587Hz (D5)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now);
+            gain1.gain.setValueAtTime(0.18, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.22);
+
+            // Tone 2: 880Hz (A5)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880, now + 0.09);
+            gain2.gain.setValueAtTime(0.22, now + 0.09);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.09);
+            osc2.stop(now + 0.35);
+        } catch (e) {
+            console.log("Audio notification notice:", e);
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 1. Fetch & Render Team Members Directory in Drawer (POST)
+    // ---------------------------------------------------------
+    function loadDrawerUsersDirectory() {
+        const query = drawerChatSearchInput ? drawerChatSearchInput.value.trim() : '';
+        fetch('/chat/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ search: query })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Update Header Unread Badge
+            const totalUnread = data.total_unread_count || 0;
+            const unreadBadge = document.getElementById('headerChatUnreadBadge');
+            if (unreadBadge) {
+                if (totalUnread > 0) {
+                    unreadBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
+                    unreadBadge.classList.remove('d-none');
+                } else {
+                    unreadBadge.classList.add('d-none');
+                }
+            }
+
+            // Sound check on new incoming unread messages
+            if (previousTotalUnread !== null && totalUnread > previousTotalUnread) {
+                playChatNotificationSound();
+            }
+            previousTotalUnread = totalUnread;
+
+            renderDrawerUsersDirectory(data.users || []);
+        })
+        .catch(err => console.error("Error loading drawer chat users:", err));
+    }
+
+    function renderDrawerUsersDirectory(users) {
+        if (!users || users.length === 0) {
+            drawerMembersListContainer.innerHTML = `<div class="text-center py-5 text-muted fs-13">No team members found.</div>`;
+            return;
+        }
+
+        let html = '<div class="list-group list-group-flush">';
+        users.forEach(u => {
+            const userUuid = u.uuid;
+            const isSelected = (currentDrawerSelectedUserUuid === userUuid);
+            const activeBg = isSelected ? 'bg-primary-subtle border-start border-primary border-3' : 'hover-bg-light';
+            const initial = (u.full_name || 'U').charAt(0).toUpperCase();
+
+            // Status chip badge
+            let statusChip = '';
+            if (u.presence.status === 'online') {
+                statusChip = `<span class="badge bg-success-subtle text-success border border-success-subtle fs-10 px-1 py-0 rounded">Online</span>`;
+            } else if (u.presence.status === 'idle') {
+                statusChip = `<span class="badge bg-warning-subtle text-dark border border-warning-subtle fs-10 px-1 py-0 rounded">Away</span>`;
+            } else {
+                statusChip = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-10 px-1 py-0 rounded">Offline</span>`;
+            }
+
+            const msgSnippet = u.last_msg_text ? escapeDrawerHtml(u.last_msg_text) : '';
+
+            html += `
+                <div class="list-group-item list-group-item-action p-2 px-3 border-bottom ${activeBg} cursor-pointer drawer-user-item" 
+                     data-user-uuid="${userUuid}" 
+                     data-user-name="${escapeDrawerHtml(u.full_name)}" 
+                     data-user-dot="${u.presence.dot_class}" 
+                     data-user-label="${escapeDrawerHtml(u.presence.label)}">
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative me-2 flex-shrink-0">
+                            <div class="avatar avatar-xs bg-light text-dark border rounded-circle d-flex align-items-center justify-content-center fw-bold fs-11">
+                                ${initial}
+                            </div>
+                            <span class="position-absolute bottom-0 end-0 p-1 border border-1 border-white rounded-circle ${u.presence.dot_class}" style="width: 9px; height: 9px;"></span>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden ms-1">
+                            <div class="d-flex align-items-center justify-content-between mb-0">
+                                <h6 class="mb-0 fs-13 text-truncate fw-semibold ${isSelected ? 'text-primary' : 'text-dark'}">${escapeDrawerHtml(u.full_name)}</h6>
+                                <small class="text-muted fs-10 ms-1 flex-shrink-0">${u.last_msg_time || ''}</small>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mt-1">
+                                <div class="d-flex align-items-center gap-1 overflow-hidden">
+                                    ${statusChip}
+                                    ${msgSnippet ? `<small class="text-muted text-truncate fs-11 mb-0">${msgSnippet}</small>` : ''}
+                                </div>
+                                ${u.unread_count > 0 ? `<span class="badge bg-danger rounded-pill fs-10 ms-1">${u.unread_count}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        drawerMembersListContainer.innerHTML = html;
+
+        // Attach item clicks
+        document.querySelectorAll('.drawer-user-item').forEach(el => {
+            el.addEventListener('click', function() {
+                const u_uuid = this.getAttribute('data-user-uuid');
+                const uname = this.getAttribute('data-user-name');
+                const udot = this.getAttribute('data-user-dot');
+                const ulabel = this.getAttribute('data-user-label');
+                openDrawerChatThread(u_uuid, uname, udot, ulabel);
+            });
+        });
+    }
+
+    // ---------------------------------------------------------
+    // 2. Open / Close Active Chat Thread
+    // ---------------------------------------------------------
+    window.openDrawerChatThread = function(userUuid, userName, dotClass, labelText) {
+        currentDrawerSelectedUserUuid = userUuid;
+        drawerReceiverUuid.value = userUuid;
+        
+        // Reset pagination state
+        drawerOldestMessageUuid = null;
+        drawerNewestMessageUuid = null;
+        drawerHasMoreMessages = false;
+        isLoadingEarlier = false;
+        currentLoadedMessages = [];
+
+        drawerHeaderMain.classList.add('d-none');
+        drawerHeaderThread.classList.remove('d-none');
+        drawerHeaderThread.classList.add('d-flex');
+
+        drawerMembersListView.classList.add('d-none');
+        drawerActiveThreadView.classList.remove('d-none');
+        drawerActiveThreadView.classList.add('d-flex');
+
+        drawerActiveAvatar.textContent = (userName || 'U').charAt(0).toUpperCase();
+        drawerActiveName.textContent = userName || 'User';
+        drawerActiveDot.className = `position-absolute bottom-0 end-0 p-1 border border-1 border-white rounded-circle ${dotClass || 'bg-danger'}`;
+        drawerActiveStatus.textContent = labelText || 'Offline';
+
+        drawerMessageStream.innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading chat...
+            </div>
+        `;
+
+        loadDrawerInitialMessages(userUuid);
+    };
+
+    window.closeDrawerChatThread = function() {
+        currentDrawerSelectedUserUuid = null;
+        drawerReceiverUuid.value = '';
+        drawerOldestMessageUuid = null;
+        drawerNewestMessageUuid = null;
+        drawerHasMoreMessages = false;
+        isLoadingEarlier = false;
+        currentLoadedMessages = [];
+
+        drawerHeaderThread.classList.add('d-none');
+        drawerHeaderThread.classList.remove('d-flex');
+        drawerHeaderMain.classList.remove('d-none');
+
+        drawerActiveThreadView.classList.add('d-none');
+        drawerActiveThreadView.classList.remove('d-flex');
+        drawerMembersListView.classList.remove('d-none');
+
+        loadDrawerUsersDirectory();
+    };
+
+    // ---------------------------------------------------------
+    // 3. Load Initial 50 Messages (POST with UUID)
+    // ---------------------------------------------------------
+    function loadDrawerInitialMessages(userUuid) {
+        if (!userUuid) return;
+
+        fetch('/chat/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ receiver_uuid: userUuid, limit: 50 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+            
+            if (data.receiver) {
+                const r = data.receiver;
+                drawerActiveName.textContent = r.full_name;
+                drawerActiveAvatar.textContent = (r.full_name || 'U').charAt(0).toUpperCase();
+                drawerActiveDot.className = `position-absolute bottom-0 end-0 p-1 border border-1 border-white rounded-circle ${r.presence.dot_class}`;
+                drawerActiveStatus.textContent = (r.presence && r.presence.label) ? r.presence.label : 'Offline';
+            }
+
+            currentLoadedMessages = data.messages || [];
+            drawerOldestMessageUuid = data.oldest_uuid || null;
+            drawerNewestMessageUuid = data.newest_uuid || null;
+            drawerHasMoreMessages = !!data.has_more;
+
+            renderFullMessageStream(true);
+        })
+        .catch(err => console.error("Error loading initial chat messages:", err));
+    }
+
+    // ---------------------------------------------------------
+    // 4. Load Earlier Messages (Pagination using before_uuid)
+    // ---------------------------------------------------------
+    window.loadDrawerEarlierMessages = function() {
+        if (isLoadingEarlier || !currentDrawerSelectedUserUuid || !drawerOldestMessageUuid) return;
+
+        isLoadingEarlier = true;
+        const btn = document.getElementById('drawerLoadEarlierBtn');
+        if (btn) {
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Loading...`;
+            btn.disabled = true;
+        }
+
+        const prevScrollHeight = drawerMessageStream.scrollHeight;
+        const prevScrollTop = drawerMessageStream.scrollTop;
+
+        fetch('/chat/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                receiver_uuid: currentDrawerSelectedUserUuid, 
+                before_uuid: drawerOldestMessageUuid, 
+                limit: 50 
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            isLoadingEarlier = false;
+            if (!data.success) return;
+
+            const earlierMsgs = data.messages || [];
+            if (earlierMsgs.length > 0) {
+                currentLoadedMessages = earlierMsgs.concat(currentLoadedMessages);
+                drawerOldestMessageUuid = data.oldest_uuid || drawerOldestMessageUuid;
+            }
+            drawerHasMoreMessages = !!data.has_more;
+
+            renderFullMessageStream(false);
+
+            // Restore scroll position
+            const newScrollHeight = drawerMessageStream.scrollHeight;
+            drawerMessageStream.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+        })
+        .catch(err => {
+            isLoadingEarlier = false;
+            console.error("Error loading earlier messages:", err);
+            if (btn) {
+                btn.innerHTML = `<i class="mdi mdi-history me-1"></i> Load earlier messages (50)`;
+                btn.disabled = false;
+            }
+        });
+    };
+
+    // ---------------------------------------------------------
+    // 5. Render Message Stream (with Load More & Double-Tick Seen)
+    // ---------------------------------------------------------
+    function renderFullMessageStream(scrollToBottom = false) {
+        if (!currentLoadedMessages || currentLoadedMessages.length === 0) {
+            drawerMessageStream.innerHTML = `
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted py-5 my-auto">
+                    <i class="mdi mdi-message-text-outline fs-1 text-secondary opacity-50 mb-2"></i>
+                    <p class="fs-12 mb-0">No messages yet. Send a message to start chatting!</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        // Load More Header Button (or Beginning of History)
+        if (drawerHasMoreMessages) {
+            html += `
+                <div class="text-center my-2 flex-shrink-0" id="drawerLoadEarlierContainer">
+                    <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill fs-11 px-3 py-1 shadow-2xs" id="drawerLoadEarlierBtn" onclick="loadDrawerEarlierMessages()">
+                        <i class="mdi mdi-history me-1"></i> Load earlier messages (50)
+                    </button>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="text-center my-2 text-muted fs-11 opacity-50 flex-shrink-0">
+                    — Beginning of conversation —
+                </div>
+            `;
+        }
+
+        html += '<div class="d-flex flex-column gap-2 py-1 flex-grow-1" id="drawerMessageListWrapper">';
+        currentLoadedMessages.forEach(m => {
+            html += buildMessageBubbleHtml(m);
+        });
+        html += '</div>';
+
+        drawerMessageStream.innerHTML = html;
+
+        if (scrollToBottom) {
+            drawerMessageStream.scrollTop = drawerMessageStream.scrollHeight;
+        }
+    }
+
+    function buildMessageBubbleHtml(m) {
+        const isSelf = m.is_self;
+        const bubbleBg = isSelf ? 'bg-primary text-white shadow-xs' : 'bg-white text-dark shadow-xs border';
+        const alignClass = isSelf ? 'align-self-end' : 'align-self-start';
+        const maxWidth = 'max-width: 80%;';
+
+        // Double Tick Seen Logic:
+        // is_read === 1 -> Blue Double Tick (Seen)
+        // is_read === 0 -> Single Tick (Sent)
+        let tickHtml = '';
+        if (isSelf) {
+            if (m.is_read === 1) {
+                tickHtml = `<i class="mdi mdi-check-all text-info ms-1" style="font-size: 13px;" title="Seen"></i>`;
+            } else {
+                tickHtml = `<i class="mdi mdi-check opacity-75 ms-1" style="font-size: 13px;" title="Sent"></i>`;
+            }
+        }
+
+        let attachmentHtml = '';
+        if (m.attachment_path) {
+            const isImg = m.attachment_path.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+            if (isImg) {
+                attachmentHtml = `
+                    <div class="mb-1">
+                        <a href="${m.attachment_path}" target="_blank">
+                            <img src="${m.attachment_path}" class="img-fluid rounded border" style="max-height: 140px;" alt="attachment">
+                        </a>
+                    </div>
+                `;
+            } else {
+                attachmentHtml = `
+                    <div class="mb-1 p-1 bg-light rounded text-dark d-flex align-items-center gap-1 border">
+                        <i class="mdi mdi-file-document-outline fs-4 text-primary"></i>
+                        <div class="text-truncate">
+                            <small class="fw-bold d-block text-truncate fs-11">${escapeDrawerHtml(m.attachment_name)}</small>
+                            <a href="${m.attachment_path}" target="_blank" class="fs-10 text-primary text-decoration-none">Download</a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        return `
+            <div class="d-flex flex-column ${alignClass} msg-item" data-msg-uuid="${m.uuid}" style="${maxWidth}">
+                <div class="p-2 px-3 rounded-3 ${bubbleBg}">
+                    ${attachmentHtml}
+                    <div class="fs-13 text-break mb-1">${escapeDrawerHtml(m.message_text)}</div>
+                    <div class="d-flex align-items-center justify-content-end gap-1 opacity-75 fs-10">
+                        <span>${m.time_fmt}</span>
+                        ${tickHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ---------------------------------------------------------
+    // 6. Polling Updates (Latest 50 Messages Poll via UUID)
+    // ---------------------------------------------------------
+    function pollDrawerMessages(userUuid) {
+        if (!userUuid || isLoadingEarlier) return;
+
+        fetch('/chat/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ receiver_uuid: userUuid, limit: 50 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+
+            // Presence update
+            if (data.receiver) {
+                const r = data.receiver;
+                drawerActiveName.textContent = r.full_name;
+                drawerActiveAvatar.textContent = (r.full_name || 'U').charAt(0).toUpperCase();
+                drawerActiveDot.className = `position-absolute bottom-0 end-0 p-1 border border-1 border-white rounded-circle ${r.presence.dot_class}`;
+                drawerActiveStatus.textContent = (r.presence && r.presence.label) ? r.presence.label : 'Offline';
+            }
+
+            const latestBatch = data.messages || [];
+            if (latestBatch.length === 0) return;
+
+            const newMaxUuid = data.newest_uuid || (latestBatch.length > 0 ? latestBatch[latestBatch.length - 1].uuid : null);
+
+            // Check if there are new incoming messages
+            if (drawerNewestMessageUuid && newMaxUuid !== drawerNewestMessageUuid) {
+                const hasNewIncoming = latestBatch.some(m => !m.is_self && !currentLoadedMessages.some(cm => cm.uuid === m.uuid));
+                if (hasNewIncoming) {
+                    playChatNotificationSound();
+                }
+            }
+
+            // Sync currentLoadedMessages with new latest messages
+            const existingUuidMap = new Map();
+            currentLoadedMessages.forEach(m => existingUuidMap.set(m.uuid, m));
+
+            let hasChanges = false;
+            latestBatch.forEach(m => {
+                if (!existingUuidMap.has(m.uuid)) {
+                    currentLoadedMessages.push(m);
+                    hasChanges = true;
+                } else {
+                    const existing = existingUuidMap.get(m.uuid);
+                    if (existing.is_read !== m.is_read) {
+                        existing.is_read = m.is_read;
+                        hasChanges = true;
+                    }
+                }
+            });
+
+            drawerNewestMessageUuid = newMaxUuid;
+            if (hasChanges) {
+                const isAtBottom = (drawerMessageStream.scrollHeight - drawerMessageStream.scrollTop - drawerMessageStream.clientHeight < 120);
+                renderFullMessageStream(isAtBottom);
+            }
+        })
+        .catch(err => console.error("Error polling chat messages:", err));
+    }
+
+    // ---------------------------------------------------------
+    // 7. Send Message Handler (POST with receiver_uuid)
+    // ---------------------------------------------------------
+    window.sendDrawerChatMessage = function(event) {
+        event.preventDefault();
+        if (isDrawerSending || !currentDrawerSelectedUserUuid) return;
+
+        const textVal = drawerMessageInput.value.trim();
+        const hasFile = drawerAttachmentInput.files.length > 0;
+
+        if (!textVal && !hasFile) return;
+
+        isDrawerSending = true;
+        const formData = new FormData(drawerMessageForm);
+
+        fetch("/chat/api/send", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            isDrawerSending = false;
+            if (data.success) {
+                drawerMessageInput.value = '';
+                drawerAttachmentInput.value = '';
+                drawerFilePreview.classList.add('d-none');
+                pollDrawerMessages(currentDrawerSelectedUserUuid);
+            } else {
+                if (typeof showToastNotification === 'function') {
+                    showToastNotification(data.message || "Failed to send message", "danger");
+                }
+            }
+        })
+        .catch(err => {
+            isDrawerSending = false;
+            console.error("Error sending message:", err);
+        });
+    };
+
+    // File attachments handler (5MB Limit & Allowed Extensions Whitelist)
+    const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'jpg', 'jpeg', 'png', 'webp', 'gif'];
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+    if (drawerAttachmentInput) {
+        drawerAttachmentInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                const ext = (file.name.split('.').pop() || '').toLowerCase();
+
+                // Extension check
+                if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                    if (typeof showToastNotification === 'function') {
+                        showToastNotification("Invalid file type! Only documents (PDF, Word, Excel, CSV, TXT) and images are allowed.", "warning");
+                    }
+                    this.value = '';
+                    drawerFilePreview.classList.add('d-none');
+                    return;
+                }
+
+                // File size check (5MB)
+                if (file.size > MAX_FILE_SIZE) {
+                    if (typeof showToastNotification === 'function') {
+                        showToastNotification("File size exceeds 5MB limit! Please upload a smaller file.", "warning");
+                    }
+                    this.value = '';
+                    drawerFilePreview.classList.add('d-none');
+                    return;
+                }
+
+                drawerFileName.textContent = file.name;
+                drawerFilePreview.classList.remove('d-none');
+                drawerFilePreview.classList.add('d-flex');
+            } else {
+                drawerFilePreview.classList.add('d-none');
+            }
+        });
+    }
+
+    window.clearDrawerAttachment = function() {
+        if (drawerAttachmentInput) drawerAttachmentInput.value = '';
+        if (drawerFilePreview) drawerFilePreview.classList.add('d-none');
+    };
+
+    // Search filter input (Debounced)
+    if (drawerChatSearchInput) {
+        let searchTimer;
+        drawerChatSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadDrawerUsersDirectory, 250);
+        });
+    }
+
+    function escapeDrawerHtml(text) {
+        if (!text) return "";
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Expose sound notification globally for /api/sidebar/live-stats
+    window.playChatNotificationSound = playChatNotificationSound;
+
+    // ---------------------------------------------------------
+    // 8. Polling & Bootstrap Offcanvas Listeners
+    // ---------------------------------------------------------
+    function startDrawerPolling() {
+        if (drawerPollInterval) clearInterval(drawerPollInterval);
+        // Only poll conversation messages when inside an active chat thread
+        drawerPollInterval = setInterval(function() {
+            if (currentDrawerSelectedUserUuid) {
+                pollDrawerMessages(currentDrawerSelectedUserUuid);
+            }
+        }, 3000);
+    }
+
+    function stopDrawerPolling() {
+        if (drawerPollInterval) {
+            clearInterval(drawerPollInterval);
+            drawerPollInterval = null;
+        }
+    }
+
+    const drawerEl = document.getElementById('crmChatDrawer');
+    if (drawerEl) {
+        // Fetch users directory only once when drawer is opened
+        drawerEl.addEventListener('show.bs.offcanvas', function () {
+            loadDrawerUsersDirectory();
+            if (currentDrawerSelectedUserUuid) {
+                loadDrawerInitialMessages(currentDrawerSelectedUserUuid);
+            }
+            startDrawerPolling();
+        });
+
+        drawerEl.addEventListener('hide.bs.offcanvas', function () {
+            stopDrawerPolling();
+        });
+    }
+})();
+</script>

@@ -1,0 +1,181 @@
+<!-- Last Uploads Table (Shared Partial) -->
+<style>
+@keyframes last-uploads-skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.last-uploads-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    animation: last-uploads-skeleton-shimmer 1.4s ease infinite;
+    display: inline-block;
+}
+</style>
+
+<div class="card h-100 mb-0">
+    <div class="card-header d-flex align-items-center justify-content-between py-2.5">
+        <h5 class="card-title mb-0 fs-14 fw-semibold">Last Uploads</h5>
+        <button type="button" class="btn btn-sm btn-ghost-secondary p-1 rounded-circle" onclick="window.loadRecentBatches && window.loadRecentBatches()" title="Refresh uploads">
+            <i class="mdi mdi-refresh fs-16"></i>
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width: 200px;">Batch Details</th>
+                        <th class="text-center" style="width: 105px;">Total Tried</th>
+                        <th class="text-center" style="width: 105px;">Imported</th>
+                        <th class="text-center" style="width: 105px;">Duplicates</th>
+                        <th class="text-center" style="width: 105px;">Invalid</th>
+                    </tr>
+                </thead>
+                <tbody id="lastUploadsTableBody">
+                    <!-- Skeleton shimmer placeholder rows (Initial Instant Load) -->
+                    {% for i in range(5) %}
+                    <tr class="last-uploads-skeleton-row">
+                        <td>
+                            <div class="d-flex flex-column gap-1.5 py-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="last-uploads-shimmer rounded" style="width: 140px; height: 16px;"></span>
+                                    <span class="last-uploads-shimmer rounded-pill" style="width: 65px; height: 18px;"></span>
+                                </div>
+                                <span class="last-uploads-shimmer rounded" style="width: 110px; height: 12px;"></span>
+                            </div>
+                        </td>
+                        <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                        <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                        <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                        <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderSkeletonRows() {
+        const tbody = document.getElementById('lastUploadsTableBody');
+        if (!tbody) return;
+        let html = '';
+        for (let i = 0; i < 5; i++) {
+            html += `
+                <tr class="last-uploads-skeleton-row">
+                    <td>
+                        <div class="d-flex flex-column gap-1.5 py-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="last-uploads-shimmer rounded" style="width: 140px; height: 16px;"></span>
+                                <span class="last-uploads-shimmer rounded-pill" style="width: 65px; height: 18px;"></span>
+                            </div>
+                            <span class="last-uploads-shimmer rounded" style="width: 110px; height: 12px;"></span>
+                        </div>
+                    </td>
+                    <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                    <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                    <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                    <td class="text-center"><span class="last-uploads-shimmer rounded-pill" style="width: 50px; height: 22px;"></span></td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = html;
+    }
+
+    async function fetchRecentBatches() {
+        const tbody = document.getElementById('lastUploadsTableBody');
+        if (!tbody) return;
+
+        try {
+            const resp = await fetch('/api/leads/recent-batches?limit=5');
+            const data = await resp.json();
+
+            if (!data.success || !data.batches || data.batches.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="mdi mdi-information-outline fs-20 d-block mb-1 text-muted"></i>
+                            No recent uploads found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const canExport = !!data.can_export;
+            let rowsHtml = '';
+
+            data.batches.forEach(b => {
+                const srcName = (b.source_name && b.source_name !== 'No Source') ? b.source_name : (b.lead_source || 'No Source');
+
+                function renderMetricCell(count, metric, badgeClass, btnClass, title) {
+                    const cnt = Number(count || 0);
+                    let cellContent = `<span class="badge ${badgeClass} fs-12 px-2 py-1">${cnt.toLocaleString('en-IN')}</span>`;
+                    if (canExport && cnt > 0) {
+                        cellContent += `
+                            <a href="/leads/batches/${encodeURIComponent(b.batch_uuid)}/export/${metric}"
+                               class="btn btn-xs ${btnClass} p-1 ms-1 d-inline-flex align-items-center"
+                               title="${escapeHtml(title)}">
+                                <i class="mdi mdi-download fs-14"></i>
+                            </a>
+                        `;
+                    }
+                    return `<div class="d-inline-flex align-items-center justify-content-center">${cellContent}</div>`;
+                }
+
+                rowsHtml += `
+                    <tr>
+                        <td>
+                            <div class="d-flex flex-column gap-1">
+                                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                    <span class="fw-semibold text-dark fs-13 text-wrap" style="max-width: 220px;" title="${escapeHtml(b.batch_name)}">${escapeHtml(b.batch_name)}</span>
+                                    <span class="badge bg-light text-dark border font-size-11 fw-medium px-1.5 py-0.5">${escapeHtml(srcName)}</span>
+                                </div>
+                                <div class="text-muted fs-11 d-inline-flex align-items-center">
+                                    <i class="mdi mdi-clock-outline me-1 fs-12 text-muted"></i>${escapeHtml(b.created_at || '')}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">${renderMetricCell(b.total_count, 'total', 'bg-secondary-subtle text-secondary', 'btn-soft-secondary', 'Download All CSV')}</td>
+                        <td class="text-center">${renderMetricCell(b.imported_count, 'uploaded', 'bg-success-subtle text-success', 'btn-soft-success', 'Download Imported CSV')}</td>
+                        <td class="text-center">${renderMetricCell(b.duplicate_count, 'duplicate', 'bg-warning-subtle text-warning', 'btn-soft-warning', 'Download Duplicates CSV')}</td>
+                        <td class="text-center">${renderMetricCell(b.invalid_count, 'invalid', 'bg-danger-subtle text-danger', 'btn-soft-danger', 'Download Invalid CSV')}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = rowsHtml;
+        } catch (err) {
+            console.error('Failed to load recent batches:', err);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">Unable to load recent uploads.</td>
+                </tr>
+            `;
+        }
+    }
+
+    window.loadRecentBatches = function() {
+        renderSkeletonRows();
+        fetchRecentBatches();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fetchRecentBatches);
+    } else {
+        fetchRecentBatches();
+    }
+})();
+</script>

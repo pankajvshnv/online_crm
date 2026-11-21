@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ page_title|default('Login') }} | {{ company_brand_name or 'ClientOS' }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{{ company_brand_favicon or url_for('static', filename='assets/images/crm_logo.png') }}">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/custom.css') }}" rel="stylesheet" type="text/css">
+</head>
+<body class="clientos-auth-body">
+    <main class="clientos-auth-shell">
+        <section class="clientos-auth-panel shadow-lg rounded-3">
+            <div class="clientos-auth-brand text-center mb-4">
+                <img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ company_brand_name or 'ClientOS' }}" style="max-height: 48px;" class="mb-2">
+                <div>
+                    <h1 class="h4 fw-bold text-dark mb-1">{{ company_brand_name or 'ClientOS' }}</h1>
+                    <p class="text-muted fs-13 mb-0">{% if require_otp_step %}Two-Factor OTP Verification{% else %}Sign in to your account{% endif %}</p>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-2 px-3 fs-13 mb-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% if require_otp_step %}
+                <!-- Step 2: OTP Verification Form -->
+                <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+                    <input type="hidden" name="client_public_ip" class="client_public_ip_input" value="">
+                    <div class="mb-3 text-center">
+                        <span class="badge bg-primary-subtle text-primary fs-13 px-3 py-2 border border-primary-subtle rounded-pill">
+                            <i class="mdi mdi-account-circle me-1"></i> User: <strong>{{ pending_username }}</strong>
+                        </span>
+                        {% if pending_phone_masked %}
+                        <div class="mt-2 text-muted fs-12">
+                            <i class="mdi mdi-whatsapp text-success fs-14 align-middle me-1"></i> WhatsApp: <strong>{{ pending_phone_masked }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-13 d-block text-center mb-2">Enter 6-Digit OTP</label>
+                        <input type="text" class="form-control text-center fw-bold fs-18 py-2" name="otp_code" placeholder="------" maxlength="6" autofocus required autocomplete="off" style="letter-spacing: 6px; font-family: monospace;">
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" name="action" value="verify_otp" class="btn btn-primary py-2 fw-semibold">
+                            <i class="mdi mdi-shield-check me-1 fs-16 align-middle"></i> Verify OTP & Login
+                        </button>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                        <button type="submit" name="action" value="resend_otp" id="btnResendOtp" formnovalidate class="btn btn-sm btn-outline-secondary" disabled>
+                            <i class="mdi mdi-clock-outline me-1"></i> Resend OTP (<span id="resendTimer">30</span>s)
+                        </button>
+                        <a href="{{ url_for('login', cancel_otp='1') }}" class="btn btn-sm btn-link text-muted text-decoration-none">
+                            <i class="mdi mdi-arrow-left me-1"></i> Back to Login
+                        </a>
+                    </div>
+                </form>
+
+                <script>
+                (function () {
+                    var btn = document.getElementById('btnResendOtp');
+                    var timerSpan = document.getElementById('resendTimer');
+                    if (!btn || !timerSpan) return;
+
+                    var timeLeft = 30;
+                    btn.disabled = true;
+
+                    var countdown = setInterval(function () {
+                        timeLeft--;
+                        if (timeLeft > 0) {
+                            if (timerSpan) timerSpan.textContent = timeLeft;
+                        } else {
+                            clearInterval(countdown);
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="mdi mdi-refresh me-1"></i> Resend OTP';
+                        }
+                    }, 1000);
+                })();
+                </script>
+            {% else %}
+                <!-- Step 1: Standard Username & Password Form -->
+                <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}">
+                    <input type="hidden" name="client_public_ip" class="client_public_ip_input" value="">
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-13">Username</label>
+                        <input type="text" class="form-control" name="username" placeholder="Enter username" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted fs-13">Password</label>
+                        <input type="password" class="form-control" name="password" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="mdi mdi-login me-1 fs-16 align-middle"></i> Login
+                    </button>
+                </form>
+            {% endif %}
+
+        </section>
+    </main>
+
+    <script>
+    (function () {
+        fetch('https://api.ipify.org?format=json')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.ip) {
+                    var inputs = document.querySelectorAll('.client_public_ip_input');
+                    for (var i = 0; i < inputs.length; i++) {
+                        inputs[i].value = data.ip;
+                    }
+                }
+            })
+            .catch(function() {});
+    })();
+    </script>
+</body>
+</html>

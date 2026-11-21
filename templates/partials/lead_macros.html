@@ -1,0 +1,36 @@
+{# Shared Lead Components Macros #}
+
+{% macro render_lead_status_badge(status_name, status_tone, status_color) %}
+    {% set tone = status_tone if status_tone else (status_color if status_color else 'slate') %}
+    <span class="lead-tone-chip lead-tone-{{ tone }}">
+        {{ status_name if status_name else 'No Status' }}
+    </span>
+{% endmacro %}
+
+{% macro render_click_to_call_button(item) %}
+    {% if item.click_to_call_active %}
+        {% set display_num = item.mobile_display if item.mobile_display else (item.decrypted_mobile or item.mobile_number or 'NA') %}
+        {% set lead_name = item.lead_name if item.lead_name is defined and item.lead_name else (item.name if item.name is defined and item.name else 'Lead') %}
+        {% set lead_code = item.lead_id if item.lead_id is defined and item.lead_id else '' %}
+        {% if item.is_last_dialed %}
+            <button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ item.lead_uuid }}" data-lead-code="{{ lead_code }}" data-lead-name="{{ lead_name }}" onclick="makeClickToCall(this)" title="Last Dialed Call: {{ display_num }}">
+                <span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span>
+                {{ display_num }}
+            </button>
+        {% elif item.call_status == 1 %}
+            <button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ item.lead_uuid }}" data-lead-code="{{ lead_code }}" data-lead-name="{{ lead_name }}" onclick="makeClickToCall(this)" title="Called: {{ display_num }}">
+                <i class="mdi mdi-phone-check-outline me-1"></i>
+                {{ display_num }}
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-outline-primary btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ item.lead_uuid }}" data-lead-code="{{ lead_code }}" data-lead-name="{{ lead_name }}" onclick="makeClickToCall(this)" title="Click to Call {{ lead_name }}">
+                <i class="mdi mdi-phone-outline me-1"></i>
+                {{ display_num }}
+            </button>
+        {% endif %}
+    {% else %}
+        <span class="fw-medium">
+            {{ item.mobile_display if item.mobile_display else (item.decrypted_mobile or item.mobile_number or 'NA') }}
+        </span>
+    {% endif %}
+{% endmacro %}

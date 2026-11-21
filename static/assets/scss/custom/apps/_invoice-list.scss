@@ -1,0 +1,24 @@
+// invoice-list.scss
+
+.revenue-card{
+    background: linear-gradient(135deg, var(--#{$prefix}info) 0%, color-mix(in srgb, var(--#{$prefix}info) 75%, white 35%) 100%);      
+    position: relative;
+    overflow: hidden;
+
+    &::before{
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(30px, -30px);
+    }
+}
+
+.cursor-pointer{
+    cursor: pointer;
+}
+

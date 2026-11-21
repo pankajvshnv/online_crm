@@ -1,0 +1,62 @@
+// breadcrumb
+
+// Breadcrumb item arrow
+.breadcrumb {
+    border: 1px solid var(--#{$prefix}border-color);
+    .breadcrumb-item {
+        a {
+            transition: $transition-base;
+            color: var(--#{$prefix}body-color);
+            &:hover {
+                color: var(--#{$prefix}primary);
+            }
+        }
+        svg {
+            fill: $text-muted;
+        }
+    }
+    &.breadcrumb-transparent {
+        background-color: transparent;
+    }
+}
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "\F0142";
+    font-family: "Material Design Icons";
+    font-size: 1.1875rem;
+    line-height: 1;
+    color: rgba(var(--#{$prefix}body-color-rgb), 0.3);
+}
+.breadcrumb-arrow {
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "\F19B0";
+    }
+}
+.breadcrumb-slash {
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "\F0FDF";
+    }
+}
+.breadcrumb-double-arrow {
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "\F013E";
+    }
+}
+
+// RTL
+[dir="rtl"] {
+    .breadcrumb-arrow {
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "\F19AF";
+        }
+    }
+    .breadcrumb-slash {
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "\F0FE0";
+        }
+    }
+    .breadcrumb-double-arrow {
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "\F013D";
+        }
+    }
+}

@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="all-leads-page single-filter-page">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Extensions</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item active">Extensions</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            
+            <!-- Top Row: Filters (LEFT) + Search, Reset & Add (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Left Filters (Status + Calling API) -->
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div>
+                        <label class="form-label mb-1 fs-12 text-muted" for="statusFilter">Status</label>
+                        <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 140px;">
+                            <option value="all" selected>All Status</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+
+                    {% if calling_apis %}
+                    <div>
+                        <label class="form-label mb-1 fs-12 text-muted" for="apiFilter">Calling API</label>
+                        <select class="form-select lead-filter-input" id="apiFilter" name="api" style="min-width: 160px;">
+                            <option value="all" selected>All Providers</option>
+                            {% for api in calling_apis %}
+                            <option value="{{ api.id }}">{{ api.api_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Search, Reset & Add Extension Button (RIGHT) -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 620px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label mb-1 fs-12 text-muted" for="extensionSearch">Search</label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="extensionSearch" name="search" value="" placeholder="Search extension, DID, user..." autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-light" id="btnResetFilters" title="Reset Filters">
+                        <i class="mdi mdi-refresh me-1"></i>Reset
+                    </button>
+                    <a href="{{ url_for('add_extension') }}" class="btn btn-outline-primary text-nowrap">
+                        <i class="mdi mdi-plus me-1"></i>Add Extensions
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="card all-leads-card border mb-3">
+                <div class="card-body p-0">
+                    <div class="clientos-table-scroll single-row-filter table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="extensionsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">#</th>
+                                    <th class="text-nowrap" style="min-width: 160px;">Extension Number</th>
+                                    <th class="text-nowrap" style="min-width: 200px;">Calling API / Provider</th>
+                                    <th class="text-nowrap" style="min-width: 160px;">DID / Caller ID</th>
+                                    <th class="text-nowrap" style="min-width: 170px;">Assigned User</th>
+                                    <th class="text-nowrap" style="width: 110px;">Status</th>
+                                    <th class="text-center text-nowrap" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="extensionTableBody">
+                                <!-- INITIAL SKELETON PLACEHOLDER ROWS (Animated Shimmering Effect) -->
+                                {% for i in range(10) %}
+                                <tr class="crm-table-skeleton-row skeleton-row-placeholder">
+                                    <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 16px; margin: auto;"></div></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="skeleton-box rounded-circle me-2" style="width: 28px; height: 28px; flex-shrink: 0;"></div>
+                                            <div class="skeleton-box" style="width: 90px; height: 16px;"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="skeleton-box mb-1" style="width: 130px; height: 16px;"></div>
+                                        <div class="skeleton-box" style="width: 95px; height: 13px;"></div>
+                                    </td>
+                                    <td><div class="skeleton-box" style="width: 110px; height: 16px;"></div></td>
+                                    <td><div class="skeleton-box rounded-pill" style="width: 115px; height: 22px;"></div></td>
+                                    <td><div class="skeleton-box rounded-pill" style="width: 70px; height: 22px;"></div></td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <div class="skeleton-box rounded-circle" style="width: 30px; height: 30px;"></div>
+                                            <div class="skeleton-box rounded-circle" style="width: 30px; height: 30px;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 p-2 pt-0">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted fs-13" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 85px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted fs-13" id="paginationInfo">Loading records...</div>
+                </div>
+                <nav aria-label="Extension pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+    let searchDebounceTimer = null;
+
+    const searchInput = document.getElementById('extensionSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const apiFilter = document.getElementById('apiFilter');
+    const pageSizeEl = document.getElementById('pageSize');
+    const tbody = document.getElementById('extensionTableBody');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationNav = document.getElementById('paginationNav');
+
+    function showSkeletonLoading(rowsCount = 10) {
+        if (!tbody) return;
+        let skelHtml = '';
+        for (let i = 0; i < rowsCount; i++) {
+            skelHtml += `
+                <tr class="crm-table-skeleton-row skeleton-row-placeholder">
+                    <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 16px; margin: auto;"></div></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="skeleton-box rounded-circle me-2" style="width: 28px; height: 28px; flex-shrink: 0;"></div>
+                            <div class="skeleton-box" style="width: 90px; height: 16px;"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="skeleton-box mb-1" style="width: 130px; height: 16px;"></div>
+                        <div class="skeleton-box" style="width: 95px; height: 13px;"></div>
+                    </td>
+                    <td><div class="skeleton-box" style="width: 110px; height: 16px;"></div></td>
+                    <td><div class="skeleton-box rounded-pill" style="width: 115px; height: 22px;"></div></td>
+                    <td><div class="skeleton-box rounded-pill" style="width: 70px; height: 22px;"></div></td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1">
+                            <div class="skeleton-box rounded-circle" style="width: 30px; height: 30px;"></div>
+                            <div class="skeleton-box rounded-circle" style="width: 30px; height: 30px;"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = skelHtml;
+    }
+
+    function loadExtensions(page = 1) {
+        currentPage = page;
+        const searchVal = searchInput ? searchInput.value.trim() : '';
+        const statusVal = statusFilter ? statusFilter.value : 'all';
+        const apiVal = apiFilter ? apiFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        showSkeletonLoading(pageSize > 15 ? 10 : pageSize);
+
+        fetch('/settings/api/extensions/list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                page: currentPage,
+                page_size: pageSize,
+                search: searchVal,
+                status: statusVal,
+                api_id: apiVal
+            })
+        })
+        .then(res => res.json())
+        .then(resData => {
+            if (!resData.success) {
+                renderEmptyTable('Failed to load extensions.');
+                return;
+            }
+            renderTableData(resData.data || [], resData.total || 0, resData.page || 1, resData.total_pages || 1);
+        })
+        .catch(err => {
+            console.error('Error loading extensions:', err);
+            renderEmptyTable('Server error while loading extensions.');
+        });
+    }
+
+    function renderEmptyTable(message) {
+        if (!tbody) return;
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="mdi mdi-alert-circle-outline fs-24 d-block mb-1 text-muted"></i>
+                    ${message}
+                </td>
+            </tr>
+        `;
+        if (paginationInfo) paginationInfo.textContent = 'Showing 0 to 0 of 0 records';
+        if (paginationNav) paginationNav.innerHTML = '';
+    }
+
+    function renderTableData(rows, total, page, totalPages) {
+        if (!tbody) return;
+
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <i class="mdi mdi-phone-off fs-24 d-block mb-1 text-muted"></i>
+                        No extensions found matching active filters.
+                    </td>
+                </tr>
+            `;
+            if (paginationInfo) paginationInfo.textContent = 'Showing 0 to 0 of 0 records';
+            if (paginationNav) paginationNav.innerHTML = '';
+            return;
+        }
+
+        const startIndex = (page - 1) * pageSize;
+        let html = '';
+
+        rows.forEach(function (ext, idx) {
+            const rowNumber = startIndex + idx + 1;
+            const extUuid = ext.extension_uuid;
+            const extNum = ext.extension_number;
+            const apiName = ext.calling_api_name || '—';
+            const providerType = (ext.calling_api_provider || '').toLowerCase();
+            const accountId = ext.account_id ? `<span class="text-muted font-size-11 ms-1">(${escapeHtml(ext.account_id)})</span>` : '';
+            
+            let providerBadge = '';
+            if (providerType === 'cloudconnect') {
+                providerBadge = `<span class="badge bg-info-subtle text-info border border-info-subtle font-size-11">CloudConnect</span>`;
+            } else if (providerType === 'issabel') {
+                providerBadge = `<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-size-11">Issabel</span>`;
+            } else if (providerType) {
+                providerBadge = `<span class="badge bg-light text-muted border font-size-11">${escapeHtml(providerType)}</span>`;
+            }
+
+            const didHtml = ext.did_number 
+                ? `<span class="fw-medium text-dark"><i class="mdi mdi-cellphone-wireless me-1 text-muted"></i>${escapeHtml(ext.did_number)}</span>`
+                : `<span class="text-muted font-size-12 fst-italic">Not Set</span>`;
+
+            const userHtml = ext.assigned_user_name 
+                ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"><i class="mdi mdi-account me-1"></i>${escapeHtml(ext.assigned_user_name)}</span>`
+                : `<span class="badge bg-light text-muted border px-2 py-1"><i class="mdi mdi-account-off-outline me-1"></i>Unassigned</span>`;
+
+            const statusHtml = (ext.status === 1 || ext.status === '1')
+                ? `<span class="lead-tone-chip lead-tone-success">Active</span>`
+                : `<span class="lead-tone-chip lead-tone-secondary">Inactive</span>`;
+
+            html += `
+                <tr class="extension-row">
+                    <td class="text-center fw-semibold text-muted">${rowNumber}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="avatar-xs d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle me-2" style="width: 28px; height: 28px;">
+                                <i class="mdi mdi-phone-classic fs-14"></i>
+                            </span>
+                            <span class="fw-bold text-dark fs-14">${escapeHtml(extNum)}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">${escapeHtml(apiName)}</div>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            ${providerBadge}
+                            ${accountId}
+                        </div>
+                    </td>
+                    <td>${didHtml}</td>
+                    <td>${userHtml}</td>
+                    <td>${statusHtml}</td>
+                    <td class="text-center text-nowrap">
+                        <a href="/settings/calling/extensions/edit/${extUuid}" class="btn btn-soft-primary btn-sm rounded-circle me-1 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit Extension" data-bs-toggle="tooltip">
+                            <i class="mdi mdi-pencil-outline"></i>
+                        </a>
+                        <button type="button" class="btn btn-soft-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="window.deleteExtensionHandler('${extUuid}', '${escapeHtml(extNum)}')" title="Delete Extension" data-bs-toggle="tooltip">
+                            <i class="mdi mdi-trash-can-outline"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+
+        if (paginationInfo) {
+            const showStart = startIndex + 1;
+            const showEnd = Math.min(startIndex + rows.length, total);
+            paginationInfo.textContent = `Showing ${showStart} to ${showEnd} of ${total} records`;
+        }
+
+        renderPaginationNav(total, page, totalPages);
+
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el);
+            }
+        });
+    }
+
+    function renderPaginationNav(total, page, totalPages) {
+        if (!paginationNav) return;
+        if (total === 0 || totalPages <= 1) {
+            paginationNav.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+        const prevDisabled = page <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-ext-nav" data-page="${page - 1}">Previous</button></li>`;
+
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === page ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-ext-nav" data-page="${i}">${i}</button></li>`;
+        }
+
+        const nextDisabled = page >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-ext-nav" data-page="${page + 1}">Next</button></li>`;
+        paginationNav.innerHTML = navHtml;
+
+        paginationNav.querySelectorAll('.btn-ext-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+                    loadExtensions(targetPage);
+                }
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function () {
+                loadExtensions(1);
+            }, 300);
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function () { loadExtensions(1); });
+    }
+
+    if (apiFilter) {
+        apiFilter.addEventListener('change', function () { loadExtensions(1); });
+    }
+
+    if (pageSizeEl) {
+        pageSizeEl.addEventListener('change', function () { loadExtensions(1); });
+    }
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = 'all';
+            if (apiFilter) apiFilter.value = 'all';
+            if (pageSizeEl) pageSizeEl.value = '10';
+            loadExtensions(1);
+        });
+    }
+
+    window.deleteExtensionHandler = function (extensionUuid, extensionNumber) {
+        if (!confirm(`Are you sure you want to delete Extension "${extensionNumber}"?`)) {
+            return;
+        }
+        fetch('/settings/api/extensions/delete-selected', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: [extensionUuid] })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadExtensions(currentPage);
+            } else {
+                alert(data.message || 'Failed to delete extension.');
+            }
+        })
+        .catch(err => {
+            alert('Server error while deleting extension.');
+        });
+    };
+
+    // Initial Load
+    loadExtensions(1);
+});
+</script>
+{% endblock %}

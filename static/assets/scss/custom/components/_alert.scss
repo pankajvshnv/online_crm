@@ -1,0 +1,44 @@
+// Alert
+
+.alert {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    svg {
+        fill: var(--#{$prefix}alert-color);
+    }
+    &.alert-dismissible {
+        .btn-close {
+            padding: 0.5rem 12px !important;
+            z-index: 2;
+            background: transparent escape-svg($btn-close-bg-dark) center / $btn-close-width auto no-repeat;
+            &::before {
+                color: var(--#{$prefix}alert-color) !important;
+            }
+        }
+    }
+}
+.alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.75rem;
+    > i {
+        font-size: 1rem;
+    }
+}
+[data-bs-theme="dark"] {
+    &.alert-dismissible {
+        .btn-close {
+            &::before {
+                color: auto !important;
+            }
+        }
+    }
+}
+[data-bs-theme=dark] {
+    --#{$prefix}btn-close-filter: none;
+}

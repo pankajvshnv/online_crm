@@ -1,0 +1,409 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="all-leads-page single-filter-page">
+
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">
+                    Products & Pricing
+                </h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url_for('settings_home') }}">
+                                Settings
+                            </a>
+                        </li>
+
+                        <li class="breadcrumb-item active">
+                            Products & Pricing
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Row: Status Filter (LEFT) + Search, Reset & Add Product (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Status Filter (LEFT) -->
+                <div>
+                    <label class="form-label" for="statusFilter">
+                        Status
+                    </label>
+
+                    <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 160px;">
+                        <option value="all" selected="">
+                            All Status
+                        </option>
+
+                        <option value="1">
+                            Active
+                        </option>
+
+                        <option value="0">
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Search, Reset & Add Product Button (RIGHT) -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 600px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="productSearch">
+                            Search
+                        </label>
+
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="productSearch" name="search" value="" placeholder="Search product name..." autocomplete="off">
+
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-light" id="btnResetFilters">
+                        <i class="mdi mdi-refresh me-1"></i>
+                        Reset
+                    </button>
+                    
+                    <a href="{{ url_for('add_product_page') }}" class="btn btn-outline-primary text-nowrap">
+                        <i class="mdi mdi-plus me-1"></i>
+                        Add Product
+                    </a>
+                </div>
+            </div>
+
+            <!-- Inner All Leads Card with Table -->
+            <div class="card all-leads-card">
+                <div class="card-body">
+
+                    <!-- Product Table -->
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="productsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">
+                                        #
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Product Name
+                                        <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Product Pricing
+                                        <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Status
+                                        <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                                    </th>
+
+                                    <th class="text-center text-nowrap" style="width: 120px;">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="productTableBody">
+                                {% if not products %}
+                                    <tr id="noProductsRow">
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            No products found. Click <strong>Add Product</strong> to create your first product.
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    {% for prod in products %}
+                                    <tr class="product-row" data-name="{{ prod.product_name | lower }}" data-status="{{ prod.status }}">
+                                        <td class="text-center fw-semibold text-muted row-index-td">
+                                            {{ loop.index }}
+                                        </td>
+
+                                        <td>
+                                            <div class="fw-semibold text-dark fs-14">
+                                                {{ prod.product_name }}
+                                            </div>
+                                        </td>
+
+                                        <td class="text-nowrap">
+                                            {% set active_cnt = prod.active_segments_count %}
+                                            {% if active_cnt > 0 %}
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                                    <i class="mdi mdi-currency-inr me-1"></i>{{ active_cnt }} Active Price Plans
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-light text-muted border px-2 py-1">
+                                                    No Active Pricing
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td>
+                                            {% if prod.status == 1 %}
+                                                <span class="lead-tone-chip lead-tone-success">
+                                                    Active
+                                                </span>
+                                            {% else %}
+                                                <span class="lead-tone-chip lead-tone-secondary">
+                                                    Inactive
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="text-center text-nowrap">
+                                            <a href="{{ url_for('edit_product_page', product_id=prod.id) }}" class="btn btn-soft-primary btn-sm rounded-circle me-1 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit Product & Pricing" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-pencil-outline"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-soft-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="deleteProduct({{ prod.id }}, '{{ prod.product_name | escape }}')" title="Delete Product" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-trash-can-outline"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">
+                            Rows
+                        </label>
+
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected="">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <div class="text-muted" id="paginationInfo">Showing 1 to {{ products | length }} of {{ products | length }} records</div>
+
+                </div>
+
+                <nav aria-label="Product pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+
+    // Collect all product rows
+    const allRows = [];
+    document.querySelectorAll('#productsTable tbody .product-row').forEach(function (tr, index) {
+        allRows.push({
+            element: tr,
+            originalIndex: index + 1,
+            name: tr.getAttribute('data-name') || '',
+            status: tr.getAttribute('data-status') || ''
+        });
+    });
+
+    function renderProductsTable() {
+        const searchInput = document.getElementById('productSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusVal = statusFilter ? statusFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        // Filter items
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || item.name.includes(searchVal);
+            const matchesStatus = statusVal === 'all' || item.status === String(statusVal);
+            return matchesSearch && matchesStatus;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        // Hide all product rows first
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        // Show page items
+        filtered.slice(startIndex, endIndex).forEach(function (item, idx) {
+            item.element.style.display = '';
+            const indexTd = item.element.querySelector('.row-index-td');
+            if (indexTd) {
+                indexTd.textContent = startIndex + idx + 1;
+            }
+        });
+
+        // Update Info Text
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showStart = startIndex + 1;
+                const showEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showStart} to ${showEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        // Render Pagination Nav
+        renderPaginationNav(total, currentPage, pageSize, totalPages);
+
+        // Re-initialize tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el);
+            }
+        });
+    }
+
+    function renderPaginationNav(total, page, pSize, totalPages) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+
+        if (total === 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+        const prevDisabled = page <= 1 ? 'disabled' : '';
+        navHtml += `
+            <li class="page-item ${prevDisabled}">
+                <button type="button" class="page-link btn-prod-page" data-page="${page - 1}">Previous</button>
+            </li>
+        `;
+
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === page ? 'active' : '';
+            navHtml += `
+                <li class="page-item ${activeClass}">
+                    <button type="button" class="page-link btn-prod-page" data-page="${i}">${i}</button>
+                </li>
+            `;
+        }
+
+        const nextDisabled = page >= totalPages ? 'disabled' : '';
+        navHtml += `
+            <li class="page-item ${nextDisabled}">
+                <button type="button" class="page-link btn-prod-page" data-page="${page + 1}">Next</button>
+            </li>
+        `;
+
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-prod-page').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== page) {
+                    currentPage = targetPage;
+                    renderProductsTable();
+                }
+            });
+        });
+    }
+
+    // Event Listeners
+    const searchInput = document.getElementById('productSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            currentPage = 1;
+            renderProductsTable();
+        });
+        searchInput.addEventListener('keyup', function () {
+            currentPage = 1;
+            renderProductsTable();
+        });
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function () {
+            currentPage = 1;
+            renderProductsTable();
+        });
+    }
+
+    const pageSizeSelect = document.getElementById('pageSize');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function () {
+            currentPage = 1;
+            renderProductsTable();
+        });
+    }
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = 'all';
+            if (pageSizeSelect) pageSizeSelect.value = '10';
+            currentPage = 1;
+            renderProductsTable();
+        });
+    }
+
+    // Initial render
+    renderProductsTable();
+});
+
+function deleteProduct(productId, productName) {
+    if (!confirm(`Are you sure you want to delete product "${productName}"? All its pricing plans will be permanently deleted.`)) {
+        return;
+    }
+
+    fetch('/api/products/delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ product_id: productId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to delete product.');
+        }
+    })
+    .catch(err => {
+        alert('Server error while deleting product.');
+    });
+}
+</script>
+
+{% endblock %}

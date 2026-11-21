@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Handbook Center</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0 fs-12">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('handbook_home') }}">Handbook</a></li>
+                        <li class="breadcrumb-item active">{{ handbook.title }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL PAGE HANDBOOK VIEW CONTAINER -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('handbook_home') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="mdi mdi-arrow-left me-1"></i> Back to Handbooks
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if can_edit %}
+                <a href="{{ url_for('handbook_edit_page', hb_uuid=handbook.handbook_uuid) }}" class="btn btn-sm btn-primary fw-semibold">
+                    <i class="mdi mdi-pencil me-1"></i> Edit Handbook
+                </a>
+                {% endif %}
+                {% if can_delete %}
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteHandbook('{{ handbook.handbook_uuid }}', '{{ handbook.title|replace('\'', '\\\'') }}')">
+                    <i class="mdi mdi-trash-can-outline me-1"></i> Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <!-- Document Title (Standard CRM 17px Font) -->
+            <h5 class="fw-bold text-dark mb-2" style="font-size: 17px; line-height: 1.35;">
+                {{ handbook.title }}
+            </h5>
+
+            <!-- Metadata Header -->
+            <div class="d-flex align-items-center flex-wrap gap-3 p-2.5 bg-light rounded-2 mb-3 text-muted fs-12">
+                <div>
+                    <i class="mdi mdi-account-circle-outline text-primary me-1 fs-14"></i>
+                    Created by <strong class="text-dark">{{ handbook.created_by_name or 'Admin' }}</strong>
+                </div>
+                <div class="vr"></div>
+                <div>
+                    <i class="mdi mdi-clock-outline me-1 fs-14"></i>
+                    Last Updated: <span class="text-dark fw-medium">{{ handbook.updated_at or handbook.created_at }}</span>
+                </div>
+            </div>
+
+            <hr class="my-3 text-muted opacity-25">
+
+            <!-- Document Rich Text Content (Standard 13px Font) -->
+            <div class="handbook-rendered-content text-dark" style="font-size: 13px; line-height: 1.65; color: #495057;">
+                {{ handbook.description|safe }}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.handbook-rendered-content h1, 
+.handbook-rendered-content h2, 
+.handbook-rendered-content h3, 
+.handbook-rendered-content h4 {
+    font-weight: 700;
+    color: #212529;
+    margin-top: 1.2rem;
+    margin-bottom: 0.6rem;
+}
+.handbook-rendered-content h1 { font-size: 15px; }
+.handbook-rendered-content h2 { font-size: 14px; }
+.handbook-rendered-content h3 { font-size: 13.5px; }
+
+.handbook-rendered-content p {
+    margin-bottom: 1rem;
+}
+.handbook-rendered-content ul, 
+.handbook-rendered-content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 1.2rem;
+}
+.handbook-rendered-content li {
+    margin-bottom: 0.4rem;
+}
+.handbook-rendered-content blockquote {
+    border-left: 4px solid #0d6efd;
+    background-color: #f8f9fa;
+    padding: 12px 18px;
+    margin: 1.2rem 0;
+    font-style: italic;
+    border-radius: 0 6px 6px 0;
+}
+.handbook-rendered-content table {
+    width: 100%;
+    margin-bottom: 1.2rem;
+    border-collapse: collapse;
+}
+.handbook-rendered-content table td, 
+.handbook-rendered-content table th {
+    padding: 10px 14px;
+    border: 1px solid #dee2e6;
+}
+.handbook-rendered-content table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+</style>
+
+<script>
+function deleteHandbook(hbUuid, title) {
+    if (!confirm(`Are you sure you want to delete the handbook "${title}"?`)) return;
+
+    fetch('/api/handbook/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handbook_uuid: hbUuid })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToastNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.href = '/handbook';
+            }, 400);
+        } else {
+            showToastNotification(data.message || 'Failed to delete handbook', 'danger');
+        }
+    })
+    .catch(err => {
+        console.error('Error deleting handbook:', err);
+        showToastNotification('An error occurred while deleting the handbook.', 'danger');
+    });
+}
+</script>
+{% endblock %}

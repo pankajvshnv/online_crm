@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>{{ page_title|default('Dashboard') }} | {{ company_brand_name or 'ClientOS' }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="ClientOS sales tracking panel" name="description">
+    <meta content="{{ company_brand_name or 'ClientOS' }}" name="author">
+    <script data-crm-base-script="true">
+        (function () {
+            try {
+                var saved = JSON.parse(localStorage.getItem("app_layout_config") || "{}");
+                if (saved.sidebarSize) {
+                    document.documentElement.setAttribute("data-sidebar", saved.sidebarSize);
+                }
+                var theme = saved.theme || localStorage.getItem("theme") || localStorage.getItem("data-bs-theme") || "light";
+                if (theme === "dark") {
+                    document.documentElement.setAttribute("data-bs-theme", "dark");
+                    document.documentElement.setAttribute("data-layout-mode", "dark");
+                    document.documentElement.setAttribute("data-topbar", "dark");
+                    document.documentElement.setAttribute("data-sidebar-color", "dark");
+                    document.documentElement.classList.add("dark-mode");
+                } else {
+                    document.documentElement.setAttribute("data-bs-theme", "light");
+                    document.documentElement.setAttribute("data-layout-mode", "light");
+                    document.documentElement.setAttribute("data-topbar", "light");
+                    document.documentElement.setAttribute("data-sidebar-color", saved.sidebarColor || "light");
+                    document.documentElement.classList.remove("dark-mode");
+                }
+            } catch (error) {
+                document.documentElement.setAttribute("data-bs-theme", "light");
+            }
+        })();
+    </script>
+    <link rel="shortcut icon" type="image/png"
+        href="{{ company_brand_favicon or url_for('static', filename='assets/images/crm_logo.png') }}">
+
+    <link href="{{ url_for('static', filename='assets/libs/select2/css/select2.min.css') }}" rel="stylesheet"
+        type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/libs/simplebar/simplebar.min.css') }}">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet"
+        type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/app.min.css') }}" id="app-style" rel="stylesheet"
+        type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/custom.css') }}?v=simple1" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/libs/flatpickr/flatpickr.min.css') }}">
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='assets/libs/bootstrap-datepicker/css/bootstrap-datepicker3.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ag-grid/ag-grid.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ag-grid/ag-theme-quartz.css') }}">
+    <style>
+        /* 1. Instant FOUC prevention in Head */
+        html[data-bs-theme="dark"],
+        html[data-layout-mode="dark"],
+        html.dark-mode {
+            background-color: #212529 !important;
+            color: #e9ecef !important;
+        }
+
+        html[data-bs-theme="dark"] body,
+        html[data-layout-mode="dark"] body,
+        html.dark-mode body {
+            background-color: #212529 !important;
+            color: #e9ecef !important;
+        }
+
+        /* 2. Instant Skeleton Loader Layout Positioning */
+        #crm-page-loader {
+            position: fixed;
+            top: var(--bs-app-header-height, 4.0625rem);
+            left: 13.5rem;
+            right: 0;
+            bottom: 0;
+            z-index: 998;
+            background: #ffffff;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 992px) {
+            #crm-page-loader {
+                left: 13.5rem !important;
+            }
+        }
+
+        html[data-sidebar="small"] #crm-page-loader,
+        [data-sidebar="small"] #crm-page-loader,
+        body[data-sidebar-size="sm"] #crm-page-loader,
+        .vertical-collapsed #crm-page-loader {
+            left: var(--bs-sidebar-collapsed-width, 4.375rem) !important;
+        }
+
+        html[data-sidebar="medium"] #crm-page-loader,
+        [data-sidebar="medium"] #crm-page-loader {
+            left: var(--bs-sidebar-medium-width, 10rem) !important;
+        }
+
+        @media (max-width: 991.98px) {
+            #crm-page-loader {
+                left: 0 !important;
+            }
+        }
+
+        html[data-bs-theme="dark"] #crm-page-loader,
+        html[data-layout-mode="dark"] #crm-page-loader {
+            background: #212529 !important;
+        }
+
+        html[data-bs-theme="dark"] .crm-loader-content {
+            background: #212529 !important;
+            border-color: #32383e !important;
+        }
+
+        html[data-bs-theme="dark"] .crm-skeleton-line,
+        html[data-bs-theme="dark"] .crm-skeleton-block,
+        html[data-bs-theme="dark"] .crm-skeleton-card {
+            background: linear-gradient(90deg, #2b3035 25%, #343a40 37%, #2b3035 63%) !important;
+            background-size: 400% 100% !important;
+        }
+
+        .flatpickr-calendar {
+            z-index: 999999 !important;
+        }
+
+        [data-bs-theme="dark"] .bg-white {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .bg-light,
+        [data-bs-theme="dark"] .bg-light-subtle {
+            background-color: var(--bs-tertiary-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .text-dark {
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .border,
+        [data-bs-theme="dark"] .border-end,
+        [data-bs-theme="dark"] .border-bottom,
+        [data-bs-theme="dark"] .border-top {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        [data-bs-theme="dark"] .list-group-item {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+            border-color: var(--bs-border-color) !important;
+        }
+
+        /* Research Calls Dropdown Dark Mode Optimization */
+        [data-bs-theme="dark"] .card-bg-dropdown {
+            background-color: var(--bs-card-bg, #2b3035) !important;
+            border-color: var(--bs-border-color, #343a40) !important;
+        }
+
+        [data-bs-theme="dark"] #headerNotificationList {
+            background-color: var(--bs-tertiary-bg, #212529) !important;
+        }
+
+        [data-bs-theme="dark"] #headerNotificationList a.bg-body {
+            background-color: var(--bs-card-bg, #2b3035) !important;
+            border-color: var(--bs-border-color, #343a40) !important;
+        }
+
+        [data-bs-theme="dark"] #headerNotificationList .text-body {
+            color: var(--bs-body-color, #f8f9fa) !important;
+        }
+
+        [data-bs-theme="dark"] #headerNotificationList .text-muted {
+            color: var(--bs-secondary-color, #adb5bd) !important;
+        }
+
+        [data-bs-theme="dark"] .list-group-item-action:hover,
+        [data-bs-theme="dark"] .list-group-item-action:focus {
+            background-color: var(--bs-tertiary-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: var(--bs-tertiary-bg) !important;
+            color: var(--bs-body-color) !important;
+            border-color: var(--bs-border-color) !important;
+        }
+
+        [data-bs-theme="dark"] .offcanvas {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .offcanvas-header {
+            border-color: var(--bs-border-color) !important;
+        }
+
+        [data-bs-theme="dark"] .card {
+            background-color: var(--bs-card-bg) !important;
+            color: var(--bs-body-color) !important;
+            border-color: var(--bs-border-color) !important;
+        }
+
+        [data-bs-theme="dark"] .card-header {
+            background-color: transparent !important;
+            border-color: var(--bs-border-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        [data-bs-theme="dark"] .apexcharts-text tspan,
+        [data-bs-theme="dark"] .apexcharts-legend-text,
+        [data-bs-theme="dark"] .apexcharts-title-text {
+            fill: var(--bs-body-color) !important;
+            color: var(--bs-body-color) !important;
+        }
+
+        /* Glassmorphism & Theme applied to Chat Drawer */
+        #crmChatDrawer {
+            backdrop-filter: blur(12px) saturate(160%);
+            -webkit-backdrop-filter: blur(12px) saturate(160%);
+            background-color: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer {
+            background-color: rgba(33, 37, 41, 0.96) !important;
+            color: #e9ecef !important;
+            border-left: 1px solid #32383e !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .bg-white {
+            background-color: #212529 !important;
+            color: #e9ecef !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .bg-light,
+        [data-bs-theme="dark"] #crmChatDrawer .bg-light-subtle {
+            background-color: #1a1d21 !important;
+            color: #e9ecef !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .text-dark {
+            color: #e9ecef !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .border,
+        [data-bs-theme="dark"] #crmChatDrawer .border-top,
+        [data-bs-theme="dark"] #crmChatDrawer .border-bottom,
+        [data-bs-theme="dark"] #crmChatDrawer .border-end {
+            border-color: #32383e !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .drawer-user-item {
+            border-color: #2b3035 !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .drawer-user-item:hover,
+        [data-bs-theme="dark"] #crmChatDrawer .drawer-user-item.active {
+            background-color: #2c3239 !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .msg-item .bg-white {
+            background-color: #2c3239 !important;
+            color: #e9ecef !important;
+            border-color: #3a4149 !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .form-control {
+            background-color: #1a1d21 !important;
+            color: #e9ecef !important;
+            border-color: #32383e !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .form-control::placeholder {
+            color: #878a99 !important;
+        }
+
+        [data-bs-theme="dark"] #crmChatDrawer .btn-light {
+            background-color: #2c3239 !important;
+            color: #e9ecef !important;
+            border-color: #3a4149 !important;
+        }
+
+        #crm-top-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #3b76e1, #6366f1, #06b6d4);
+            z-index: 99999999;
+            transition: width 0.2s ease, opacity 0.3s ease;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
+            pointer-events: none;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    {% if show_page_loader|default(true) %}
+    <div id="crm-page-loader" class="crm-page-loader">
+        <section class="crm-loader-content">
+            <div class="crm-loader-page-title">
+                <div>
+                    <div class="crm-skeleton-line crm-skeleton-title"></div>
+                    <div class="crm-skeleton-line crm-skeleton-subtitle"></div>
+                </div>
+                <div class="crm-skeleton-line crm-loader-breadcrumb"></div>
+            </div>
+            <div class="crm-skeleton-card crm-loader-filter"></div>
+            <div class="crm-skeleton-grid">
+                <div class="crm-skeleton-card"></div>
+                <div class="crm-skeleton-card"></div>
+                <div class="crm-skeleton-card"></div>
+                <div class="crm-skeleton-card"></div>
+            </div>
+            <div class="crm-loader-dashboard-grid">
+                <div class="crm-skeleton-card crm-loader-chart"></div>
+                <div class="crm-skeleton-card crm-loader-side-card"></div>
+            </div>
+            <div class="crm-skeleton-card crm-loader-table"></div>
+        </section>
+    </div>
+    {% endif %}
+
+    <div id="layout-wrapper">
+        {% include 'partials/header.html' %}
+        {% include 'partials/sidebar.html' %}
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            {% include 'partials/footer.html' %}
+        </div>
+    </div>
+
+    {% include 'partials/chat_drawer.html' %}
+
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="toast align-items-center text-white bg-{{ 'danger' if category == 'error' else category }} border-0"
+            role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <button type="button" class="btn btn-primary btn-icon scroll-top" id="scroll-top">
+        <i class="mdi mdi-arrow-up"></i>
+    </button>
+    <script src="{{ url_for('static', filename='assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='ag-grid/ag-grid-community.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/clientos-ag-grid.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/flatpickr/flatpickr.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/jquery/jquery.min.js') }}"></script>
+    <script
+        src="{{ url_for('static', filename='assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
+    <script data-crm-base-script="true">
+        // Bootstrap Datepicker Global Defaults: strictly DD/MM/YYYY
+        if (window.jQuery && $.fn.datepicker) {
+            $.fn.datepicker.defaults.format = "dd/mm/yyyy";
+            $.fn.datepicker.defaults.autoclose = true;
+            $.fn.datepicker.defaults.todayHighlight = true;
+            $.fn.datepicker.defaults.orientation = "bottom auto";
+            $.fn.datepicker.defaults.clearBtn = true;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='assets/libs/select2/js/select2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/metismenu/metisMenu.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/simplebar/simplebar.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/eva-icons/eva.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/scroll-top.init.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/custom-loader.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/bootstrap-table.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/lead/all_leads.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/india_states_cities.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/libs/tinymce/tinymce.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/crm-pjax.js') }}"></script>
+
+
+    <script data-crm-base-script="true">
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('.toast').forEach(function (el) {
+                const toast = new bootstrap.Toast(el, {
+                    delay: 3000,
+                    autohide: true
+                });
+
+                toast.show();
+            });
+        });
+
+        window.showToastNotification = function (message, category = 'info') {
+            if (!message) return;
+            message = String(message).replace(/\s+on extension\s+[^\.\!\?]+/gi, '').replace(/#/g, '');
+            let toastEl = document.getElementById('liveToast');
+            if (!toastEl) {
+                const toastContainer = document.createElement('div');
+                toastContainer.innerHTML = `
+            <div id="liveToast" class="toast position-fixed top-0 end-0 m-3 border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000" style="z-index:9999; min-width:350px;">
+                <div class="toast-header">
+                    <i class="mdi mdi-information text-info me-2 fs-4" id="toastIcon"></i>
+                    <strong class="me-auto" id="toastTitle">Notification</strong>
+                    <small>Now</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body fs-13" id="toastBody"></div>
+            </div>
+        `;
+                document.body.appendChild(toastContainer);
+                toastEl = document.getElementById('liveToast');
+            }
+            const iconEl = toastEl.querySelector('#toastIcon');
+            const titleEl = toastEl.querySelector('#toastTitle');
+            const bodyEl = toastEl.querySelector('#toastBody');
+            if (category === 'success') {
+                if (iconEl) iconEl.className = 'mdi mdi-check-circle text-success me-2 fs-4';
+                if (titleEl) titleEl.textContent = 'Success';
+            } else if (category === 'danger' || category === 'error') {
+                if (iconEl) iconEl.className = 'mdi mdi-close-circle text-danger me-2 fs-4';
+                if (titleEl) titleEl.textContent = 'Error';
+            } else {
+                if (iconEl) iconEl.className = 'mdi mdi-alert-circle text-warning me-2 fs-4';
+                if (titleEl) titleEl.textContent = 'Warning';
+            }
+            if (bodyEl) bodyEl.textContent = message;
+            const toast = new bootstrap.Toast(toastEl, { delay: 4000, autohide: true });
+            toast.show();
+        };
+
+        window.executeClientCallingUrl = function (callUrl) {
+            if (!callUrl) return;
+            try {
+                console.log('[Click-to-Call] Dispatching call request:', callUrl);
+
+                // Clean fetch without polluting DOM or triggering mixed-content warnings
+                fetch(callUrl, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    credentials: 'omit'
+                }).then(function () {
+                    console.log('[Click-to-Call] Dial request dispatched successfully.');
+                }).catch(function (err) {
+                    console.warn('[Click-to-Call] Fetch dispatch note:', err);
+                });
+            } catch (e) {
+                console.error('[Click-to-Call] Execution error:', e);
+            }
+        };
+
+        window.makeClickToCall = function (btnElement) {
+            if (!btnElement) return;
+            const leadUuid = btnElement.getAttribute('data-lead-uuid');
+            const leadCode = btnElement.getAttribute('data-lead-code') || '';
+            const leadName = btnElement.getAttribute('data-lead-name') || 'Lead';
+            const currentDisplayText = btnElement.textContent.trim() || 'NA';
+
+            if (!leadUuid) {
+                showToastNotification('Lead identifier missing.', 'warning');
+                return;
+            }
+
+            btnElement.disabled = true;
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Dialing...`;
+
+            const leadLabel = leadCode ? `Lead ${leadCode}` : (leadName !== 'Lead' ? leadName : `Lead`);
+            showToastNotification(`Dialing ${leadLabel}...`, 'info');
+
+            fetch('/api/leads/click-to-call', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lead_uuid: leadUuid })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btnElement.disabled = false;
+                    if (data.success) {
+                        const resData = data.result || data;
+                        const finalCode = resData.lead_id || leadCode;
+                        const finalName = resData.lead_name || leadName;
+
+                        console.log('[Click-to-Call Response]:', resData);
+                        if (resData.target_url) {
+                            console.log('[Click-to-Call Target URL]:', resData.target_url);
+                            console.log('[Click-to-Call Server Hit Status]:', resData.server_hit_status, '| HTTP Code:', resData.server_status_code);
+                            console.log('[Click-to-Call Server Output]:', resData.server_response);
+                        }
+
+                        // Trigger client-side call if provided (e.g. Local PBX 192.168.1.x)
+                        if (resData.client_call_url) {
+                            window.executeClientCallingUrl(resData.client_call_url);
+                        }
+
+                        let msg = '';
+                        if (finalCode) {
+                            msg = `Dialing Lead ${finalCode} (${finalName})...`;
+                        } else if (finalName && finalName !== 'Lead') {
+                            msg = `Dialing ${finalName}...`;
+                        } else {
+                            msg = `Dialing Lead...`;
+                        }
+
+                        document.querySelectorAll('.last-dialed-dot').forEach(el => {
+                            const icon = document.createElement('i');
+                            icon.className = 'mdi mdi-phone-check-outline me-1';
+                            el.replaceWith(icon);
+                        });
+
+                        btnElement.className = 'btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1';
+                        btnElement.innerHTML = `<span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span> ${currentDisplayText}`;
+                        btnElement.setAttribute('title', `Last Dialed Call: ${currentDisplayText}`);
+
+                        showToastNotification(msg, 'success');
+                    } else {
+                        btnElement.innerHTML = originalHtml;
+                        showToastNotification(data.message || 'Unable to initiate call.', 'warning');
+                    }
+                })
+                .catch(err => {
+                    console.error('Click to call error:', err);
+                    btnElement.disabled = false;
+                    btnElement.innerHTML = originalHtml;
+                    showToastNotification('An error occurred while calling.', 'danger');
+                });
+        };
+
+        // Global Handler: Export & Download Button Single-Click Loader Protection
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('a[href*="/export"], a[href*="/download"], .btn-export-csv, .btn-download');
+            if (!btn) return;
+
+            if (btn.classList.contains('exporting-loading')) {
+                e.preventDefault();
+                return false;
+            }
+
+            btn.classList.add('exporting-loading');
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.65';
+
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width: 12px; height: 12px; border-width: 2px;" role="status"></span>';
+
+            setTimeout(function () {
+                btn.classList.remove('exporting-loading');
+                btn.style.pointerEvents = '';
+                btn.style.opacity = '';
+                btn.innerHTML = originalHtml;
+            }, 4500);
+        });
+
+        // Global Instant Navigation Feedback: Top Progress & Menu Switch
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript:"]):not([href^="mailto:"]):not([href^="tel:"])');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+            // Show instant top progress bar
+            let bar = document.getElementById('crm-top-progress');
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.id = 'crm-top-progress';
+                document.body.appendChild(bar);
+            }
+            bar.style.opacity = '1';
+            bar.style.width = '35%';
+            setTimeout(function () { if (bar) bar.style.width = '75%'; }, 120);
+
+            // If it's a sidebar link, immediately highlight it
+            const sidebarItem = link.closest('#side-menu li');
+            if (sidebarItem) {
+                document.querySelectorAll('#side-menu li.mm-active, #side-menu a.active').forEach(function (el) {
+                    el.classList.remove('mm-active', 'active');
+                });
+                sidebarItem.classList.add('mm-active');
+                link.classList.add('active');
+            }
+        });
+    </script>
+
+    <script data-crm-base-script="true">
+        // -------------------------------------------------------------
+        // 1. Global User Presence Heartbeat (with 3-min AFK Detection)
+        // -------------------------------------------------------------
+        let userIsActive = true;
+        let afkTimer = null;
+
+        function resetUserPresenceActivity() {
+            userIsActive = true;
+            clearTimeout(afkTimer);
+            afkTimer = setTimeout(function () {
+                userIsActive = false;
+            }, 3 * 60 * 1000);
+        }
+
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (evt) {
+            window.addEventListener(evt, resetUserPresenceActivity, { passive: true });
+        });
+
+        // -------------------------------------------------------------
+        // 2. Global Audio Synthesizer (3 Distinct Sounds: Chat, Email, Research)
+        // -------------------------------------------------------------
+        let _globalAudioCtx = null;
+        function getAudioContext() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return null;
+                if (!_globalAudioCtx) {
+                    _globalAudioCtx = new AudioCtx();
+                }
+                if (_globalAudioCtx.state === 'suspended') {
+                    _globalAudioCtx.resume();
+                }
+                return _globalAudioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 1. 💬 Chat Notification Sound: Pleasant 2-Tone Pop Chime (587Hz -> 880Hz)
+        window.playChatNotificationSound = function () {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            try {
+                const now = ctx.currentTime;
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now); // D5
+                gain1.gain.setValueAtTime(0.18, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.2);
+
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(880, now + 0.08); // A5
+                gain2.gain.setValueAtTime(0.22, now + 0.08);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.08);
+                osc2.stop(now + 0.32);
+            } catch (e) { }
+        };
+
+        // 2. ✉️ Email Notification Sound: Classic Soft Ding (659Hz -> 987Hz)
+        window.playEmailNotificationSound = function () {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            try {
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(659.25, now); // E5
+                osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.12); // B5
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.55);
+            } catch (e) { }
+        };
+
+        // 3. 📈 Research Recommendation Alert: High-Priority 3-Tone Ascending Crystal Chime (1046Hz -> 1318Hz -> 1568Hz)
+        window.playResearchNotificationSound = function () {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            try {
+                const now = ctx.currentTime;
+                // Note 1: C6 (1046Hz)
+                const o1 = ctx.createOscillator();
+                const g1 = ctx.createGain();
+                o1.type = 'sine';
+                o1.frequency.setValueAtTime(1046.50, now);
+                g1.gain.setValueAtTime(0.2, now);
+                g1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                o1.connect(g1);
+                g1.connect(ctx.destination);
+                o1.start(now);
+                o1.stop(now + 0.18);
+
+                // Note 2: E6 (1318Hz)
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.type = 'sine';
+                o2.frequency.setValueAtTime(1318.51, now + 0.08);
+                g2.gain.setValueAtTime(0.22, now + 0.08);
+                g2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                o2.connect(g2);
+                g2.connect(ctx.destination);
+                o2.start(now + 0.08);
+                o2.stop(now + 0.28);
+
+                // Note 3: G6 (1568Hz)
+                const o3 = ctx.createOscillator();
+                const g3 = ctx.createGain();
+                o3.type = 'sine';
+                o3.frequency.setValueAtTime(1567.98, now + 0.16);
+                g3.gain.setValueAtTime(0.26, now + 0.16);
+                g3.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                o3.connect(g3);
+                g3.connect(ctx.destination);
+                o3.start(now + 0.16);
+                o3.stop(now + 0.45);
+            } catch (e) { }
+        };
+
+        // -------------------------------------------------------------
+        // 3. Live Sidebar Badge Counts & Presence Polling (10-Second Polling)
+        // -------------------------------------------------------------
+        window._prevGlobalChatUnread = null;
+        window._prevGlobalEmailUnread = null;
+        window._prevGlobalResearchMaxId = null;
+        window._latestMaxResearchId = 0;
+        window._lastSeenResearchId = parseInt(localStorage.getItem('clientos_last_seen_research_id') || '0', 10);
+
+        function markResearchNotificationsAsSeen() {
+            if (window._latestMaxResearchId > 0) {
+                window._lastSeenResearchId = window._latestMaxResearchId;
+                localStorage.setItem('clientos_last_seen_research_id', window._latestMaxResearchId);
+            }
+            const headerNotifBadge = document.getElementById('headerNotificationBadge');
+            const researchBadge = document.getElementById('sidebarResearchCountBadge');
+            if (headerNotifBadge) {
+                headerNotifBadge.textContent = '0';
+                headerNotifBadge.classList.add('d-none');
+            }
+            if (researchBadge) {
+                researchBadge.textContent = '0';
+                researchBadge.classList.add('d-none');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const notifBtn = document.getElementById('headerNotificationBtn');
+            if (notifBtn) {
+                notifBtn.addEventListener('click', function () {
+                    markResearchNotificationsAsSeen();
+                    fetchResearchNotifications(); // Pull latest notifications on click
+                });
+            }
+            // If currently on research page, automatically mark seen
+            if (window.location.pathname.startsWith('/research')) {
+                setTimeout(markResearchNotificationsAsSeen, 1500);
+            }
+        });
+
+        // A. Ultra-lightweight Live Stats & Alert Polling (Every 10 seconds)
+        function pollGlobalLiveStats() {
+            if (document.visibilityState !== 'visible') return;
+
+            fetch('/api/sidebar/live-stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    // 1. Followups Badge
+                    const followupBadge = document.getElementById('sidebarFollowupsCountBadge');
+                    if (followupBadge) {
+                        if (data.today_followups > 0) {
+                            followupBadge.textContent = data.today_followups;
+                            followupBadge.classList.remove('d-none');
+                        } else {
+                            followupBadge.classList.add('d-none');
+                        }
+                    }
+
+                    // 2. Free Trials Badge
+                    const freeTrialBadge = document.getElementById('sidebarFreeTrialsCountBadge');
+                    if (freeTrialBadge) {
+                        if (data.today_free_trials > 0) {
+                            freeTrialBadge.textContent = data.today_free_trials;
+                            freeTrialBadge.classList.remove('d-none');
+                        } else {
+                            freeTrialBadge.classList.add('d-none');
+                        }
+                    }
+
+                    // 3. Unread Emails Badge & Sound Alert
+                    const emailBadge = document.getElementById('sidebarEmailCountBadge');
+                    const emailUnread = parseInt(data.unread_emails, 10) || 0;
+                    if (emailBadge) {
+                        if (emailUnread > 0) {
+                            emailBadge.textContent = emailUnread;
+                            emailBadge.classList.remove('d-none');
+                        } else {
+                            emailBadge.classList.add('d-none');
+                        }
+                    }
+                    if (window._prevGlobalEmailUnread !== null && emailUnread > window._prevGlobalEmailUnread) {
+                        window.playEmailNotificationSound();
+                    }
+                    window._prevGlobalEmailUnread = emailUnread;
+
+                    // 4. Research Unseen Alert Counter & Sound Alert
+                    const maxId = parseInt(data.max_research_id, 10) || 0;
+                    window._latestMaxResearchId = maxId;
+
+                    let unseenCount = 0;
+                    if (window._lastSeenResearchId === 0) {
+                        // First session initialization: set baseline to latest max id
+                        window._lastSeenResearchId = maxId;
+                        localStorage.setItem('clientos_last_seen_research_id', maxId);
+                    } else if (maxId > window._lastSeenResearchId) {
+                        unseenCount = maxId - window._lastSeenResearchId;
+                    }
+
+                    // Play research crystal chime sound when a new call arrives
+                    if (window._prevGlobalResearchMaxId !== null && maxId > window._prevGlobalResearchMaxId) {
+                        window.playResearchNotificationSound();
+                        fetchResearchNotifications();
+                        if (typeof loadResearchTable === 'function') {
+                            loadResearchTable(currentPage, true);
+                        }
+                    }
+                    window._prevGlobalResearchMaxId = maxId;
+
+                    // Sidebar Research Badge
+                    const researchBadge = document.getElementById('sidebarResearchCountBadge');
+                    if (researchBadge) {
+                        if (unseenCount > 0) {
+                            researchBadge.textContent = unseenCount > 99 ? '99+' : unseenCount;
+                            researchBadge.classList.remove('d-none');
+                        } else {
+                            researchBadge.classList.add('d-none');
+                        }
+                    }
+
+                    // Header Notification Bell Badge
+                    const headerNotifBadge = document.getElementById('headerNotificationBadge');
+                    if (headerNotifBadge) {
+                        if (unseenCount > 0) {
+                            headerNotifBadge.textContent = unseenCount > 9 ? '9+' : unseenCount;
+                            headerNotifBadge.classList.remove('d-none');
+                        } else {
+                            headerNotifBadge.classList.add('d-none');
+                        }
+                    }
+
+                    // 5. Header Chat Unread Counter Badge & Sound Alert
+                    const chatBadge = document.getElementById('headerChatUnreadBadge');
+                    const chatUnread = parseInt(data.chat_unread_count, 10) || 0;
+                    if (chatBadge) {
+                        if (chatUnread > 0) {
+                            chatBadge.textContent = chatUnread > 99 ? '99+' : chatUnread;
+                            chatBadge.classList.remove('d-none');
+                        } else {
+                            chatBadge.classList.add('d-none');
+                        }
+                    }
+
+                    // Play chat pop chime sound if new message arrives
+                    if (window._prevGlobalChatUnread !== null && chatUnread > window._prevGlobalChatUnread) {
+                        window.playChatNotificationSound();
+                    }
+                    // Helper for Local Date (YYYY-MM-DD)
+                    function getLocalTodayStr() {
+                        const d = new Date();
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `${yyyy}-${mm}-${dd}`;
+                    }
+                    const todayStr = getLocalTodayStr();
+
+                    // 6. Follow-up Due Reminders (10m Toast & 2m Modal Popup - Once per followup_id)
+                    if (Array.isArray(data.due_reminders) && data.due_reminders.length > 0) {
+                        data.due_reminders.forEach(r => {
+                            const idKey = r.followup_id;
+                            const toastKey = 'fup_notified_10m_' + idKey;
+                            const modalKey = 'fup_notified_2m_' + idKey;
+
+                            if (r.alert_type === '10min' && !localStorage.getItem(toastKey)) {
+                                localStorage.setItem(toastKey, 'true');
+                                if (typeof window.showToastNotification === 'function') {
+                                    window.showToastNotification(`⏰ Follow-up Pending for ${r.lead_name} at ${r.followup_time_fmt}`, 'info');
+                                }
+                            } else if (r.alert_type === '2min' && !localStorage.getItem(modalKey)) {
+                                localStorage.setItem(modalKey, 'true');
+                                enqueueCelebrationAlert(function () {
+                                    if (typeof window.playEmailNotificationSound === 'function') {
+                                        window.playEmailNotificationSound();
+                                    }
+                                    showFollowupReminderModal(r);
+                                });
+                            }
+                        });
+                    }
+
+                    // 7. Employee Birthday Celebration Alerts (Strictly once per day per user)
+                    if (Array.isArray(data.birthday_alerts) && data.birthday_alerts.length > 0) {
+                        const unnotifiedList = data.birthday_alerts.filter(b => !localStorage.getItem('bday_alert_shown_' + todayStr + '_' + b.user_id));
+
+                        if (unnotifiedList.length > 0) {
+                            unnotifiedList.forEach(b => localStorage.setItem('bday_alert_shown_' + todayStr + '_' + b.user_id, 'true'));
+                            enqueueCelebrationAlert(function () {
+                                if (typeof window.playEmailNotificationSound === 'function') window.playEmailNotificationSound();
+                                showBirthdayCelebrationModal(unnotifiedList);
+                                launchBirthdayConfetti();
+                            });
+                        }
+                    }
+
+                    // 8. SO Approved & Payment Alerts (Strictly once per approved order within last 1 minute)
+                    if (Array.isArray(data.so_approved_alerts) && data.so_approved_alerts.length > 0) {
+                        const unnotifiedSO = data.so_approved_alerts.filter(r => !localStorage.getItem('so_app_shown_' + r.order_id));
+                        if (unnotifiedSO.length > 0) {
+                            unnotifiedSO.forEach(r => localStorage.setItem('so_app_shown_' + r.order_id, 'true'));
+                            enqueueCelebrationAlert(function () {
+                                if (typeof window.playEmailNotificationSound === 'function') window.playEmailNotificationSound();
+                                showSOApprovedCelebrationModal(unnotifiedSO);
+                            });
+                        }
+                    }
+
+                    // 9. Target Achieved Alerts (Strictly once per day per user)
+                    if (Array.isArray(data.target_achieved_alerts) && data.target_achieved_alerts.length > 0) {
+                        const unnotifiedTgt = data.target_achieved_alerts.filter(r => !localStorage.getItem('tgt_ach_shown_' + todayStr + '_' + r.user_id));
+                        if (unnotifiedTgt.length > 0) {
+                            unnotifiedTgt.forEach(r => localStorage.setItem('tgt_ach_shown_' + todayStr + '_' + r.user_id, 'true'));
+                            enqueueCelebrationAlert(function () {
+                                if (typeof window.playEmailNotificationSound === 'function') window.playEmailNotificationSound();
+                                showTargetAchievedCelebrationModal(unnotifiedTgt);
+                            });
+                        }
+                    }
+
+                    // 10. New Employee Joining Alerts (Strictly once per day per user)
+                    if (Array.isArray(data.joining_day_alerts) && data.joining_day_alerts.length > 0) {
+                        const unnotifiedJoin = data.joining_day_alerts.filter(r => !localStorage.getItem('join_day_shown_' + todayStr + '_' + r.user_id));
+                        if (unnotifiedJoin.length > 0) {
+                            unnotifiedJoin.forEach(r => localStorage.setItem('join_day_shown_' + todayStr + '_' + r.user_id, 'true'));
+                            enqueueCelebrationAlert(function () {
+                                if (typeof window.playEmailNotificationSound === 'function') window.playEmailNotificationSound();
+                                showJoiningDayCelebrationModal(unnotifiedJoin);
+                            });
+                        }
+                    }
+
+                    // 11. Work Anniversary Alerts (Strictly once per day per user)
+                    if (Array.isArray(data.work_anniversary_alerts) && data.work_anniversary_alerts.length > 0) {
+                        const unnotifiedAnniv = data.work_anniversary_alerts.filter(r => !localStorage.getItem('anniv_shown_' + todayStr + '_' + r.user_id));
+                        if (unnotifiedAnniv.length > 0) {
+                            unnotifiedAnniv.forEach(r => localStorage.setItem('anniv_shown_' + todayStr + '_' + r.user_id, 'true'));
+                            enqueueCelebrationAlert(function () {
+                                if (typeof window.playEmailNotificationSound === 'function') window.playEmailNotificationSound();
+                                showWorkAnniversaryCelebrationModal(unnotifiedAnniv);
+                            });
+                        }
+                    }
+                })
+                .catch(function () { });
+        }
+
+        // Celebration Modal Queueing Engine (Ensures alerts pop up ONE BY ONE sequentially)
+        let _celebrationModalQueue = [];
+        let _isCelebrationModalActive = false;
+
+        function enqueueCelebrationAlert(alertTask) {
+            _celebrationModalQueue.push(alertTask);
+            processNextCelebrationAlert();
+        }
+
+        function processNextCelebrationAlert() {
+            if (_isCelebrationModalActive) return;
+            if (_celebrationModalQueue.length === 0) return;
+
+            const nextTask = _celebrationModalQueue.shift();
+            _isCelebrationModalActive = true;
+            nextTask();
+        }
+
+        function showFollowupReminderModal(r) {
+            const modalEl = document.getElementById('followupReminderModal');
+            if (!modalEl) return;
+
+            const leadCodeEl = document.getElementById('frLeadCode');
+            const leadNameEl = document.getElementById('frLeadName');
+            const timeEl = document.getElementById('frTime');
+
+            if (leadCodeEl) leadCodeEl.textContent = '#' + (r.client_code || r.lead_uuid);
+            if (leadNameEl) leadNameEl.textContent = r.lead_name || 'Lead';
+            if (timeEl) timeEl.textContent = r.followup_time_fmt || '';
+
+            try {
+                let bsModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)) : null;
+                if (bsModal) {
+                    bsModal.show();
+                }
+            } catch (e) {
+                console.error("Followup modal error:", e);
+            }
+        }
+
+        function showBirthdayCelebrationModal(bdayList) {
+            const modalEl = document.getElementById('birthdayCelebrationModal');
+            if (!modalEl) return;
+
+            const list = Array.isArray(bdayList) ? bdayList : [bdayList];
+            const bodyEl = document.getElementById('bdayModalBody');
+
+            if (bodyEl) {
+                if (list.length === 1) {
+                    const b = list[0];
+                    bodyEl.innerHTML = `
+                <div class="my-2">
+                    <div class="avatar-xl mx-auto mb-3">
+                        <div class="avatar-title text-purple rounded-circle border shadow-sm" style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(219, 39, 119, 0.12) 100%) !important; border-color: rgba(124, 58, 237, 0.25) !important;">
+                            🎂
+                        </div>
+                    </div>
+                    <h1 class="fw-extrabold text-dark mb-2" style="font-size: 32px; letter-spacing: -0.5px;">${escapeHtml(b.full_name || 'Team Member')}</h1>
+                    <p class="text-secondary fs-15 mt-3 mb-0 fw-medium">
+                        Wishing ${escapeHtml(b.full_name || 'you')} a fantastic Birthday filled with joy, great health, and huge success! 🎉
+                    </p>
+                </div>
+            `;
+                } else {
+                    let cardsHtml = '';
+                    const namesArr = [];
+                    list.forEach(b => {
+                        const nameStr = b.full_name || 'Team Member';
+                        namesArr.push(nameStr);
+                        cardsHtml += `
+                    <div class="p-3 bg-white rounded-3 border shadow-xs text-center" style="min-width: 140px; flex: 1;">
+                        <div class="avatar-title text-purple rounded-circle border shadow-sm mb-2" style="width: 54px; height: 54px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 28px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(219, 39, 119, 0.12) 100%) !important; border-color: rgba(124, 58, 237, 0.25) !important;">
+                            🎂
+                        </div>
+                        <h5 class="fw-bold text-dark mb-0 fs-16">${escapeHtml(nameStr)}</h5>
+                    </div>
+                `;
+                    });
+
+                    const joinedNames = namesArr.slice(0, -1).join(', ') + (namesArr.length > 1 ? ' & ' + namesArr[namesArr.length - 1] : '');
+
+                    bodyEl.innerHTML = `
+                <div class="my-2">
+                    <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap mb-3">
+                        ${cardsHtml}
+                    </div>
+                    <p class="text-secondary fs-15 mt-3 mb-0 fw-medium">
+                        Wishing <strong>${escapeHtml(joinedNames)}</strong> a fantastic Birthday filled with joy, great health, and huge success! 🎉
+                    </p>
+                </div>
+            `;
+                }
+            }
+
+            try {
+                let bsModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)) : null;
+                if (bsModal) {
+                    bsModal.show();
+                }
+            } catch (e) {
+                console.error("Birthday modal error:", e);
+            }
+        }
+
+        // System Generic Celebration Modal & Floating Particles Engine
+        let _sysCelebrationAnimInterval = null;
+
+        function launchCelebrationParticles(items) {
+            stopCelebrationParticles();
+
+            const container = document.createElement('div');
+            container.id = 'sysCelebrationParticlesContainer';
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100vw';
+            container.style.height = '100vh';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '999999';
+            document.body.appendChild(container);
+
+            const particleList = items && items.length > 0 ? items : ['🎉', '⭐', '🏆', '🎊'];
+
+            function spawnParticle() {
+                if (!document.getElementById('sysCelebrationParticlesContainer')) return;
+                const el = document.createElement('div');
+                el.textContent = particleList[Math.floor(Math.random() * particleList.length)];
+                el.style.position = 'absolute';
+                el.style.left = Math.random() * 95 + 'vw';
+                el.style.top = (Math.random() * 15 + 85) + 'vh';
+                el.style.fontSize = (Math.random() * 18 + 24) + 'px';
+                el.style.transition = 'all 4s cubic-bezier(0.25, 1, 0.5, 1)';
+                el.style.opacity = '1';
+                container.appendChild(el);
+
+                setTimeout(() => {
+                    el.style.top = (Math.random() * 30 - 20) + 'vh';
+                    el.style.left = (parseFloat(el.style.left) + (Math.random() * 30 - 15)) + 'vw';
+                    el.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => {
+                    el.remove();
+                }, 4200);
+            }
+
+            for (let i = 0; i < 25; i++) {
+                spawnParticle();
+            }
+
+            _sysCelebrationAnimInterval = setInterval(() => {
+                if (!document.getElementById('sysCelebrationParticlesContainer')) {
+                    clearInterval(_sysCelebrationAnimInterval);
+                    _sysCelebrationAnimInterval = null;
+                    return;
+                }
+                spawnParticle();
+                spawnParticle();
+            }, 280);
+        }
+
+        function stopCelebrationParticles() {
+            if (_sysCelebrationAnimInterval) {
+                clearInterval(_sysCelebrationAnimInterval);
+                _sysCelebrationAnimInterval = null;
+            }
+            const container = document.getElementById('sysCelebrationParticlesContainer');
+            if (container) {
+                container.remove();
+            }
+        }
+
+        function openGenericSystemModal(titleText, subtitleText, headerGrad, btnGrad, iconsText, bodyHtml, particleItems) {
+            const modalEl = document.getElementById('systemCelebrationModal');
+            if (!modalEl) return;
+
+            const titleEl = document.getElementById('sysModalTitle');
+            const subEl = document.getElementById('sysModalSubtitle');
+            const headerEl = document.getElementById('sysModalHeader');
+            const btnEl = document.getElementById('sysModalBtn');
+            const iconsEl = document.getElementById('sysModalIcons');
+            const bodyEl = document.getElementById('sysModalBody');
+
+            if (titleEl) titleEl.textContent = titleText;
+            if (subEl) subEl.textContent = subtitleText;
+            if (headerEl) headerEl.style.background = headerGrad;
+            if (btnEl) btnEl.style.background = btnGrad;
+            if (iconsEl) iconsEl.textContent = iconsText;
+            if (bodyEl) bodyEl.innerHTML = bodyHtml;
+
+            try {
+                let bsModal = (typeof bootstrap !== 'undefined' && bootstrap.Modal) ? (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)) : null;
+                if (bsModal) {
+                    bsModal.show();
+                    launchCelebrationParticles(particleItems);
+                }
+            } catch (e) {
+                console.error("System modal error:", e);
+            }
+        }
+
+        // 2. SO Approved & Payment Modal Handler
+        function showSOApprovedCelebrationModal(list) {
+            const r = list[0];
+            const bodyHtml = `
+        <div class="my-2">
+            <div class="avatar-xl mx-auto mb-3">
+                <div class="avatar-title rounded-circle shadow-sm border" style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: rgba(16, 185, 129, 0.12) !important; color: #10b981 !important; border-color: rgba(16, 185, 129, 0.25) !important;">
+                    🪙
+                </div>
+            </div>
+            <h2 class="fw-extrabold text-success mb-2" style="font-size: 36px; letter-spacing: -0.5px;">${escapeHtml(r.amount_fmt)}</h2>
+            <h1 class="fw-extrabold text-dark mb-3" style="font-size: 30px;">${escapeHtml(r.agent_name || 'Team Member')}</h1>
+            <p class="text-secondary fs-15 mt-2 mb-0 fw-medium">
+                New Sales Order Approved & Payment Received! Great job! 🎉
+            </p>
+        </div>
+    `;
+            openGenericSystemModal(
+                "PAYMENT APPROVED!",
+                "Sales Order & Payment Success",
+                "linear-gradient(135deg, #059669 0%, #10b981 50%, #f59e0b 100%)",
+                "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                "🪙 💰 ₹",
+                bodyHtml,
+                ['🪙', '💰', '₹', '💸', '🏆', '🎊']
+            );
+        }
+
+        // 3. Target Achieved Modal Handler
+        function showTargetAchievedCelebrationModal(list) {
+            const r = list[0];
+            const bodyHtml = `
+        <div class="my-2">
+            <div class="avatar-xl mx-auto mb-3">
+                <div class="avatar-title rounded-circle shadow-sm border" style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: rgba(245, 158, 11, 0.12) !important; color: #f59e0b !important; border-color: rgba(245, 158, 11, 0.25) !important;">
+                    🏆
+                </div>
+            </div>
+            <h1 class="fw-extrabold text-dark mb-2" style="font-size: 32px;">${escapeHtml(r.full_name)}</h1>
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1.5 fs-14 rounded-pill mb-3">Target: ${escapeHtml(r.target_fmt)} | Achieved: ${escapeHtml(r.achieved_fmt)}</span>
+            <p class="text-secondary fs-15 mt-2 mb-0 fw-medium">
+                Congratulations on successfully achieving your monthly target! Keep shining! 🎯
+            </p>
+        </div>
+    `;
+            openGenericSystemModal(
+                "TARGET ACHIEVED!",
+                "Sales Target Achievement Milestone",
+                "linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #7c3aed 100%)",
+                "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+                "🏆 🎯 🥇",
+                bodyHtml,
+                ['🏆', '🎯', '🥇', '🎖️', '🎉', '✨']
+            );
+        }
+
+        // 4. New Employee Joining Modal Handler
+        function showJoiningDayCelebrationModal(list) {
+            const r = list[0];
+            const bodyHtml = `
+        <div class="my-2">
+            <div class="avatar-xl mx-auto mb-3">
+                <div class="avatar-title rounded-circle shadow-sm border" style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: rgba(37, 99, 235, 0.12) !important; color: #2563eb !important; border-color: rgba(37, 99, 235, 0.25) !important;">
+                    👔
+                </div>
+            </div>
+            <h1 class="fw-extrabold text-dark mb-2" style="font-size: 32px; letter-spacing: -0.5px;">${escapeHtml(r.full_name)}</h1>
+            <p class="text-secondary fs-15 mt-3 mb-0 fw-medium">
+                Warm welcome to <strong>${escapeHtml(r.full_name)}</strong> on joining our Team today! 👏
+            </p>
+        </div>
+    `;
+            openGenericSystemModal(
+                "WELCOME NEW MEMBER!",
+                "New Employee Joining Today",
+                "linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #9333ea 100%)",
+                "linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)",
+                "👔 ⭐ 👏",
+                bodyHtml,
+                ['👔', '⭐', '👏', '✨', '🎊', '🤝']
+            );
+        }
+
+        // 5. Work Anniversary Modal Handler
+        function showWorkAnniversaryCelebrationModal(list) {
+            const r = list[0];
+            const bodyHtml = `
+        <div class="my-2">
+            <div class="avatar-xl mx-auto mb-3">
+                <div class="avatar-title rounded-circle shadow-sm border" style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: rgba(192, 38, 211, 0.12) !important; color: #c026d3 !important; border-color: rgba(192, 38, 211, 0.25) !important;">
+                    🎈
+                </div>
+            </div>
+            <h1 class="fw-extrabold text-dark mb-2" style="font-size: 32px;">${escapeHtml(r.full_name)}</h1>
+            <span class="badge bg-secondary-subtle text-purple border border-purple-subtle px-3.5 py-1.5 fs-14 rounded-pill mb-3">Completed ${escapeHtml(r.years)} Year(s) with us!</span>
+            <p class="text-secondary fs-15 mt-2 mb-0 fw-medium">
+                Happy Work Anniversary! Thank you for your dedication and commitment! 🎀
+            </p>
+        </div>
+    `;
+            openGenericSystemModal(
+                "HAPPY WORK ANNIVERSARY!",
+                "Company Work Milestone",
+                "linear-gradient(135deg, #c026d3 0%, #7c3aed 50%, #4f46e5 100%)",
+                "linear-gradient(135deg, #c026d3 0%, #7c3aed 100%)",
+                "🎈 🎀 🏆",
+                bodyHtml,
+                ['🎈', '🎀', '🏆', '🎊', '⭐', '🎁']
+            );
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const bdayModalEl = document.getElementById('birthdayCelebrationModal');
+            if (bdayModalEl) {
+                bdayModalEl.addEventListener('hidden.bs.modal', function () {
+                    stopBirthdayConfetti();
+                    _isCelebrationModalActive = false;
+                    setTimeout(processNextCelebrationAlert, 200);
+                });
+            }
+            const sysModalEl = document.getElementById('systemCelebrationModal');
+            if (sysModalEl) {
+                sysModalEl.addEventListener('hidden.bs.modal', function () {
+                    stopCelebrationParticles();
+                    _isCelebrationModalActive = false;
+                    setTimeout(processNextCelebrationAlert, 200);
+                });
+            }
+            const fupModalEl = document.getElementById('followupReminderModal');
+            if (fupModalEl) {
+                fupModalEl.addEventListener('hidden.bs.modal', function () {
+                    _isCelebrationModalActive = false;
+                    setTimeout(processNextCelebrationAlert, 200);
+                });
+            }
+        });
+
+        let _birthdayAnimInterval = null;
+
+        function launchBirthdayConfetti() {
+            stopBirthdayConfetti();
+
+            const container = document.createElement('div');
+            container.id = 'birthdayConfettiContainer';
+            container.style.position = 'fixed';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100vw';
+            container.style.height = '100vh';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = '999999';
+            document.body.appendChild(container);
+
+            const items = ['🎂', '🎈', '🎉', '🎁', '⭐', '🎊'];
+
+            function spawnParticle() {
+                if (!document.getElementById('birthdayConfettiContainer')) return;
+                const el = document.createElement('div');
+                el.textContent = items[Math.floor(Math.random() * items.length)];
+                el.style.position = 'absolute';
+                el.style.left = Math.random() * 95 + 'vw';
+                el.style.top = (Math.random() * 15 + 85) + 'vh';
+                el.style.fontSize = (Math.random() * 18 + 24) + 'px';
+                el.style.transition = 'all 4s cubic-bezier(0.25, 1, 0.5, 1)';
+                el.style.opacity = '1';
+                container.appendChild(el);
+
+                setTimeout(() => {
+                    el.style.top = (Math.random() * 30 - 20) + 'vh';
+                    el.style.left = (parseFloat(el.style.left) + (Math.random() * 30 - 15)) + 'vw';
+                    el.style.opacity = '0';
+                }, 50);
+
+                setTimeout(() => {
+                    el.remove();
+                }, 4200);
+            }
+
+            for (let i = 0; i < 25; i++) {
+                spawnParticle();
+            }
+
+            _birthdayAnimInterval = setInterval(() => {
+                if (!document.getElementById('birthdayConfettiContainer')) {
+                    clearInterval(_birthdayAnimInterval);
+                    _birthdayAnimInterval = null;
+                    return;
+                }
+                spawnParticle();
+                spawnParticle();
+            }, 280);
+        }
+
+        function stopBirthdayConfetti() {
+            if (_birthdayAnimInterval) {
+                clearInterval(_birthdayAnimInterval);
+                _birthdayAnimInterval = null;
+            }
+            const container = document.getElementById('birthdayConfettiContainer');
+            if (container) {
+                container.remove();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const bdayModalEl = document.getElementById('birthdayCelebrationModal');
+            if (bdayModalEl) {
+                bdayModalEl.addEventListener('hidden.bs.modal', function () {
+                    stopBirthdayConfetti();
+                });
+            }
+        });
+
+        // B. Dedicated Notification List Pulling (Every 1 minute & on dropdown click)
+        function fetchResearchNotifications() {
+            if (document.visibilityState !== 'visible') return;
+
+            fetch('/api/research/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    const headerNotifCount = document.getElementById('headerNotificationCount');
+                    const headerNotifList = document.getElementById('headerNotificationList');
+
+                    if (headerNotifCount && Array.isArray(data.notifications) && data.notifications.length > 0) {
+                        headerNotifCount.textContent = data.notifications.length;
+                        headerNotifCount.classList.remove('d-none');
+                    }
+
+                    if (headerNotifList && Array.isArray(data.notifications)) {
+                        if (data.notifications.length === 0) {
+                            headerNotifList.innerHTML = `
+                        <div class="text-center py-4 text-muted fs-12">
+                            <i class="mdi mdi-bell-outline fs-20 d-block mb-1"></i>
+                            No notifications today
+                        </div>
+                    `;
+                            return;
+                        }
+
+                        let notifHtml = '';
+                        data.notifications.forEach(item => {
+                            const isNew = item.id > window._lastSeenResearchId;
+                            const newBorder = isNew ? 'border-primary' : '';
+                            notifHtml += `
+                        <a href="/research" class="text-reset d-block p-2.5 rounded-2 bg-body border mb-2 shadow-xs ${newBorder}" style="text-decoration: none;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span class="badge ${item.css_class || 'bg-primary-subtle text-primary border'}">${escapeHtml(item.badge || 'CALL')}</span>
+                                <small class="text-muted fs-11">${escapeHtml(item.time_str || '')}</small>
+                            </div>
+                            <div class="text-body fs-12 fw-semibold lh-base mb-1" style="word-break: break-word; white-space: normal;">
+                                ${escapeHtml(item.recommendation)}
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="text-primary fs-11 fw-semibold">${escapeHtml(item.segment || '')}</span>
+                                ${isNew ? '<span class="badge bg-danger rounded-pill fs-9 px-1 py-0">NEW</span>' : ''}
+                            </div>
+                        </a>
+                    `;
+                        });
+                        headerNotifList.innerHTML = notifHtml;
+                    }
+                })
+                .catch(function () { });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // 1. Initial pulls on page load
+        pollGlobalLiveStats();
+        fetchResearchNotifications();
+
+        // 2. 10-Second Interval Polling for Counters
+        setInterval(pollGlobalLiveStats, 10000);
+
+        // 3. 1-Minute Interval Polling for Full Notification List
+        setInterval(fetchResearchNotifications, 60000);
+    </script>
+
+    <!-- Global Follow-up Reminder Alert Modal -->
+    <div class="modal fade" id="followupReminderModal" tabindex="-1" aria-labelledby="followupReminderModalLabel"
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                <div class="modal-header bg-danger text-white py-3 px-4">
+                    <div class="d-flex align-items-center">
+                        <i class="mdi mdi-clock-alert-outline fs-22 me-2"></i>
+                        <div>
+                            <h5 class="modal-title fw-bold text-white mb-0" id="followupReminderModalLabel">Follow-up
+                                Call Alert</h5>
+                            <small class="text-white-50 fs-12">2 Minutes Remaining</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-12 mb-2"
+                            id="frLeadCode">#--</span>
+                        <h4 class="fw-bold text-dark mb-2" id="frLeadName">--</h4>
+                        <div class="fs-15 text-danger fw-semibold">
+                            Your Follow-up is Pending for <span id="frTime" class="text-dark">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2.5 px-4 bg-light justify-content-between">
+                    <button type="button" class="btn btn-secondary btn-sm px-4 fw-medium"
+                        data-bs-dismiss="modal">Close</button>
+                    <a href="/followups" class="btn btn-primary btn-sm px-4 fw-medium">
+                        <i class="mdi mdi-calendar-clock me-1"></i> Go to Follow-ups
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Employee Birthday Celebration Modal (Royal Purple & Celebration Gold Party Theme) -->
+    <div class="modal fade" id="birthdayCelebrationModal" tabindex="-1" aria-labelledby="birthdayCelebrationModalLabel"
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-center"
+                style="border-radius: 20px; overflow: hidden; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 20px 50px rgba(124, 58, 237, 0.25);">
+                <div class="modal-header text-white py-4 px-4 justify-content-center border-0"
+                    style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%) !important;">
+                    <div class="text-center">
+                        <div class="fs-32 mb-1">🎂 🎈 🎁</div>
+                        <h3 class="modal-title fw-bold text-white mb-0" id="birthdayCelebrationModalLabel"
+                            style="font-size: 24px; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                            HAPPY BIRTHDAY!</h3>
+                        <small class="text-white-50 fs-13">Wishing you a joyous & prosperous day!</small>
+                    </div>
+                </div>
+                <div class="modal-body p-4 p-md-5" id="bdayModalBody">
+                    <div class="my-2">
+                        <div class="avatar-xl mx-auto mb-3">
+                            <div class="avatar-title text-purple rounded-circle border shadow-sm"
+                                style="width: 84px; height: 84px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 44px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.12) 0%, rgba(219, 39, 119, 0.12) 100%) !important; border-color: rgba(124, 58, 237, 0.25) !important;">
+                                🎂
+                            </div>
+                        </div>
+                        <!-- Extra Large Employee Name (Role/Designation Removed) -->
+                        <h1 class="fw-extrabold text-dark mb-2" id="bdayName"
+                            style="font-size: 32px; letter-spacing: -0.5px;">--</h1>
+
+                        <p class="text-secondary fs-15 mt-3 mb-0 fw-medium">
+                            Wishing you a fantastic Birthday filled with joy, great health, and huge success! 🎉
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-lg px-5 rounded-pill shadow-sm fw-bold text-white"
+                        data-bs-dismiss="modal" onclick="stopBirthdayConfetti();"
+                        style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%) !important; border: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);">
+                        🎉 Wish Happy Birthday!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global System Celebration Modal (Frosted Glassmorphism Theme) -->
+    <div class="modal fade" id="systemCelebrationModal" tabindex="-1" aria-labelledby="systemCelebrationModalLabel"
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg text-center"
+                style="border-radius: 20px; overflow: hidden; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.7); box-shadow: 0 20px 50px rgba(0,0,0,0.25);">
+                <div class="modal-header text-white py-4 px-4 justify-content-center border-0" id="sysModalHeader"
+                    style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%) !important;">
+                    <div class="text-center">
+                        <div class="fs-32 mb-1" id="sysModalIcons">🎉 🪙 🏆</div>
+                        <h3 class="modal-title fw-bold text-white mb-0" id="sysModalTitle"
+                            style="font-size: 22px; letter-spacing: 0.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                            CELEBRATION ALERT!</h3>
+                        <small class="text-white-50 fs-13" id="sysModalSubtitle">System Automated Alert</small>
+                    </div>
+                </div>
+                <div class="modal-body p-4 p-md-5" id="sysModalBody">
+                    <!-- Dynamic Content Injection -->
+                </div>
+                <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-lg px-5 rounded-pill shadow-sm fw-bold text-white"
+                        id="sysModalBtn" data-bs-dismiss="modal" onclick="stopCelebrationParticles();"
+                        style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%) !important; border: none; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);">
+                        🎉 Celebrate & Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

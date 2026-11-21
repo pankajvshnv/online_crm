@@ -1,0 +1,134 @@
+// helper
+
+.w-xs {
+    min-width: 80px;
+}
+
+.w-sm {
+    min-width: 95px;
+}
+
+.w-md {
+    min-width: 110px;
+}
+
+.w-lg {
+    min-width: 140px;
+}
+
+.w-xl {
+    min-width: 160px;
+}
+
+// flex-1
+
+.flex-1 {
+    flex: 1;
+}
+
+// Modal & Offcanvas
+.modal,
+.offcanvas {
+    box-shadow: var(--#{$prefix}box-shadow-sm);
+
+    .btn-close {
+        border: 1px solid rgba(var(--#{$prefix}body-color-rgb), 0.15);
+        padding: 0 !important;
+    }
+}
+
+// Offcanvas
+.offcanvas-title{
+    font-size: 0.875rem;
+}
+.offcanvas-body{
+    padding-top: 0;
+}
+
+// Btn Close
+.btn-close {
+    transition: $transition-base;
+    margin-right: 0 !important;
+    border-radius: var(--#{$prefix}border-radius);
+    height: 1.5rem;
+    width: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &::before {
+        content: "\F0156";
+        font-family: "Material Design Icons";
+        font-size: 1rem;
+        line-height: 15px;
+        color: var(--#{$prefix}body-color);
+    }
+    &:hover {
+        &::before {
+            color: var(--#{$prefix}danger) !important;
+        }
+    }
+}
+
+::selection {
+    background-color: $primary;
+    color: $white;
+}
+
+// Sticky top
+.sticky-top {
+    top: 81px;
+    z-index: auto;
+}
+
+// Tooltip
+.tooltip {
+    background-color: var(--#{$prefix}light);
+    border: 1px solid var(--#{$prefix}border-color);
+    border-radius: $border-radius;
+}
+
+svg {
+    vertical-align: sub !important;
+}
+
+// Border Light
+.border-light {
+    border-color: var(--#{$prefix}secondary-bg) !important;
+}
+
+// BlockUI
+
+.blockElement,
+.blockUI,
+.blockMsg {
+    // background-color: var(--#{$prefix}secondary-bg) !important;
+    padding: 5px 10px !important;
+    border: none !important;
+    border-radius: $border-radius !important;
+    width: auto !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+
+    h1 {
+        font-size: 0.9375rem !important;
+        color: var(--#{$prefix}black) !important;
+        font-weight: 400 !important;
+        margin-bottom: 0 !important;
+    }
+}
+.blockUI {
+    &.blockOverlay {
+        background-color: rgba(var(--#{$prefix}light-rgb), 0.7) !important;
+        width: 100% !important;
+    }
+}
+
+.border-dashed {
+    border-style: dashed;
+}
+
+.simplebar-scrollbar:before {
+    background: var(--#{$prefix}light) !important;
+}

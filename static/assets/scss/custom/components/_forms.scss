@@ -1,0 +1,86 @@
+// Forms
+
+// checkbox input right
+
+.form-check-right {
+  padding-left: 0;
+  display: inline-block;
+  padding-right: $form-check-padding-start;
+  .form-check-input {
+    float: right;
+    margin-left: 0;
+    margin-right: $form-check-padding-start * -1;
+  }
+  .form-check-label {
+    display: block;
+  }
+}
+.form-control {
+  line-height: 1.41;
+}
+.form-check {
+  position: relative;
+  text-align: left /*rtl: right*/;
+  .form-check-input{
+    cursor: pointer;
+  }
+}
+
+.form-check-label {
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.form-floating {
+  > .form-control {
+    &:focus {
+      padding-top: 1.2rem !important;
+      padding-bottom: 1rem !important;
+      + label {
+        top: -15px !important;
+      }
+    }
+  }
+  .form-control {
+    height: calc(1rem + 22px) !important;
+  }
+  > label {
+    top: -7px !important;
+  }
+  > .form-select {
+    height: auto !important;
+    padding-top: 1rem !important;
+    padding-bottom: 0.5rem !important;
+    + label {
+      top: -15px !important;
+    }
+    &:focus {
+      box-shadow: none;
+    }
+  }
+}
+
+.form-floating > .form-control:not(:placeholder-shown) {
+  padding-top: 1.2rem !important;
+  padding-bottom: 1rem !important;
+  + label {
+    top: -15px !important;
+  }
+}
+input[type="file"]::file-selector-button {
+  background-color: var(--#{$prefix}light);
+  border-right: 1px solid var(--#{$prefix}border-color);
+}
+input[type="file"]:hover::file-selector-button {
+  background-color: var(--#{$prefix}light);
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background-color: var(--#{$prefix}tertiary-bg);
+  border: 2px solid var(--#{$prefix}tertiary-bg);
+}
+.form-control.is-invalid:focus,
+.form-control.is-valid:focus,
+.form-select.is-invalid:focus{
+  box-shadow: none;
+}

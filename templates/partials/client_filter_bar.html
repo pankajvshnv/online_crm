@@ -1,0 +1,54 @@
+<!-- Reusable Top Filter & Action Bar -->
+<div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+
+    <!-- Industry -->
+    <div>
+        <label class="form-label" for="industryFilter">Industry</label>
+        <select class="form-select lead-filter-input" id="industryFilter" style="min-width: 130px;">
+            <option value="all" selected>All Industries</option>
+            <option value="real estate">Real Estate</option>
+            <option value="saas">SaaS</option>
+            <option value="fmcg">FMCG</option>
+        </select>
+    </div>
+
+    <!-- Status -->
+    <div>
+        <label class="form-label" for="statusFilter">Status</label>
+        <select class="form-select lead-filter-input" id="statusFilter" style="min-width: 130px;">
+            <option value="all" selected>All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="onboarding">Onboarding</option>
+        </select>
+    </div>
+
+    <!-- Search + Reset -->
+    <div class="d-flex align-items-end gap-2 ms-auto">
+        <div style="min-width: 200px; max-width: 280px;">
+            <label class="form-label" for="clientSearch">Search</label>
+            <div class="position-relative">
+                <input type="search" class="form-control" id="clientSearch" placeholder="Search clients...">
+                <i class="mdi mdi-magnify position-absolute top-50 translate-middle-y text-muted" style="right: 10px; font-size: 16px;"></i>
+            </div>
+        </div>
+        <button type="button" class="btn btn-light px-3" id="btnResetFilters" title="Reset Filters">
+            <i class="mdi mdi-refresh"></i>
+        </button>
+    </div>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <div>
+        <span class="text-muted fs-13" id="paginationInfo">Showing 0 to 0 of 0 records</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0 text-muted fs-13">Rows per page:</label>
+        <select class="form-select form-select-sm" id="pageSize" style="width: 70px;">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+    </div>
+</div>

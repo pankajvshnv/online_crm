@@ -1,0 +1,1 @@
+const pdfmakeBase=require("./base").default,OutputDocumentServer=require("./OutputDocumentServer").default;class pdfmake extends pdfmakeBase{constructor(){super()}_transformToDocument(e){return new OutputDocumentServer(e)}}module.exports=new pdfmake;

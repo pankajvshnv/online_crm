@@ -1,0 +1,57 @@
+//
+// toastr.scss
+//
+
+#toast-container {
+    > div {
+        box-shadow: $box-shadow;
+        opacity: 1;
+        &:hover {
+            box-shadow: $box-shadow;
+            opacity: 0.9;
+        }
+    }
+
+    &.toast-top-full-width,
+    &.toast-bottom-full-width {
+        > div {
+            min-width: 96%;
+            margin: 4px auto;
+        }
+    }
+}
+.toast-container {
+    --bs-toast-zindex: 1039 !important;
+    z-index: var(--bs-toast-zindex) !important;
+}
+
+.liveToast {
+    z-index: 1111;
+}
+
+@each $color, $value in $theme-colors {
+    .toast-#{$color} {
+        border: 2px solid $value !important;
+        background-color: rgba(($value), 0.8) !important;
+    }
+}
+
+.toast-header {
+    --#{$prefix}toast-header-bg: var(--#{$prefix}secondary-bg);
+}
+.toast {
+    --#{$prefix}toast-bg: var(--#{$prefix}secondary-bg);
+}
+// for error
+
+.toast-error {
+    background-color: rgba($danger, 0.8);
+    border: 2px solid $danger;
+}
+
+.toastr-options {
+    padding: 24px;
+    background-color: lighten($gray-200, 2%);
+    margin-bottom: 0;
+    border: 1px solid $border-color;
+}

@@ -1,0 +1,1 @@
+import OutputDocument from"./OutputDocument";import fs from"fs";class OutputDocumentServer extends OutputDocument{async write(e){const t=await this.getStream(),r=fs.createWriteStream(e),o=new Promise(((e,r)=>{t.on("end",e),t.on("error",r)})),n=new Promise(((e,t)=>{r.on("close",e),r.on("error",t)}));t.pipe(r),t.end(),await Promise.all([o,n])}}export default OutputDocumentServer;

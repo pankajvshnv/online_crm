@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="all-leads-page single-filter-page">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Calling APIs</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item active">Calling APIs</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            
+            <!-- Top Row: Filters (LEFT) + Search, Reset & Add (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Left Filters (Status + Provider) -->
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <div>
+                        <label class="form-label mb-1 fs-12 text-muted" for="statusFilter">Status</label>
+                        <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 140px;">
+                            <option value="all" selected>All Status</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label mb-1 fs-12 text-muted" for="providerFilter">Provider Type</label>
+                        <select class="form-select lead-filter-input" id="providerFilter" name="provider" style="min-width: 160px;">
+                            <option value="all" selected>All Providers</option>
+                            <option value="cloudconnect">CloudConnect</option>
+                            <option value="issabel">Issabel</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Search, Reset & Add API Button (RIGHT) -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 620px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label mb-1 fs-12 text-muted" for="apiSearch">Search</label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="apiSearch" name="search" value="" placeholder="Search API name, host, DID..." autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-light" id="btnResetFilters" title="Reset Filters">
+                        <i class="mdi mdi-refresh me-1"></i>Reset
+                    </button>
+                    <a href="{{ url_for('add_calling_api') }}" class="btn btn-outline-primary text-nowrap">
+                        <i class="mdi mdi-plus me-1"></i>Add Calling API
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="card all-leads-card border mb-3">
+                <div class="card-body p-0">
+                    <div class="clientos-table-scroll single-row-filter table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="callingApisTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">#</th>
+                                    <th class="text-nowrap">API Name</th>
+                                    <th class="text-nowrap">Provider</th>
+                                    <th class="text-nowrap">Server Host / Endpoint</th>
+                                    <th class="text-nowrap">Default DID</th>
+                                    <th class="text-nowrap" style="width: 110px;">Status</th>
+                                    <th class="text-center text-nowrap" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="callingApiTableBody">
+                                {% if not calling_apis %}
+                                    <tr id="emptyTableRow">
+                                        <td colspan="7" class="text-center py-4 text-muted">No Calling APIs found. Click <strong>Add Calling API</strong> to configure one.</td>
+                                    </tr>
+                                {% else %}
+                                    {% for api in calling_apis %}
+                                    <tr class="api-row"
+                                        data-name="{{ (api.api_name or '') | lower }}"
+                                        data-provider="{{ (api.provider_type or '') | lower }}"
+                                        data-host="{{ (api.server_host or api.api_link or '') | lower }}"
+                                        data-did="{{ (api.default_did or '') | lower }}"
+                                        data-status="{{ api.status }}">
+                                        <td class="text-center fw-semibold text-muted row-index-td">{{ loop.index }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="avatar-xs d-inline-flex align-items-center justify-content-center bg-info-subtle text-info rounded-circle me-2" style="width: 28px; height: 28px;">
+                                                    <i class="mdi mdi-api fs-14"></i>
+                                                </span>
+                                                <span class="fw-bold text-dark fs-14">{{ api.api_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if api.provider_type == 'cloudconnect' %}
+                                                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                                    <i class="mdi mdi-cloud-outline me-1"></i>CloudConnect
+                                                </span>
+                                            {% elif api.provider_type == 'issabel' %}
+                                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                                    <i class="mdi mdi-server-network me-1"></i>Issabel
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-light text-muted border px-2 py-1">
+                                                    {{ api.provider_type or '—' }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if api.server_host %}
+                                                <code class="text-dark">{{ api.server_host }}</code>
+                                            {% elif api.api_link %}
+                                                <small class="text-muted text-break">{{ api.api_link }}</small>
+                                            {% else %}
+                                                <span class="text-muted fst-italic">Not Set</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if api.default_did %}
+                                                <span class="fw-medium text-dark"><i class="mdi mdi-cellphone-wireless me-1 text-muted"></i>{{ api.default_did }}</span>
+                                            {% else %}
+                                                <span class="text-muted font-size-12 fst-italic">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if api.status == 1 or api.status == '1' %}
+                                                <span class="lead-tone-chip lead-tone-success">Active</span>
+                                            {% else %}
+                                                <span class="lead-tone-chip lead-tone-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center text-nowrap">
+                                            <a href="{{ url_for('edit_calling_api', calling_api_uuid=api.calling_api_uuid) }}" class="btn btn-soft-primary btn-sm rounded-circle me-1 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit Calling API" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-pencil-outline"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-soft-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="deleteCallingApi('{{ api.calling_api_uuid }}', '{{ api.api_name | escape }}')" title="Delete Calling API" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-trash-can-outline"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    <tr id="noResultsMatchRow" style="display: none;">
+                                        <td colspan="7" class="text-center py-4 text-muted">No matching Calling APIs found. Try adjusting your search or filters.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 p-2 pt-0">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted fs-13" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 85px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted fs-13" id="paginationInfo">Showing 1 to {{ calling_apis | length }} of {{ calling_apis | length }} records</div>
+                </div>
+                <nav aria-label="Calling API pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+
+    const allRows = [];
+    document.querySelectorAll('#callingApisTable tbody .api-row').forEach(function (tr, index) {
+        allRows.push({
+            element: tr,
+            originalIndex: index + 1,
+            name: tr.getAttribute('data-name') || '',
+            provider: tr.getAttribute('data-provider') || '',
+            host: tr.getAttribute('data-host') || '',
+            did: tr.getAttribute('data-did') || '',
+            status: tr.getAttribute('data-status') || ''
+        });
+    });
+
+    const searchInput = document.getElementById('apiSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const providerFilter = document.getElementById('providerFilter');
+    const pageSizeEl = document.getElementById('pageSize');
+    const noResultsRow = document.getElementById('noResultsMatchRow');
+
+    function renderApisTable() {
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusVal = statusFilter ? statusFilter.value : 'all';
+        const providerVal = providerFilter ? providerFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || 
+                item.name.includes(searchVal) || 
+                item.host.includes(searchVal) || 
+                item.did.includes(searchVal) || 
+                item.provider.includes(searchVal);
+
+            const matchesStatus = statusVal === 'all' || item.status === String(statusVal);
+            const matchesProvider = providerVal === 'all' || item.provider === String(providerVal);
+
+            return matchesSearch && matchesStatus && matchesProvider;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        if (total === 0 && allRows.length > 0) {
+            if (noResultsRow) noResultsRow.style.display = '';
+        } else {
+            if (noResultsRow) noResultsRow.style.display = 'none';
+        }
+
+        filtered.slice(startIndex, endIndex).forEach(function (item, idx) {
+            item.element.style.display = '';
+            const indexTd = item.element.querySelector('.row-index-td');
+            if (indexTd) {
+                indexTd.textContent = startIndex + idx + 1;
+            }
+        });
+
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showStart = startIndex + 1;
+                const showEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showStart} to ${showEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        renderPaginationNav(total, currentPage, pageSize, totalPages);
+
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el);
+            }
+        });
+    }
+
+    function renderPaginationNav(total, page, pSize, totalPages) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+        if (total === 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+        let navHtml = '';
+        const prevDisabled = page <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-api-page" data-page="${page - 1}">Previous</button></li>`;
+        
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === page ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-api-page" data-page="${i}">${i}</button></li>`;
+        }
+        
+        const nextDisabled = page >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-api-page" data-page="${page + 1}">Next</button></li>`;
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-api-page').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== page) {
+                    currentPage = targetPage;
+                    renderApisTable();
+                }
+            });
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () { currentPage = 1; renderApisTable(); });
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function () { currentPage = 1; renderApisTable(); });
+    }
+    if (providerFilter) {
+        providerFilter.addEventListener('change', function () { currentPage = 1; renderApisTable(); });
+    }
+    if (pageSizeEl) {
+        pageSizeEl.addEventListener('change', function () { currentPage = 1; renderApisTable(); });
+    }
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = 'all';
+            if (providerFilter) providerFilter.value = 'all';
+            if (pageSizeEl) pageSizeEl.value = '10';
+            currentPage = 1;
+            renderApisTable();
+        });
+    }
+
+    renderApisTable();
+});
+
+function deleteCallingApi(callingApiUuid, apiName) {
+    if (!confirm(`Are you sure you want to delete Calling API "${apiName}"?`)) {
+        return;
+    }
+    window.location.href = `/settings/calling/apis/delete/${callingApiUuid}`;
+}
+</script>
+{% endblock %}

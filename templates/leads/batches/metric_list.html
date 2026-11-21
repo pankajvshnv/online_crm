@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ metric_label }}</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('lead_batches') }}">Lead Batches</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('lead_batch_detail', batch_uuid=batch.batch_uuid) }}">{{ batch.batch_name }}</a></li>
+                    <li class="breadcrumb-item active">{{ metric_label }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if metric in ['total_uploaded', 'duplicate', 'invalid'] %}
+    {% if metric == 'total_uploaded' %}
+        {% set columns = [
+            {"headerName": "Row", "field": "row_number", "maxWidth": 90},
+            {"headerName": "Uploaded Number", "field": "uploaded_number", "minWidth": 160},
+            {"headerName": "Status", "field": "item_status", "minWidth": 130},
+            {"headerName": "Message", "field": "validation_message", "minWidth": 260, "flex": 1},
+            {"headerName": "Created At", "field": "created_at", "minWidth": 170}
+        ] %}
+    {% else %}
+    {% if metric == 'duplicate' %}
+        {% set columns = [
+            {"headerName": "Uploaded Number", "field": "uploaded_number", "minWidth": 150},
+            {"headerName": "Existing Lead", "field": "existing_lead_id", "minWidth": 150},
+            {"headerName": "Existing Status", "field": "existing_lead_status", "minWidth": 150},
+            {"headerName": "Current Owner", "field": "current_owner", "minWidth": 160},
+            {"headerName": "Lead Source", "field": "lead_source", "minWidth": 130},
+            {"headerName": "Lifecycle", "field": "lifecycle_status", "minWidth": 130, "renderer": "lifecycleBadge"},
+            {"headerName": "Created At", "field": "created_at", "minWidth": 170},
+            {"headerName": "Modified At", "field": "updated_at", "minWidth": 170}
+        ] %}
+    {% else %}
+        {% set columns = [
+            {"headerName": "Row", "field": "row_number", "maxWidth": 90},
+            {"headerName": "Uploaded Number", "field": "uploaded_number", "minWidth": 160},
+            {"headerName": "Reason", "field": "validation_message", "minWidth": 300, "flex": 1},
+            {"headerName": "Created At", "field": "created_at", "minWidth": 170}
+        ] %}
+    {% endif %}
+    {% endif %}
+{% else %}
+    {% set columns = [
+        {"headerName": "Lead", "field": "name", "minWidth": 160},
+        {"headerName": "Mobile", "field": "mobile_number", "minWidth": 140},
+        {"headerName": "Email", "field": "email", "minWidth": 170},
+        {"headerName": "Source", "field": "lead_source", "minWidth": 130},
+        {"headerName": "Lead Status", "field": "lead_status", "minWidth": 150},
+        {"headerName": "Call State", "field": "call_state", "minWidth": 130, "renderer": "callStateBadge"},
+        {"headerName": "Lifecycle", "field": "lifecycle_status", "minWidth": 130, "renderer": "lifecycleBadge"},
+        {"headerName": "Owner", "field": "current_owner", "minWidth": 150},
+        {"headerName": "Created At", "field": "created_at", "minWidth": 170},
+        {"headerName": "Modified At", "field": "updated_at", "minWidth": 170}
+    ] %}
+{% endif %}
+
+{% set grid_id = 'batchMetricGrid' %}
+{% set data = rows %}
+{% set row_id_field = 'lead_uuid' if metric not in ['total_uploaded', 'duplicate', 'invalid'] else 'row_number' %}
+{% set action_id_field = row_id_field %}
+{% set view_url = '' %}
+{% set page_size = 10 %}
+{% set show_status_counts = false %}
+{% set page_size_options = [10, 20, 50, 100, {"value": "all", "label": "All"}] %}
+{% set filters = [] %}
+{% set toolbar_buttons = [
+    {"url": download_url, "label": "Download", "icon": "mdi mdi-download-outline", "class": "btn btn-outline-primary btn-export-csv"}
+] if has_permission('global_access_scope', 'global_data_export') else [] %}
+{% include 'partials/aggrid.html' %}
+{% endblock %}

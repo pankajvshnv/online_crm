@@ -1,0 +1,57 @@
+// Extras pages.scss
+
+// profile
+
+.profile-info {
+    .icon-info {
+        margin-top: 0.125rem;
+    }
+    .profile-img {
+        margin-top: -36px;
+    }
+}
+
+// Pricing
+
+.pricing-nav-tabs {
+    display: inline-block;
+    background-color: var(--#{$prefix}secondary-bg);
+    box-shadow: $box-shadow;
+    padding: 4px;
+    border-radius: 7px;
+    .nav-item {
+        display: inline-block;
+    }
+}
+
+.pricing-box {
+    .plan-features {
+        text-align: left;
+        li {
+            padding: 6px 0px;
+        }
+    }
+}
+
+/*********************
+    Faqs
+**********************/
+.faq-card {
+    min-height: 765px;
+    .faq-vector {
+        bottom: -3%;
+        left: 5%;
+        width: 32%;
+    }
+}
+
+// Contact
+
+.system-status {
+    @include media-breakpoint-up(lg){
+        max-width: 90%;
+    }
+}
+.contact-bg-overlay {
+    width: 36%;
+}

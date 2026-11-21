@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="all-leads-page single-filter-page">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{{ page_title }}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">{{ page_title }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            
+            {% include 'partials/client_filter_bar.html' %}
+            
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="clientsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap">Client Name</th>
+                                    <th class="text-nowrap">Contact Person</th>
+                                    <th class="text-nowrap">Phone</th>
+                                    <th class="text-nowrap">Email</th>
+                                    <th class="text-nowrap">Industry</th>
+                                    <th class="text-nowrap">Account Owner</th>
+                                    <th class="text-nowrap">Status</th>
+                                    <th class="text-center text-nowrap">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="client-row" data-industry="real estate" data-status="active" data-search="vertex realty aarav mehta 9876543210 aarav@example.com real estate priya sharma active">
+                                    <td><div class="fw-medium text-dark">Vertex Realty</div></td>
+                                    <td>Aarav Mehta</td>
+                                    <td>9876543210</td>
+                                    <td>aarav@example.com</td>
+                                    <td>Real Estate</td>
+                                    <td>Priya Sharma</td>
+                                    <td><span class="badge bg-success-subtle text-success">Active</span></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-info"><i class="mdi mdi-eye-outline"></i></button>
+                                        <button type="button" class="btn btn-sm btn-primary"><i class="mdi mdi-pencil-outline"></i></button>
+                                    </td>
+                                </tr>
+                                <tr class="client-row" data-industry="saas" data-status="onboarding" data-search="bluefin labs nisha shah 9811122233 nisha@example.com saas rohan iyer onboarding">
+                                    <td><div class="fw-medium text-dark">Bluefin Labs</div></td>
+                                    <td>Nisha Shah</td>
+                                    <td>9811122233</td>
+                                    <td>nisha@example.com</td>
+                                    <td>SaaS</td>
+                                    <td>Rohan Iyer</td>
+                                    <td><span class="badge bg-primary-subtle text-primary">Onboarding</span></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-info"><i class="mdi mdi-eye-outline"></i></button>
+                                        <button type="button" class="btn btn-sm btn-primary"><i class="mdi mdi-pencil-outline"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Nav -->
+            <div class="d-flex justify-content-end mt-3">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+
+    const allRows = [];
+    document.querySelectorAll('#clientsTable tbody .client-row').forEach(function (tr, index) {
+        allRows.push({
+            element: tr,
+            originalIndex: index + 1,
+            searchStr: tr.getAttribute('data-search') || '',
+            industry: tr.getAttribute('data-industry') || '',
+            status: tr.getAttribute('data-status') || ''
+        });
+    });
+
+    function renderClientsTable() {
+        const searchInput = document.getElementById('clientSearch');
+        const industryFilter = document.getElementById('industryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const industryVal = industryFilter ? industryFilter.value.toLowerCase() : 'all';
+        const statusVal = statusFilter ? statusFilter.value.toLowerCase() : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || item.searchStr.includes(searchVal);
+            const matchesIndustry = industryVal === 'all' || item.industry === industryVal;
+            const matchesStatus = statusVal === 'all' || item.status === statusVal;
+
+            return matchesSearch && matchesIndustry && matchesStatus;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        const noDataRow = document.getElementById('noClientsRow');
+        if (total === 0) {
+            if (noDataRow) {
+                noDataRow.style.display = '';
+            } else {
+                const tbody = document.querySelector('tbody');
+                if (tbody) {
+                    const emptyTr = document.createElement('tr');
+                    emptyTr.id = 'noClientsRow';
+                    emptyTr.innerHTML = '<td colspan="8" class="text-center py-4 text-muted">No records found matching active filters.</td>';
+                    tbody.appendChild(emptyTr);
+                }
+            }
+        } else {
+            if (noDataRow) noDataRow.style.display = 'none';
+            filtered.forEach(function (item, idx) {
+                if (idx >= startIndex && idx < endIndex) {
+                    item.element.style.display = '';
+                }
+            });
+        }
+
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showingStart = startIndex + 1;
+                const showingEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showingStart} to ${showingEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        renderPaginationNav(totalPages, total);
+    }
+
+    function renderPaginationNav(totalPages, total) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+        if (total <= 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+        let navHtml = '';
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage - 1}">Previous</button></li>`;
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button></li>`;
+        }
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage + 1}">Next</button></li>`;
+        navEl.innerHTML = navHtml;
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (!isNaN(targetPage) && targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    renderClientsTable();
+                }
+            });
+        });
+    }
+
+    ['clientSearch', 'industryFilter', 'statusFilter', 'pageSize'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id.includes('Search')) {
+                let timer;
+                el.addEventListener('input', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(function () {
+                        currentPage = 1;
+                        renderClientsTable();
+                    }, 250);
+                });
+            } else {
+                el.addEventListener('change', function () {
+                    currentPage = 1;
+                    renderClientsTable();
+                });
+            }
+        }
+    });
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            const ids = ['clientSearch', 'industryFilter', 'statusFilter'];
+            ids.forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id.includes('Search')) el.value = '';
+                    else el.value = 'all';
+                }
+            });
+            currentPage = 1;
+            renderClientsTable();
+        });
+    }
+
+    renderClientsTable();
+});
+</script>
+{% endblock %}

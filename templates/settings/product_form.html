@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{{ page_title }}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('product_settings') }}">Products & Pricing</a></li>
+                        <li class="breadcrumb-item active">{{ page_title }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section Card -->
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">
+                {% if product %}Edit Product Information{% else %}Product Information{% endif %}
+            </h5>
+            <a href="{{ url_for('product_settings') }}" class="btn btn-sm btn-outline-primary">
+                <i class="mdi mdi-package-variant-closed me-1"></i> View All Products
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_product_page', product_id=product.id) if product else url_for('add_product_page') }}">
+                <div class="row g-4">
+
+                    <!-- Product Name -->
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Product Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               value="{{ product.product_name if product else '' }}" 
+                               class="form-control" 
+                               name="product_name" 
+                               required 
+                               minlength="2" 
+                               maxlength="120" 
+                               placeholder="Enter product name (e.g. CRM Software, Product A)">
+                    </div>
+
+                    <!-- Divider Header for Duration Pricing -->
+                    <div class="col-12 mt-4">
+                        <div class="d-flex align-items-center justify-content-between border-bottom pb-2">
+                            <h6 class="fw-bold mb-0 text-primary">
+                                <i class="mdi mdi-currency-inr me-1"></i> Product Duration Pricing (in ₹)
+                            </h6>
+                            <small class="text-muted fs-12">
+                                Note: Setting price to <strong>₹0.00</strong> means plan is <strong>Not Active</strong>. Enter an amount to activate the plan.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- 10 Duration Pricing Inputs (col-md-6 each) -->
+                    {% for seg in duration_segments %}
+                        {% set price_val = (product[seg.key] if product and product[seg.key] is defined else 0.0) | float %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">{{ seg.label }} (in ₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted">₹</span>
+                                <input type="number" 
+                                       step="0.01" 
+                                       min="0" 
+                                       class="form-control" 
+                                       name="price_{{ seg.key }}" 
+                                       value="{{ '%.2f' % price_val if price_val > 0 else '0.00' }}" 
+                                       placeholder="0.00">
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Status (Placed at Very Bottom) -->
+                    <div class="col-12 pt-2">
+                        <label class="form-label fw-medium">Status</label>
+                        <select class="form-select" name="status" required style="max-width: 300px;">
+                            <option value="1" {% if not product or product.status == 1 %}selected{% endif %}>Active</option>
+                            <option value="0" {% if product and product.status == 0 %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 pt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="mdi mdi-content-save-outline me-1"></i>
+                            {% if product %}Save Product Changes{% else %}Create Product{% endif %}
+                        </button>
+                        <a href="{{ url_for('product_settings') }}" class="btn btn-light ms-2">
+                            Cancel
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

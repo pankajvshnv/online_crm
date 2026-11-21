@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0 fw-bold">Edit Sales Order - #{{ sales_order.order_number }}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_payments') }}">Sales Orders</a></li>
+                        <li class="breadcrumb-item active">Edit Sales Order</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error_message %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="mdi mdi-alert-circle-outline me-2"></i> {{ error_message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <!-- Edit Sales Order Form (Exact 2-Column Layout matching Create SO) -->
+    <form id="editSalesOrderPageForm" method="POST" action="{{ url_for('edit_sales_order_page', sales_order_uuid=sales_order.sales_order_uuid) }}">
+        <input type="hidden" name="sales_order_uuid" value="{{ sales_order.sales_order_uuid }}">
+
+        <div class="row g-4 mb-4">
+            
+            <!-- LEFT COLUMN (col-lg-6): Customer & Tax Profile -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100 mb-0">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3">
+                        <h5 class="card-title fw-bold mb-0">Customer & Tax Profile</h5>
+                        <span class="badge bg-soft-primary text-primary fs-12">Person Info</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            
+                            <!-- Invoice Name -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soInvoiceName">Invoice Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="soInvoiceName" name="invoice_name" value="{{ sales_order.invoice_name or lead.name or '' }}" placeholder="Customer / Billing Name" required>
+                                <div class="invalid-feedback">Please enter customer invoice name.</div>
+                            </div>
+
+                            <!-- Mobile Number (Lead) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soMobile">Mobile Number <small class="text-muted">(Lead)</small></label>
+                                <input type="text" class="form-control bg-light-subtle opacity-75" id="soMobile" name="mobile" value="{{ lead.masked_mobile or lead.mobile_number or '' }}" readonly tabindex="-1" style="pointer-events: none;">
+                            </div>
+
+                            <!-- Email Address -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soEmail">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="soEmail" name="email" value="{{ sales_order.email or lead.email or '' }}" placeholder="client@example.com" required>
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                            </div>
+
+                            <!-- Date of Birth (DOB) (Bootstrap Datepicker: DD/MM/YYYY) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soDob">Date of Birth <span class="text-danger">*</span> <small class="text-muted">(Required)</small></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bs-datepicker" id="soDob" name="dob" value="{{ sales_order.dob or '' }}" placeholder="DD/MM/YYYY" required autocomplete="off">
+                                    <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soDob').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                                </div>
+                                <small class="text-muted fs-12">Format: DD/MM/YYYY</small>
+                            </div>
+
+                            <!-- GST Number -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soGst">GST Number <small class="text-muted">(Optional)</small></label>
+                                <input type="text" class="form-control text-uppercase" id="soGst" name="gst_number" value="{{ sales_order.gst_number or '' }}" placeholder="e.g. 27AAAAA0000A1Z5" maxlength="15">
+                            </div>
+
+                            <!-- PAN Card Number -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soPan">PAN Card Number <small class="text-muted">(Optional)</small></label>
+                                <input type="text" class="form-control text-uppercase" id="soPan" name="pan_number" value="{{ sales_order.pan_number or '' }}" placeholder="e.g. ABCDE1234F" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+                                <small class="text-muted fs-12">Format: ABCDE1234F</small>
+                            </div>
+
+                            <!-- Aadhaar Number -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soAadhaar">Aadhaar Number <small class="text-muted">(Optional - 12 Digits)</small></label>
+                                <input type="text" class="form-control" id="soAadhaar" name="aadhaar_number" value="{{ sales_order.aadhaar_number or '' }}" placeholder="e.g. 123456789012" maxlength="12" pattern="\d{12}" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+                            </div>
+
+                            <!-- KYC Status -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soKycStatus">KYC Status</label>
+                                <select class="form-select" id="soKycStatus" name="kyc_status">
+                                    <option value="Verified" {% if (sales_order.kyc_status or '') | lower in ['verified', 'approved'] %}selected{% endif %}>Verified / KYC Done</option>
+                                    <option value="Pending" {% if (sales_order.kyc_status or '') | lower == 'pending' %}selected{% endif %}>Pending KYC</option>
+                                    <option value="Rejected" {% if (sales_order.kyc_status or '') | lower == 'rejected' %}selected{% endif %}>Rejected KYC</option>
+                                </select>
+                            </div>
+
+                            <!-- State Dropdown -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soState">State <span class="text-danger">*</span></label>
+                                <select class="form-select" id="soState" name="state" required>
+                                    <option value="">-- Select State --</option>
+                                </select>
+                                <div class="invalid-feedback">Please select state.</div>
+                            </div>
+
+                            <!-- City Dropdown -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soCity">City <span class="text-danger">*</span></label>
+                                <select class="form-select" id="soCity" name="city" required>
+                                    <option value="">-- Select City --</option>
+                                </select>
+                                <div class="invalid-feedback">Please select city.</div>
+                            </div>
+
+                            <!-- Billing Address (Required) -->
+                            <div class="col-12">
+                                <label class="form-label fw-medium" for="soAddress">Billing Address <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="soAddress" name="address" rows="3" placeholder="Flat / House No., Street, Area, Landmark, Pincode..." required>{{ sales_order.address or lead.address or '' }}</textarea>
+                                <div class="invalid-feedback">Please enter billing address.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN (col-lg-6): Order & Payment Details -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100 mb-0 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="card-header d-flex align-items-center justify-content-between py-3">
+                            <h5 class="card-title fw-bold mb-0">Sales Order & Payment Details</h5>
+                            <span class="badge bg-soft-success text-success fs-12">Payment & Plan</span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                
+                                <!-- Product Name Dropdown (Matches by text) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soProductName">Product <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="soProductName" name="product_name" required onchange="handleProductChange(this.value)">
+                                        <option value="">-- Select Product --</option>
+                                        {% set prod_matched = namespace(found=false) %}
+                                        {% if products %}
+                                            {% for prod in products %}
+                                                {% set is_match = (sales_order.product_name or '')|lower == prod.product_name|lower %}
+                                                {% if is_match %}{% set prod_matched.found = true %}{% endif %}
+                                                <option value="{{ prod.product_name }}" {% if is_match %}selected{% endif %}>{{ prod.product_name }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if sales_order.product_name and not prod_matched.found %}
+                                            <option value="{{ sales_order.product_name }}" selected>{{ sales_order.product_name }}</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+
+                                <!-- Plan / Duration Dropdown (Matches by text) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soPlanName">Plan / Duration <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="soPlanName" name="plan_name" required onchange="handlePlanChange(this)">
+                                        <option value="">-- Select Plan --</option>
+                                    </select>
+                                </div>
+
+                                <!-- Service Start Date (Bootstrap Datepicker: DD/MM/YYYY) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soStartDate">Service Start Date <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bs-datepicker" id="soStartDate" name="service_start_date" value="{{ sales_order.service_start_date or '' }}" placeholder="DD/MM/YYYY" autocomplete="off" required>
+                                        <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soStartDate').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                                    </div>
+                                </div>
+
+                                <!-- Service Expiry Date (Bootstrap Datepicker: DD/MM/YYYY) -->
+                                {% set can_manual_expiry = has_permission('payments', 'manual_expiry_date') or has_permission('payments', 'auto_expiry_date_calc') %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soExpiryDate">
+                                        Service Expiry Date 
+                                        {% if can_manual_expiry %}
+                                            <small class="text-primary fw-bold">(Manual Pick Enabled)</small>
+                                        {% endif %}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control fw-bold text-success bs-datepicker" id="soExpiryDate" name="service_expiry_date" value="{{ sales_order.service_expiry_date or '' }}" placeholder="DD/MM/YYYY" autocomplete="off">
+                                        <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soExpiryDate').datepicker('show');"><i class="mdi mdi-calendar-clock text-success"></i></span>
+                                    </div>
+                                </div>
+
+                                <!-- Gross Payment Amount -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soGrossAmount">Gross Payment <small class="text-muted">(inc. GST ₹)</small> <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" min="0.01" class="form-control fw-bold text-success fs-15" id="soGrossAmount" name="gross_amount" value="{{ sales_order.gross_amount or '' }}" placeholder="0.00" oninput="calculateTaxBreakdown(this.value)" required>
+                                </div>
+
+                                <!-- Net Payment Amount (Calculated Breakdown) -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soNetAmount">Net Payment <small class="text-muted">(ex. GST ₹)</small></label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" class="form-control fw-semibold opacity-75 bg-light" id="soNetAmount" value="{{ sales_order.net_amount or '' }}" placeholder="0.00" readonly tabindex="-1" style="pointer-events: none;">
+                                        <span class="input-group-text fw-bold border-start-0">{{ sales_order.tax_percentage or 18.0 }}% GST</span>
+                                    </div>
+                                    <small class="text-muted fs-12 mt-1 d-block" id="soTaxAmountText">Tax Amount (GST): ₹{{ "%.2f"|format(sales_order.tax_amount or 0.0) }}</small>
+                                </div>
+
+                                <!-- Payment Date (Bootstrap Datepicker: DD/MM/YYYY) -->
+                                {% set can_back_date = has_permission('payments', 'back_date_sales_order') %}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soPaymentDate">
+                                        Payment Date <span class="text-danger">*</span>
+                                        {% if can_back_date %}
+                                            <small class="text-primary fw-bold">(Back Date Allowed)</small>
+                                        {% endif %}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bs-datepicker" id="soPaymentDate" name="payment_date" value="{{ sales_order.payment_date or '' }}" placeholder="DD/MM/YYYY" autocomplete="off" required>
+                                        <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soPaymentDate').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                                    </div>
+                                </div>
+
+                                <!-- Service Delivery Mode -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soServiceMode">Service Delivery Mode <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="soServiceMode" name="service_mode" required>
+                                        <option value="" {% if not sales_order.service_mode %}selected{% endif %}>-- Select Delivery Mode --</option>
+                                        <option value="App" {% if sales_order.service_mode == 'App' %}selected{% endif %}>Mobile App</option>
+                                        <option value="Web" {% if sales_order.service_mode == 'Web' %}selected{% endif %}>Web Portal</option>
+                                        <option value="WhatsApp" {% if sales_order.service_mode == 'WhatsApp' %}selected{% endif %}>WhatsApp</option>
+                                        <option value="Telegram" {% if sales_order.service_mode == 'Telegram' %}selected{% endif %}>Telegram</option>
+                                        <option value="App & Web" {% if sales_order.service_mode == 'App & Web' %}selected{% endif %}>App & Web</option>
+                                        <option value="All Modes" {% if sales_order.service_mode == 'All Modes' %}selected{% endif %}>All Modes (App, Web, WA, Telegram)</option>
+                                        <option value="Other" {% if sales_order.service_mode == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+
+                                <!-- Payment Mode -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soPaymentMode">Payment Mode <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="soPaymentMode" name="payment_mode" required>
+                                        <option value="">-- Select Payment Mode --</option>
+                                        <option value="UPI" {% if sales_order.payment_mode == 'UPI' %}selected{% endif %}>UPI (GPay / PhonePe / Paytm)</option>
+                                        <option value="Net Banking" {% if sales_order.payment_mode == 'Net Banking' %}selected{% endif %}>Net Banking (NEFT / RTGS / IMPS)</option>
+                                        <option value="Bank Transfer" {% if sales_order.payment_mode == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+                                        <option value="Cheque" {% if sales_order.payment_mode == 'Cheque' %}selected{% endif %}>Cheque</option>
+                                        <option value="Cash" {% if sales_order.payment_mode == 'Cash' %}selected{% endif %}>Cash</option>
+                                        <option value="Credit / Debit Card" {% if sales_order.payment_mode == 'Credit / Debit Card' %}selected{% endif %}>Credit / Debit Card</option>
+                                        <option value="Other" {% if sales_order.payment_mode == 'Other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+
+                                <!-- Ref / Txn Number -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soReferenceNumber">Ref / Txn Number <small class="text-muted">(Optional)</small></label>
+                                    <input type="text" class="form-control" id="soReferenceNumber" name="reference_number" value="{{ sales_order.reference_number or '' }}" placeholder="e.g. UTR / Txn Ref ID">
+                                </div>
+
+                                <!-- Order Status -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soOrderStatus">Order Status</label>
+                                    <select class="form-select" id="soOrderStatus" name="order_status">
+                                        {% if has_permission('payments', 'so_approve') %}
+                                            <option value="approved" {% if sales_order.order_status == 'approved' %}selected{% endif %}>Approved / Received</option>
+                                        {% endif %}
+                                        <option value="pending" {% if sales_order.order_status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="rejected" {% if sales_order.order_status in ['rejected', 'cancelled'] %}selected{% endif %}>Rejected / Cancelled</option>
+                                    </select>
+                                </div>
+
+                                <!-- Order Notes -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium" for="soNotes">Order Notes <small class="text-muted">(Optional)</small></label>
+                                    <input type="text" class="form-control" id="soNotes" name="notes" value="{{ sales_order.notes or '' }}" placeholder="Optional internal notes...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer Actions -->
+                    <div class="card-footer bg-transparent border-top p-4 d-flex align-items-center justify-content-end gap-2">
+                        <a href="{{ url_for('all_payments') }}" class="btn btn-light px-4">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 fw-medium" id="btnSaveSalesOrder">
+                            <i class="mdi mdi-content-save-outline me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='assets/js/india_states_cities.js') }}"></script>
+<script>
+const productsData = {{ products | tojson | safe if products else '[]' }};
+const savedProductName = {{ (sales_order.product_name or '') | tojson | safe }};
+const savedPlanName = {{ (sales_order.plan_name or '') | tojson | safe }};
+const savedState = {{ (sales_order.state or lead.state or '') | tojson | safe }};
+const savedCity = {{ (sales_order.city or lead.city or '') | tojson | safe }};
+
+const planConfigMap = [
+    { key: 'weekly', label: 'Weekly (7 Days)', textMatch: ['weekly', '7 days', 'week', '1 week'] },
+    { key: 'two_weekly', label: '2-Weekly (14 Days)', textMatch: ['two_weekly', '2-weekly', '14 days', '2 weeks'] },
+    { key: 'monthly', label: 'Monthly (1 Month)', textMatch: ['monthly', '1 month', '30 days', 'month'] },
+    { key: 'two_monthly', label: '2-Monthly (2 Months)', textMatch: ['two_monthly', '2-monthly', '2 months', '60 days'] },
+    { key: 'quarterly', label: 'Quarterly (3 Months)', textMatch: ['quarterly', '3 months', '90 days', 'quarter'] },
+    { key: 'six_monthly', label: '6-Monthly (6 Months)', textMatch: ['six_monthly', '6-monthly', '6 months', 'half yearly', '180 days'] },
+    { key: 'nine_monthly', label: '9-Monthly (9 Months)', textMatch: ['nine_monthly', '9-monthly', '9 months', '270 days'] },
+    { key: 'yearly', label: 'Yearly (1 Year)', textMatch: ['yearly', '1 year', '12 months', '365 days', 'annual'] },
+    { key: 'eighteen_monthly', label: '18-Monthly (1.5 Years)', textMatch: ['eighteen_monthly', '18-monthly', '18 months', '1.5 years'] },
+    { key: 'twenty_four_monthly', label: '2-Yearly (2 Years)', textMatch: ['twenty_four_monthly', '2-yearly', '2 years', '24 months'] }
+];
+
+function isPlanMatch(planItem, targetText) {
+    if (!targetText) return false;
+    const targetClean = String(targetText).toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const keyClean = planItem.key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const labelClean = planItem.label.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    if (targetClean === keyClean || targetClean === labelClean) return true;
+    if (targetClean.includes(keyClean) || keyClean.includes(targetClean)) return true;
+
+    for (let alias of (planItem.textMatch || [])) {
+        const aliasClean = alias.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (targetClean === aliasClean || targetClean.includes(aliasClean)) return true;
+    }
+    return false;
+}
+
+function updatePlanDropdown(productName, selectedPlan) {
+    const planSelect = document.getElementById("soPlanName");
+    if (!planSelect) return;
+
+    if (!productName) {
+        planSelect.innerHTML = '<option value="" selected>-- Select Plan --</option>';
+        return;
+    }
+
+    const prod = productsData.find(p => p.product_name && p.product_name.trim().toLowerCase() === productName.trim().toLowerCase());
+    let html = '<option value="">-- Select Plan --</option>';
+    let matchedAny = false;
+
+    planConfigMap.forEach(plan => {
+        const priceVal = prod ? (parseFloat(prod[plan.key]) || 0) : 0;
+        const isMatched = isPlanMatch(plan, selectedPlan);
+        if (isMatched) matchedAny = true;
+
+        if (priceVal > 0 || isMatched || !prod) {
+            const priceLabel = priceVal > 0 ? ` - ₹${priceVal.toLocaleString('en-IN')}` : '';
+            html += `<option value="${plan.key}" data-price="${priceVal}" data-label="${plan.label}" ${isMatched ? 'selected' : ''}>${plan.label}${priceLabel}</option>`;
+        }
+    });
+
+    // If existing saved plan was not matched by predefined keys, add it explicitly
+    if (selectedPlan && !matchedAny) {
+        html += `<option value="${selectedPlan}" selected>${selectedPlan}</option>`;
+    }
+
+    planSelect.innerHTML = html;
+}
+
+function handleProductChange(productName) {
+    updatePlanDropdown(productName, '');
+}
+
+function handlePlanChange(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    if (opt && opt.getAttribute('data-price')) {
+        const price = parseFloat(opt.getAttribute('data-price')) || 0;
+        const grossInput = document.getElementById('soGrossAmount');
+        if (price > 0 && grossInput && (!grossInput.value || parseFloat(grossInput.value) === 0)) {
+            grossInput.value = price.toFixed(2);
+            calculateTaxBreakdown(price);
+        }
+    }
+}
+
+function calculateTaxBreakdown(grossValue) {
+    const gross = parseFloat(grossValue) || 0;
+    const taxRate = {{ sales_order.tax_percentage or 18.0 }};
+    if (gross > 0) {
+        const net = (gross / (1 + (taxRate / 100))).toFixed(2);
+        const tax = (gross - parseFloat(net)).toFixed(2);
+        document.getElementById('soNetAmount').value = net;
+        document.getElementById('soTaxAmountText').textContent = 'Tax Amount (GST): ₹' + tax;
+    } else {
+        document.getElementById('soNetAmount').value = '0.00';
+        document.getElementById('soTaxAmountText').textContent = 'Tax Amount (GST): ₹0.00';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // 0. Initialize State & City Dropdowns with text match
+    if (window.initIndianStateCityDropdowns) {
+        window.initIndianStateCityDropdowns('soState', 'soCity', savedState, savedCity);
+    }
+
+    // 1. Initialize Product & Plan Dropdowns with text match
+    const prodSelect = document.getElementById('soProductName');
+    const currentProd = prodSelect ? prodSelect.value : savedProductName;
+    updatePlanDropdown(currentProd, savedPlanName);
+
+    // 2. Initialize Tax calculation
+    const grossInput = document.getElementById('soGrossAmount');
+    if (grossInput && grossInput.value) {
+        calculateTaxBreakdown(grossInput.value);
+    }
+
+    // 3. Initialize Bootstrap Datepickers
+    if (window.jQuery && $.fn.datepicker) {
+        $('#soStartDate, #soExpiryDate, #soPaymentDate').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: 'bottom auto'
+        });
+        $('#soDob').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            endDate: '-18y',
+            orientation: 'bottom auto'
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+//
+//  spinner.scss
+//
+
+// Spinner 1
+.spinner-1 {
+    width: 35px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(farthest-side, var(--#{$prefix}warning) 94%, #0000) top/8px 8px no-repeat,
+        conic-gradient(#0000 30%, var(--#{$prefix}warning));
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 8px), #000 0);
+    animation: l13 1s infinite linear;
+}
+@keyframes l13 {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+
+// Spinner 2
+.spinner-2 {
+    width: 35px;
+    aspect-ratio: 1;
+    --c: no-repeat radial-gradient(farthest-side, var(--#{$prefix}primary) 92%, #0000);
+    background:
+        var(--c) 50% 0,
+        var(--c) 50% 100%,
+        var(--c) 100% 50%,
+        var(--c) 0 50%;
+    background-size: 7px 7px;
+    animation: l18 1s infinite;
+    position: relative;
+}
+.spinner-2::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: 3px;
+    background: repeating-conic-gradient(#0000 0 35deg, var(--#{$prefix}primary) 0 90deg);
+    mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 0);
+    border-radius: 50%;
+}
+@keyframes l18 {
+    100% {
+        transform: rotate(0.5turn);
+    }
+}
+
+// Spinner 3
+.spinner-3 {
+    width: 35px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(farthest-side, var(--#{$prefix}info) 50%, #0000) 22% 1px/12px 12px no-repeat,
+        radial-gradient(farthest-side, #0000 calc(100% - 8px), rgba(var(--#{$prefix}info-rgb), 0.2) 0);
+    animation: l9 2s infinite ;
+}
+@keyframes l9 {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+// Spinner 4
+.spinner-4 {
+    height: 35px;
+    aspect-ratio: 1;
+    padding: 10px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    position: relative;
+    mask:
+        conic-gradient(#000 0 0) content-box exclude,
+        conic-gradient(#000 0 0);
+    filter: blur(12px);
+}
+.spinner-4:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-conic-gradient(#0000 0 5%, var(--#{$prefix}dark), #0000 30% 60%);
+    animation: l2 1.5s linear infinite;
+}
+@keyframes l2 {
+    to {
+        rotate: 1turn;
+    }
+}
+
+// Spinner 5
+.spinner-5 {
+  width: 30px;
+  height: 30px;
+  border: 5px dotted var(--#{$prefix}danger);
+  border-radius: 50%;
+  display: inline-block;
+  position: relative;
+  box-sizing: border-box;
+  animation: rotation 2s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+} 

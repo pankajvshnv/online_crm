@@ -1,0 +1,78 @@
+// DateRangepicker
+
+.daterangepicker {
+    background-color: var(--#{$prefix}secondary-bg);
+    border-color: var(--#{$prefix}border-color);
+    .calendar-table {
+        background-color: var(--#{$prefix}secondary-bg);
+        border-color: var(--#{$prefix}border-color);
+    }
+    .ranges {
+        li {
+            &:hover,
+            &.active {
+                background-color: var(--#{$prefix}primary) !important;
+                color: var(--#{$prefix}white) !important;
+            }
+        }
+    }
+    th {
+        &.available {
+            &:hover {
+                background: var(--#{$prefix}secondary-bg) !important;
+            }
+        }
+    }
+    td {
+        &.available {
+            &:hover {
+                background: var(--#{$prefix}light) !important;
+            }
+        }
+        &.off {
+            background-color: var(--#{$prefix}secondary-bg);
+            &.in-range {
+                background-color: var(--#{$prefix}primary-bg-subtle);
+            }
+            &.start-date {
+                background-color: var(--#{$prefix}primary);
+                color: var(--#{$prefix}body-color) !important;
+            }
+        }
+        &.active {
+            background-color: $primary;
+            &:hover {
+                background-color: $primary;
+                color: var(--#{$prefix}body-color) !important;
+            }
+        }
+
+        &.in-range {
+            background-color: rgba($primary, 0.1);
+            color: var(--#{$prefix}body-color);
+            &:hover {
+                background-color: rgba($primary, 0.15);
+            }
+        }
+    }
+    select.hourselect,
+    select.minuteselect,
+    select.ampmselect {
+
+        background: var(--#{$prefix}secondary-bg);
+        border: 1px solid var(--#{$prefix}border-color);
+        // color: var(--#{$prefix}body-color);
+        padding: 6px 8px;
+        border-radius: 4px;
+    }
+
+    .drp-buttons {
+        border-color: var(--#{$prefix}border-color);
+    }
+    .prev,
+    .next {
+        span {
+            border-color: var(--#{$prefix}body-color) !important;
+        }
+    }
+}

@@ -1,0 +1,23 @@
+// Touch Spin
+
+.input-group {
+  &.bootstrap-touchspin {
+    width: 155px;
+    .form-control{
+      text-align: center;
+    }
+    .bootstrap-touchspin-down{
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .bootstrap-touchspin-up{
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+    .input-group-btn-vertical{
+      .bootstrap-touchspin-down{
+        border-bottom-right-radius: var(--#{$prefix}border-radius-sm);
+      }
+    }
+  }
+}

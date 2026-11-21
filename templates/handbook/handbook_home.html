@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Handbook Center</h4>
+                <div class="page-title-right d-flex align-items-center gap-2">
+                    {% if can_add %}
+                    <a href="{{ url_for('handbook_add_page') }}" class="btn btn-primary btn-sm fw-semibold">
+                        <i class="mdi mdi-plus-circle me-1"></i> Add Handbook
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HANDBOOK CARDS GRID (COMPACT 4-COLUMN CARDS) -->
+    <div class="row g-3" id="handbookCardsGrid">
+        {% if handbooks %}
+            {% for hb in handbooks %}
+            <div class="col-sm-6 col-md-4 col-xl-3 hb-card-col" data-title="{{ hb.title|lower }}">
+                <div class="card hb-card h-100 shadow-sm text-decoration-none" style="cursor: pointer;" onclick="navigateToView('{{ hb.handbook_uuid }}', event)">
+                    <div class="card-body p-3 d-flex flex-column">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="avatar-xs flex-shrink-0">
+                                <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-15">
+                                    <i class="mdi mdi-book-open-page-variant-outline"></i>
+                                </span>
+                            </div>
+                            <span class="badge bg-light text-muted border fs-10 px-2 py-0.5">
+                                <i class="mdi mdi-clock-outline me-1"></i>{{ hb.updated_at or hb.created_at }}
+                            </span>
+                        </div>
+
+                        <!-- Title (Standard CRM 13.5px Font) -->
+                        <h6 class="card-title fw-semibold text-dark mb-1 line-clamp-2" style="font-size: 13.5px; line-height: 1.35;">
+                            {{ hb.title }}
+                        </h6>
+                        <p class="text-muted fs-11 mb-3">
+                            <i class="mdi mdi-account-circle-outline me-1"></i>{{ hb.created_by_name or 'Admin' }}
+                        </p>
+
+                        <!-- Card Action Buttons at Bottom -->
+                        <div class="pt-2 border-top mt-auto d-flex align-items-center justify-content-between">
+                            <span class="text-primary fs-11 fw-semibold">
+                                Read <i class="mdi mdi-arrow-right ms-0.5"></i>
+                            </span>
+                            <div class="d-flex align-items-center gap-1" onclick="event.stopPropagation();">
+                                {% if can_edit %}
+                                <a href="{{ url_for('handbook_edit_page', hb_uuid=hb.handbook_uuid) }}" class="btn btn-xs btn-soft-primary text-primary px-2 py-0.5 fs-11" title="Edit Handbook">
+                                    <i class="mdi mdi-pencil me-0.5"></i> Edit
+                                </a>
+                                {% endif %}
+                                {% if can_delete %}
+                                <button type="button" class="btn btn-xs btn-soft-danger text-danger px-2 py-0.5 fs-11" title="Delete Handbook" onclick="deleteHandbook('{{ hb.handbook_uuid }}', '{{ hb.title|replace('\'', '\\\'') }}')">
+                                    <i class="mdi mdi-trash-can-outline me-0.5"></i> Delete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <div class="avatar-lg mx-auto mb-3">
+                    <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-36">
+                        <i class="mdi mdi-book-open-page-variant"></i>
+                    </span>
+                </div>
+                <h4 class="fw-semibold text-dark">No Handbooks Found</h4>
+                <p class="text-muted fs-14">There are currently no active company handbooks available.</p>
+                {% if can_add %}
+                <a href="{{ url_for('handbook_add_page') }}" class="btn btn-primary btn-sm">
+                    <i class="mdi mdi-plus me-1"></i> Add Handbook
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+.hb-card {
+    border: 1.5px solid #e9ebec !important;
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+}
+.hb-card:hover {
+    border-color: #405189 !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 18px rgba(64, 81, 137, 0.14) !important;
+}
+.hb-card:hover .card-title {
+    color: #405189 !important;
+}
+.btn-xs {
+    padding: 0.2rem 0.45rem;
+    font-size: 0.72rem;
+    border-radius: 0.25rem;
+}
+</style>
+
+<script>
+function navigateToView(hbUuid, event) {
+    window.location.href = `/handbook/view/${hbUuid}`;
+}
+
+function deleteHandbook(hbUuid, title) {
+    if (!confirm(`Are you sure you want to delete the handbook "${title}"?`)) return;
+
+    fetch('/api/handbook/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handbook_uuid: hbUuid })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToastNotification(data.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 400);
+        } else {
+            showToastNotification(data.message || 'Failed to delete handbook', 'danger');
+        }
+    })
+    .catch(err => {
+        console.error('Error deleting handbook:', err);
+        showToastNotification('An error occurred while deleting the handbook.', 'danger');
+    });
+}
+</script>
+{% endblock %}

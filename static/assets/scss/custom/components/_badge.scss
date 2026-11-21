@@ -1,0 +1,16 @@
+// badge
+
+.badge {
+  line-height: 0.75;
+}
+
+.badge-circle,
+.badge-square {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2em;
+  width: 2em;
+  line-height: 0;
+}
+

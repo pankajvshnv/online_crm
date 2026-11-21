@@ -1,0 +1,99 @@
+//
+// root.scss
+//
+
+@import "./mixin/primary-color";
+
+@if $enable-dark-mode {
+    @include color-mode(dark, true) {
+        color-scheme: dark;
+        --#{$prefix}light: #{$light-dark};
+        --#{$prefix}light-rgb: #{to-rgb($light-dark)};
+        --#{$prefix}light-text-emphasis: #{$light-text-emphasis-dark};
+        --#{$prefix}light-bg-subtle: #{$light-bg-subtle-dark};
+        --#{$prefix}light-border-subtle: #{$light-border-subtle-dark};
+
+        --#{$prefix}dark: #{$dark-dark};
+        --#{$prefix}box-shadow-sm: #{$box-shadow-sm-dark};
+        --#{$prefix}box-shadow: #{$box-shadow-dark};
+        --#{$prefix}box-shadow-lg: #{$box-shadow-lg-dark};
+        --#{$prefix}box-shadow-inset: #{$box-shadow-inset-dark};
+
+        --#{$prefix}dark-text-emphasis: #{$dark-text-emphasis-dark};
+        --#{$prefix}dark-bg-subtle: #{$dark-bg-subtle-dark};
+        --#{$prefix}dark-border-subtle: #{$dark-border-subtle-dark};
+
+        --#{$prefix}sidebar-menu-item-color: #{$sidebar-menu-item-color-dark};
+
+        .logo-light {
+            display: block !important;
+        }
+
+        .logo-dark {
+            display: none;
+        }
+    }
+}
+
+:root,
+[data-bs-theme="light"] {
+    
+    @each $color, $value in $custom-theme-colors-text {
+        --#{$prefix}#{$color}-text-emphasis: #{$value};
+    }
+
+    @each $color, $value in $custom-theme-colors-bg-subtle {
+        --#{$prefix}#{$color}-bg-subtle: #{$value};
+    }
+
+    @each $color, $value in $custom-theme-colors-border-subtle {
+        --#{$prefix}#{$color}-border-subtle: #{$value};
+    }
+
+    // sidebar
+    --#{$prefix}sidebar-width: #{$sidebar-base-width};
+    --#{$prefix}sidebar-collapsed-width: #{$sidebar-collapsed-width};
+    --#{$prefix}sidebar-medium-width: #{$sidebar-medium-width};
+    --#{$prefix}sidebar-menu-item-color: #{$sidebar-menu-item-color};
+    --#{$prefix}sidebar-menu-item-dot-color: #{$sidebar-menu-item-dot-color};
+
+    // Header
+    --#{$prefix}app-header-height: #{$header-base-height};
+
+    // Semibox
+    --#{$prefix}semibox-width: #{$semibox-width};
+
+    // Boxed
+    --#{$prefix}boxed-layout-width: #{$boxed-layout-width};
+    --#{$prefix}boxed-layout-sm-width: #{$boxed-layout-sm-width};
+    --#{$prefix}boxed-body-bg: #{$boxed-body-bg};
+
+    // PRIMARY COLOR APPLICATION
+    @each $name, $color-variation in $color-variations {
+        $primary: map-get($color-variation, primary);
+
+        &[data-theme-colors="#{$name}"] {
+            --#{$prefix}primary: #{$primary};
+            --#{$prefix}primary-rgb: #{to-rgb($primary)};
+            --#{$prefix}primary-text-emphasis: #{darken-text($primary)};
+            --#{$prefix}primary-bg-subtle: rgba(#{to-rgb($primary)}, 0.1);
+            --#{$prefix}primary-border-subtle: rgba(#{hex-to-rgb($primary)}, 0.5);
+            --#{$prefix}link-color-rgb: #{to-rgb($primary)};
+            --#{$prefix}link-hover-color-rgb: #{to-rgb(darken($primary, 9%))};
+        }
+    }
+}
+
+[data-bs-theme="dark"] {
+  @each $color, $value in $custom-theme-colors-text-dark {
+    --#{$prefix}#{$color}-text-emphasis: #{$value};
+  }
+
+  @each $color, $value in $custom-theme-colors-bg-subtle-dark {
+    --#{$prefix}#{$color}-bg-subtle: #{$value};
+  }
+
+  @each $color, $value in $custom-theme-colors-border-subtle-dark {
+    --#{$prefix}#{$color}-border-subtle: #{$value};
+  }
+}

@@ -1,0 +1,128 @@
+// Compact Sidebar
+[data-sidebar="medium"] {
+    .navbar-logo-box {
+        width: $sidebar-medium-width;
+
+        @media (max-width: 992px) {
+            width: auto;
+        }
+    }
+    .sidebar-left {
+        width: $sidebar-medium-width;
+        text-align: center;
+
+        .has-arrow:after,
+        .badge {
+            display: none !important;
+        }
+    }
+    .main-content {
+        margin-left: $sidebar-medium-width;
+    }
+    .footer {
+        left: $sidebar-medium-width;
+    }
+
+    .sidebar-left {
+        #sidebar-menu {
+            padding: 0;
+            .has-arrow {
+                &::before {
+                    left: -41px;
+                }
+            }
+            ul {
+                li {
+                    &.menu-title {
+                        background-color: var(--#{$prefix}light);
+                        margin-bottom: 0.3125rem;
+                    }
+                    a {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 6px;
+                        i {
+                            display: block;
+                        }
+                    }
+                    ul.sub-menu {
+                        margin-left: 0;
+                        > li {
+                            padding-inline: 0;
+                            > a {
+                                margin-left: 0;
+                                padding: 25px 12px 9px;
+
+                                &::after {
+                                    height: 5px;
+                                    width: 5px;
+                                    top: 20%;
+                                    left: 50%;
+                                    transform: translateX(-50%);
+                                    background-color: $sidebar-menu-item-color;
+                                    border: none;
+                                    outline: none;
+                                }
+                                &::before{
+                                    left: 50%;
+                                    transform: translateX(-50%);
+                                    top: 5px;
+                                }
+                                &:hover {
+                                    &::after {
+                                        background-color: var(--#{$prefix}primary);
+                                    }
+                                }
+                            }
+                            &.mm-active {
+                                .active {
+                                    &::after {
+                                        background-color: var(--#{$prefix}primary);
+                                    }
+                                }
+                            }
+                            ul.sub-menu {
+                                li {
+                                    a {
+                                        padding-left: 1.5rem;
+                                    }
+                                }
+                            }
+                        }
+                        &::before {
+                            display: none;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    &[data-sidebar="small"] {
+        .main-content {
+            margin-left: $sidebar-collapsed-width;
+        }
+        .sidebar-left {
+            #sidebar-menu {
+                text-align: left;
+                > ul {
+                    > li {
+                        > a {
+                            i {
+                                display: inline-block;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .footer {
+            left: $sidebar-collapsed-width;
+        }
+    }
+    &[data-sidebar-color="dark"]{
+        .menu-title{
+            background-color: $light-dark !important;
+        }
+    }
+}

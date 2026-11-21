@@ -1,0 +1,399 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Upload Leads</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">Upload Leads</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2-Column Layout -->
+    <div class="row g-4 align-items-start">
+
+        <!-- LEFT COLUMN: Upload Form Card -->
+        <div class="col-lg-6">
+            <div class="card mb-0">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">
+                        <i class="mdi mdi-cloud-upload-outline me-1 text-primary"></i> Upload CSV File
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('sample_csv_download') }}" class="btn btn-sm btn-outline-success">
+                            <i class="mdi mdi-file-download-outline me-1"></i> Sample CSV
+                        </a>
+                        <a href="{{ url_for('all_leads') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="mdi mdi-arrow-left me-1"></i> Back to Leads
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('lead_upload_file') }}" enctype="multipart/form-data" data-csv-upload-form>
+                        <div class="row g-3">
+
+                            <!-- Batch Name -->
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Batch Name</label>
+                                <input type="text"
+                                       class="form-control"
+                                       name="batch_name"
+                                       maxlength="160"
+                                       value="{{ default_batch_name }}"
+                                       placeholder="Auto: Lead Batch #ID">
+                            </div>
+
+                            <!-- CSV File Input -->
+                            <div class="col-12">
+                                <label class="form-label fw-medium">CSV File <span class="text-danger">*</span></label>
+                                <input type="file"
+                                       class="form-control"
+                                       name="lead_file"
+                                       accept=".csv,text/csv"
+                                       required
+                                       data-csv-file>
+                                <div class="form-text text-muted">Supports comma, semicolon or tab-delimited CSV files.</div>
+                            </div>
+
+                            <!-- Lead Source -->
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Lead Source <span class="text-danger">*</span></label>
+                                <select class="form-select" name="lead_source" required>
+                                    <option value="">Select Lead Source</option>
+                                    {% for source in options.sources %}
+                                        <option value="{{ source.id }}">{{ source.source_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Lead Status -->
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Lead Status</label>
+                                <select class="form-select" name="lead_status">
+                                    <option value="">No Lead Status</option>
+                                    {% for status in options.statuses %}
+                                        <option value="{{ status.id }}">{{ status.status_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Assign To -->
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Assign To</label>
+                                <select class="form-select" name="assign_to_user_uuid">
+                                    <option value="">Unassigned</option>
+                                    {% for user in options.users %}
+                                        <option value="{{ user.user_uuid }}">{{ user.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- CSV Header Checkbox -->
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="1" name="has_header" id="csvHasHeader" checked data-csv-has-header>
+                                    <label class="form-check-label fw-medium" for="csvHasHeader">CSV first row contains column headers</label>
+                                </div>
+                            </div>
+
+                            <!-- Column Mapping Selectors -->
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Mobile Column <span class="text-danger">*</span></label>
+                                <select class="form-select" name="mobile_column" required data-column-select data-mobile-column>
+                                    <option value="">Select CSV file first</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Name Column</label>
+                                <select class="form-select" name="name_column" data-column-select data-optional-column>
+                                    <option value="">Auto / Not Available</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Email Column</label>
+                                <select class="form-select" name="email_column" data-column-select data-optional-column>
+                                    <option value="">Auto / Not Available</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-medium">Address Column</label>
+                                <select class="form-select" name="address_column" data-column-select data-optional-column>
+                                    <option value="">Not Available</option>
+                                </select>
+                            </div>
+
+                            <!-- Mapping Help Alert & Count Preview -->
+                            <div class="col-12">
+                                <div class="alert alert-info mb-2 py-2" data-csv-column-help>
+                                    <i class="mdi mdi-information-outline me-1"></i> Attach a CSV file to load column options for mapping.
+                                </div>
+                                <div class="row g-2 mb-2" data-csv-count-preview></div>
+                            </div>
+
+                            <!-- CSV Live Mapping Preview Table -->
+                            <div class="col-12">
+                                <div class="table-responsive border rounded">
+                                    <table class="table table-sm align-middle mb-0" data-csv-mapping-preview>
+                                        <thead class="table-light">
+                                            <tr><th>Preview</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td class="text-muted">Select a CSV file to preview mapping.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-12 pt-1 d-flex align-items-center gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="mdi mdi-cloud-upload-outline me-1"></i> Upload Leads
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-reset-csv-mapping>
+                                    <i class="mdi mdi-refresh me-1"></i> Reset
+                                </button>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Last Uploads Table -->
+        <div class="col-lg-6">
+            {% include 'leads/_last_uploads_table.html' %}
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("[data-csv-upload-form]");
+    if (!form) return;
+
+    const fileInput = form.querySelector("[data-csv-file]");
+    const hasHeaderInput = form.querySelector("[data-csv-has-header]");
+    const columnSelects = Array.from(form.querySelectorAll("[data-column-select]"));
+    const mobileSelect = form.querySelector("[data-mobile-column]");
+    const helpBox = form.querySelector("[data-csv-column-help]");
+    const countPreview = form.querySelector("[data-csv-count-preview]");
+    const tableHead = form.querySelector("[data-csv-mapping-preview] thead");
+    const tableBody = form.querySelector("[data-csv-mapping-preview] tbody");
+    const resetButton = form.querySelector("[data-reset-csv-mapping]");
+
+    let parsedResult = null;
+
+    function detectDelimiter(text) {
+        const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0).slice(0, 20);
+        if (!lines.length) return ",";
+        const commaCount = (lines[0].match(/,/g) || []).length;
+        const semiCount  = (lines[0].match(/;/g) || []).length;
+        const tabCount   = (lines[0].match(/\t/g) || []).length;
+        if (semiCount > commaCount && semiCount >= tabCount) return ";";
+        if (tabCount > commaCount && tabCount > semiCount) return "\t";
+        return ",";
+    }
+
+    function parseCsvLine(line, delimiter) {
+        const row = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === delimiter && !inQuotes) {
+                row.push(current.trim());
+                current = "";
+            } else {
+                current += char;
+            }
+        }
+        row.push(current.trim());
+        return row;
+    }
+
+    function parseCsvText(text) {
+        const delimiter = detectDelimiter(text);
+        const rawLines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+        return rawLines.map(line => parseCsvLine(line, delimiter));
+    }
+
+    function getColumnName(index) {
+        let name = "";
+        let idx = index;
+        while (idx >= 0) {
+            name = String.fromCharCode(65 + (idx % 26)) + name;
+            idx = Math.floor(idx / 26) - 1;
+        }
+        return name;
+    }
+
+    function guessColumnIndex(labels, keywords) {
+        return labels.findIndex(label => {
+            const normalized = String(label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            return keywords.some(kw => normalized.includes(kw));
+        });
+    }
+
+    function resetSelects() {
+        columnSelects.forEach(select => {
+            select.innerHTML = '<option value="">Select CSV file first</option>';
+            select.value = "";
+        });
+        helpBox.className = "alert alert-info mb-2 py-2";
+        helpBox.innerHTML = '<i class="mdi mdi-information-outline me-1"></i> Attach a CSV file to load column options for mapping.';
+        countPreview.innerHTML = "";
+        tableHead.innerHTML = "<tr><th>Preview</th></tr>";
+        tableBody.innerHTML = '<tr><td class="text-muted">Select a CSV file to preview mapping.</td></tr>';
+        parsedResult = null;
+    }
+
+    function updatePreview() {
+        if (!parsedResult || !parsedResult.rows || !parsedResult.rows.length) {
+            resetSelects();
+            return;
+        }
+
+        const hasHeader = hasHeaderInput ? hasHeaderInput.checked : true;
+        const dataRows  = hasHeader ? parsedResult.rows.slice(1) : parsedResult.rows;
+        const totalRows = dataRows.length;
+
+        countPreview.innerHTML = `
+            <div class="col-6 col-md-4">
+                <div class="border rounded p-2 bg-light text-center">
+                    <small class="text-muted d-block">Rows Found</small>
+                    <strong class="fs-16 text-primary">${totalRows}</strong>
+                </div>
+            </div>
+        `;
+
+        const mobileIdx  = parseInt(mobileSelect ? mobileSelect.value : "", 10);
+        const nameSelect    = form.querySelector('[name="name_column"]');
+        const emailSelect   = form.querySelector('[name="email_column"]');
+        const addressSelect = form.querySelector('[name="address_column"]');
+
+        const nameIdx    = nameSelect    && nameSelect.value    !== "" ? parseInt(nameSelect.value, 10)    : -1;
+        const emailIdx   = emailSelect   && emailSelect.value   !== "" ? parseInt(emailSelect.value, 10)   : -1;
+        const addressIdx = addressSelect && addressSelect.value !== "" ? parseInt(addressSelect.value, 10) : -1;
+
+        if (isNaN(mobileIdx)) {
+            helpBox.className = "alert alert-warning mb-2 py-2";
+            helpBox.innerHTML = '<i class="mdi mdi-alert-circle-outline me-1"></i> Select which CSV column contains <strong>Mobile Number</strong>.';
+            tableHead.innerHTML = "<tr><th>#</th><th>Row Values</th></tr>";
+            tableBody.innerHTML = dataRows.slice(0, 5).map((row, idx) => `
+                <tr>
+                    <td class="text-muted">${idx + 1}</td>
+                    <td>${row.join(" | ")}</td>
+                </tr>
+            `).join("");
+            return;
+        }
+
+        helpBox.className = "alert alert-success mb-2 py-2";
+        helpBox.innerHTML = '<i class="mdi mdi-check-circle-outline me-1"></i> Ready to import! Columns mapped successfully.';
+
+        tableHead.innerHTML = `
+            <tr>
+                <th>#</th>
+                <th class="table-primary">Mobile Number</th>
+                ${nameIdx    >= 0 ? "<th>Name</th>"    : ""}
+                ${emailIdx   >= 0 ? "<th>Email</th>"   : ""}
+                ${addressIdx >= 0 ? "<th>Address</th>" : ""}
+            </tr>
+        `;
+
+        tableBody.innerHTML = dataRows.slice(0, 5).map((row, idx) => `
+            <tr>
+                <td class="text-muted">${idx + 1}</td>
+                <td class="table-primary fw-medium">${row[mobileIdx] || '<span class="text-danger">Empty</span>'}</td>
+                ${nameIdx    >= 0 ? `<td>${row[nameIdx]    || ""}</td>` : ""}
+                ${emailIdx   >= 0 ? `<td>${row[emailIdx]   || ""}</td>` : ""}
+                ${addressIdx >= 0 ? `<td>${row[addressIdx] || ""}</td>` : ""}
+            </tr>
+        `).join("");
+    }
+
+    function populateSelects(headers) {
+        columnSelects.forEach(select => {
+            const isOptional  = select.hasAttribute("data-optional-column");
+            const defaultText = isOptional ? "Auto / Not Available" : "Select Mobile Column";
+            let optionsHtml   = `<option value="">${defaultText}</option>`;
+            headers.forEach((label, idx) => {
+                optionsHtml += `<option value="${idx}">${getColumnName(idx)}: ${label}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        });
+
+        const guessedMobile = guessColumnIndex(headers, ["mobile", "phone", "contact", "number", "cell"]);
+        if (guessedMobile >= 0 && mobileSelect) mobileSelect.value = String(guessedMobile);
+
+        const nameSelect  = form.querySelector('[name="name_column"]');
+        const guessedName = guessColumnIndex(headers, ["name", "fullname", "person", "client"]);
+        if (guessedName >= 0 && nameSelect) nameSelect.value = String(guessedName);
+
+        const emailSelect  = form.querySelector('[name="email_column"]');
+        const guessedEmail = guessColumnIndex(headers, ["email", "mail"]);
+        if (guessedEmail >= 0 && emailSelect) emailSelect.value = String(guessedEmail);
+
+        const addressSelect  = form.querySelector('[name="address_column"]');
+        const guessedAddress = guessColumnIndex(headers, ["address", "location", "city"]);
+        if (guessedAddress >= 0 && addressSelect) addressSelect.value = String(guessedAddress);
+
+        updatePreview();
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener("change", function () {
+            const file = fileInput.files[0];
+            if (!file) { resetSelects(); return; }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const text = e.target.result;
+                const rows = parseCsvText(text);
+                if (!rows.length) { resetSelects(); return; }
+
+                parsedResult = { rows: rows };
+                const firstRow = rows[0];
+                const headers  = firstRow.map((col, idx) => col || `Column ${getColumnName(idx)}`);
+                populateSelects(headers);
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    if (hasHeaderInput) {
+        hasHeaderInput.addEventListener("change", function () {
+            if (parsedResult && parsedResult.rows && parsedResult.rows.length) {
+                const hasHeader = hasHeaderInput.checked;
+                const headers   = hasHeader
+                    ? parsedResult.rows[0].map((col, idx) => col || `Column ${getColumnName(idx)}`)
+                    : parsedResult.rows[0].map((_, idx) => `Column ${getColumnName(idx)}`);
+                populateSelects(headers);
+            }
+        });
+    }
+
+    columnSelects.forEach(select => select.addEventListener("change", updatePreview));
+    if (resetButton) resetButton.addEventListener("click", resetSelects);
+});
+</script>
+{% endblock %}

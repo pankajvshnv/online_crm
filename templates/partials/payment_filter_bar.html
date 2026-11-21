@@ -1,0 +1,95 @@
+<!-- Reusable Top Filter & Action Bar — Payments -->
+<div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+
+    <!-- 1. Payment Status -->
+    <div>
+        <label class="form-label" for="statusFilter">Status</label>
+        <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 140px;">
+            <option value="pending" {% if mode == 'pending' or mode == 'all' or not mode %}selected{% endif %}>Pending</option>
+            <option value="all" {% if mode == 'all_statuses' %}selected{% endif %}>All Statuses</option>
+            <option value="approved" {% if mode == 'approved' %}selected{% endif %}>Approved / Received</option>
+            <option value="rejected" {% if mode == 'rejected' %}selected{% endif %}>Rejected / Cancelled</option>
+        </select>
+    </div>
+
+    <!-- 2. Payment Mode -->
+    <div>
+        <label class="form-label" for="modeFilter">Payment Mode</label>
+        <select class="form-select lead-filter-input" id="modeFilter" name="mode" style="min-width: 140px;">
+            <option value="all" selected>All Modes</option>
+            <option value="bank transfer">Bank Transfer</option>
+            <option value="upi">UPI</option>
+            <option value="cheque">Cheque</option>
+            <option value="cash">Cash</option>
+            <option value="credit card">Credit Card</option>
+            <option value="online">Online</option>
+        </select>
+    </div>
+
+    <!-- 3. Product -->
+    <div>
+        <label class="form-label" for="productFilter">Product</label>
+        <select class="form-select lead-filter-input" id="productFilter" name="product" style="min-width: 140px;">
+            <option value="all" selected>All Products</option>
+            {% if products %}
+                {% for prod in products %}
+                    <option value="{{ prod.product_name | lower }}">{{ prod.product_name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- 3. Owner -->
+    <div>
+        <label class="form-label" for="ownerFilter">Owner</label>
+        <select class="form-select lead-filter-input" id="ownerFilter" name="owner" style="min-width: 140px;">
+            <option value="all" {% if selected_owner == 'all' %}selected{% endif %}>All Owners</option>
+            <option value="unassigned" {% if selected_owner == 'unassigned' %}selected{% endif %}>Unassigned</option>
+            {% if owners %}
+                {% for o in owners %}
+                    <option value="{{ o.user_uuid }}" {% if selected_owner == o.user_uuid %}selected{% endif %}>{{ o.full_name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- 5. Date Filter -->
+    <div>
+        <label class="form-label" for="datePresetFilter">Date</label>
+        <select class="form-select lead-filter-input" id="datePresetFilter" style="min-width: 130px;">
+            <option value="all" selected>All Time</option>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="this_week">This Week</option>
+            <option value="this_month">This Month</option>
+            <option value="custom">Custom Range</option>
+        </select>
+    </div>
+
+    <!-- Custom Range Inputs (Hidden by default) -->
+    <div id="customDateContainer" class="d-none d-flex align-items-center gap-2">
+        <div>
+            <label class="form-label fs-12 mb-1" for="startDateInput">Start Date</label>
+            <input type="date" class="form-control form-control-sm" id="startDateInput">
+        </div>
+        <div>
+            <label class="form-label fs-12 mb-1" for="endDateInput">End Date</label>
+            <input type="date" class="form-control form-control-sm" id="endDateInput">
+        </div>
+    </div>
+
+    <!-- Search + Reset -->
+    <div class="d-flex align-items-end gap-2 ms-auto">
+        <div style="min-width: 200px; max-width: 280px;">
+            <label class="form-label" for="paymentSearch">Search</label>
+            <div class="position-relative">
+                <input type="search" class="form-control" id="paymentSearch" placeholder="Search order no, client, product, ref no...">
+                <i class="mdi mdi-magnify position-absolute top-50 translate-middle-y text-muted" style="right: 10px; font-size: 16px;"></i>
+            </div>
+        </div>
+        <button type="button" class="btn btn-light px-3" id="btnResetFilters" title="Reset Filters">
+            <i class="mdi mdi-refresh"></i>
+        </button>
+    </div>
+
+</div>

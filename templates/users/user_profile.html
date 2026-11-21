@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">My Profile</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item">Users</li>
+                        <li class="breadcrumb-item active">My Profile</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Card Section -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light-subtle py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0 fw-bold">User Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+
+                <!-- Full Name -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Full Name</label>
+                    <input type="text" value="{{ user.full_name or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Username -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">User Name</label>
+                    <input type="text" value="{{ user.username or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Phone -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Phone</label>
+                    <input type="text" value="{{ user.mobile or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Extension Number -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Extension Number</label>
+                    <input type="text" value="{{ user.extension_number or 'Not Assigned' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Designation -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Designation</label>
+                    <input type="text" value="{{ user.designation_name or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- User Role -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">User Role</label>
+                    <input type="text" value="{{ user.role_name or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Date Of Birth -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Date Of Birth</label>
+                    <input type="text" value="{{ user.date_of_birth_display or user.date_of_birth or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Date of Joining -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Date of Joining</label>
+                    <input type="text" value="{{ user.date_of_joining_display or user.date_of_joining or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Biometric ID -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Biometric ID</label>
+                    <input type="text" value="{{ user.biometric_id or 'N/A' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Reporting to -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Reporting to</label>
+                    <input type="text" value="{{ user.reporting_manager_name or 'None' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Target (in Numbers) -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Target (in Numbers)</label>
+                    <input type="text" value="{{ user.target if user.target is not none else '0' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Click to Call -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Click to Call</label>
+                    <input type="text" value="{{ 'Active' if user.click_to_call == 1 else 'Inactive' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Number Show/hide -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Number Show/hide</label>
+                    <input type="text" value="{{ 'Show' if user.number_show_hide == 1 else 'Hide' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+                <!-- Status -->
+                <div class="col-md-6">
+                    <label class="form-label text-muted">Status</label>
+                    <input type="text" value="{{ 'Active' if user.status == 1 else 'Inactive' }}" class="form-control bg-light" readonly disabled>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

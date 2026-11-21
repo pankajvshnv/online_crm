@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ page_heading }}</h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('settings_home') }}">Settings</a>
+                    </li>
+
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('calling_apis') }}">Calling Api</a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        {{ 'Add' if form_mode == 'add' else 'Edit' }}
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0">
+            {{ page_heading }}
+        </h5>
+
+        <a href="{{ url_for('calling_apis') }}" class="btn btn-sm btn-outline-primary">
+            <i class="mdi mdi-format-list-bulleted me-1"></i>
+            View Calling Api
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form method="POST" id="callingApiForm">
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Provider Type <span class="text-danger">*</span></label>
+                    <select class="form-select" name="provider_type" id="provider_type" required>
+                        <option value="issabel" {% if not record or record.provider_type == 'issabel' %}selected{% endif %}>
+                            Local Issabel / Asterisk PBX
+                        </option>
+                        <option value="cloudconnect" {% if record and record.provider_type == 'cloudconnect' %}selected{% endif %}>
+                            CloudConnect (Cloud PBX)
+                        </option>
+                    </select>
+                    <div class="form-text">Choose the telephony platform for this API profile.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">API Profile Name <span class="text-danger">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="api_name"
+                        id="api_name"
+                        maxlength="150"
+                        value="{{ record.api_name if record else '' }}"
+                        placeholder="e.g. CloudConnect Main or Issabel Office"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Click-to-Call API Endpoint URL <span class="text-danger">*</span></label>
+                    <input
+                        type="url"
+                        class="form-control"
+                        name="api_link"
+                        id="api_link"
+                        value="{{ record.api_link if record else '' }}"
+                        placeholder="https://crm2.cloud-connect.in/ccpl_api/v1.4/api/info/click2call"
+                        required
+                    >
+                </div>
+
+                <!-- CloudConnect Specific Fields -->
+                <div class="col-md-6 cc-field" id="wrap_token_id">
+                    <label class="form-label">CloudConnect Token ID (API Key) <span class="text-danger">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="token_id"
+                        id="token_id"
+                        maxlength="255"
+                        value="{{ record.token_id if record else '' }}"
+                        placeholder="e.g. pP9HXXXXXXXX"
+                    >
+                    <div class="form-text">Mandatory Authentication Token provided by CloudConnect for API integration.</div>
+                </div>
+
+                <div class="col-md-6 cc-field" id="wrap_default_did">
+                    <label class="form-label">Company DID / Pilot Number</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="default_did"
+                        id="default_did"
+                        maxlength="50"
+                        value="{{ record.default_did if record else '' }}"
+                        placeholder="e.g. 08037404978"
+                    >
+                    <div class="form-text">Primary virtual / DID number assigned to your CloudConnect account.</div>
+                </div>
+
+                <!-- Issabel Specific Fields -->
+                <div class="col-md-6 issabel-field" id="wrap_server_host">
+                    <label class="form-label">Server Host / IP <span class="text-danger">*</span></label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="server_host"
+                        id="server_host"
+                        maxlength="150"
+                        value="{{ record.server_host if record else '' }}"
+                        placeholder="192.168.1.211 or crm2.cloud-connect.in"
+                    >
+                </div>
+
+                <div class="col-md-6 issabel-field" id="wrap_server_username">
+                    <label class="form-label">Server Username</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="server_username"
+                        id="server_username"
+                        maxlength="150"
+                        value="{{ record.server_username if record else '' }}"
+                        placeholder="root or admin"
+                    >
+                </div>
+
+                <div class="col-md-6 issabel-field" id="wrap_server_password">
+                    <label class="form-label">Server Password</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        name="server_password"
+                        id="server_password"
+                        maxlength="255"
+                        value="{{ record.server_password if record else '' }}"
+                    >
+                </div>
+
+                <div class="col-md-6 issabel-field" id="wrap_server_db_name">
+                    <label class="form-label">Server DB Name</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="server_db_name"
+                        id="server_db_name"
+                        maxlength="150"
+                        value="{{ record.server_db_name if record else '' }}"
+                        placeholder="asteriskcdrdb"
+                    >
+                </div>
+
+                <div class="col-md-6 issabel-field" id="wrap_source_variable">
+                    <label class="form-label">Source Parameter Variable</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="source_variable"
+                        id="source_variable"
+                        maxlength="100"
+                        value="{{ record.source_variable if record else '' }}"
+                        placeholder="from or extension_number"
+                    >
+                </div>
+
+                <div class="col-md-6 issabel-field" id="wrap_destination_variable">
+                    <label class="form-label">Destination Parameter Variable</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        name="destination_variable"
+                        id="destination_variable"
+                        maxlength="100"
+                        value="{{ record.destination_variable if record else '' }}"
+                        placeholder="to or phone_number"
+                    >
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Status <span class="text-danger">*</span></label>
+                    <select class="form-select" name="status" required>
+                        <option value="1" {% if not record or record.status|string == '1' %}selected{% endif %}>
+                            Active
+                        </option>
+                        <option value="0" {% if record and record.status|string == '0' %}selected{% endif %}>
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="mdi mdi-content-save-outline me-1"></i>
+                    {% if form_mode == 'add' %}
+                    Save Calling Api
+                    {% else %}
+                    Update Calling Api
+                    {% endif %}
+                </button>
+
+                <a href="{{ url_for('calling_apis') }}" class="btn btn-light">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const providerSelect = document.getElementById("provider_type");
+    const apiLinkInput = document.getElementById("api_link");
+    const serverHostInput = document.getElementById("server_host");
+    const tokenIdInput = document.getElementById("token_id");
+
+    const ccFields = document.querySelectorAll(".cc-field");
+    const issabelFields = document.querySelectorAll(".issabel-field");
+
+    function updateFormFields() {
+        const isCloudConnect = providerSelect.value === "cloudconnect";
+
+        if (isCloudConnect) {
+            ccFields.forEach(el => el.style.display = "");
+            issabelFields.forEach(el => el.style.display = "none");
+            tokenIdInput.setAttribute("required", "required");
+
+            if (!apiLinkInput.value || apiLinkInput.value.includes("192.168")) {
+                apiLinkInput.value = "https://crm2.cloud-connect.in/ccpl_api/v1.4/api/info/click2call";
+            }
+            if (!serverHostInput.value || serverHostInput.value.includes("192.168")) {
+                serverHostInput.value = "https://crm2.cloud-connect.in";
+            }
+        } else {
+            ccFields.forEach(el => el.style.display = "none");
+            issabelFields.forEach(el => el.style.display = "");
+            tokenIdInput.removeAttribute("required");
+
+            if (apiLinkInput.value.includes("cloud-connect.in")) {
+                apiLinkInput.value = "";
+            }
+        }
+    }
+
+    providerSelect.addEventListener("change", updateFormFields);
+    updateFormFields();
+});
+</script>
+
+{% endblock %}

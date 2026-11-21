@@ -1,0 +1,32 @@
+// List-group
+
+@each $color, $value in $theme-colors {
+    .list-group-item-#{$color} {
+        background-color: rgba(var(--#{$prefix}#{$color}-rgb), 0.15);
+        color: var(--#{$prefix}#{$color});
+        border-color: var(--#{$prefix}border-color);
+        &:hover {
+            background-color: rgba(var(--#{$prefix}#{$color}-rgb), 0.20) !important;
+            color: var(--#{$prefix}#{$color}) !important;
+        }
+    }
+}
+
+.list-group-item-light {
+    color: var(--#{$prefix}primary);
+    &:hover {
+        color: var(--#{$prefix}primary) !important;
+    }
+}
+
+.list-group-item {
+    &.list-group-item-action {
+        &.active,
+        &:active {
+            h3,h4,h5{
+                color: var(--#{$prefix}white) !important;
+            }
+            color: var(--#{$prefix}white) !important;
+        }
+    }
+}

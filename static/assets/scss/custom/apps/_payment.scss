@@ -1,0 +1,10 @@
+
+// payment.scss
+
+.payment-option {
+  transition: $transition-base;
+}
+.payment-option:has(.form-check-input:checked) {
+  border-color: rgba(var(--#{$prefix}primary-rgb), 0.2) !important;
+  background-color: var(--#{$prefix}primary-bg-subtle) !important;
+}

@@ -1,0 +1,80 @@
+<div class="modal fade" id="createdDateModal" tabindex="-1" aria-labelledby="createdDateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createdDateModalLabel">Created Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="createdDateFrom">From Date</label>
+                        <input type="date" class="form-control bg-white" id="createdDateFrom" value="{{ request.args.get('created_from', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="createdDateTo">To Date</label>
+                        <input type="date" class="form-control bg-white" id="createdDateTo" value="{{ request.args.get('created_to', '') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" onclick="clearDateFilter('created')">Clear</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="applyDateFilter()">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modifiedDateModal" tabindex="-1" aria-labelledby="modifiedDateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modifiedDateModalLabel">Modification Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="modifiedDateFrom">From Date</label>
+                        <input type="date" class="form-control bg-white" id="modifiedDateFrom" value="{{ request.args.get('modified_from', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="modifiedDateTo">To Date</label>
+                        <input type="date" class="form-control bg-white" id="modifiedDateTo" value="{{ request.args.get('modified_to', '') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" onclick="clearDateFilter('modified')">Clear</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="applyDateFilter()">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="assignedDateModal" tabindex="-1" aria-labelledby="assignedDateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignedDateModalLabel">Assigned Date Range</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="assignedDateFrom">From Date</label>
+                        <input type="date" class="form-control bg-white" id="assignedDateFrom" value="{{ request.args.get('assigned_from', '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold" for="assignedDateTo">To Date</label>
+                        <input type="date" class="form-control bg-white" id="assignedDateTo" value="{{ request.args.get('assigned_to', '') }}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" onclick="clearDateFilter('assigned')">Clear</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="applyDateFilter()">Apply Filter</button>
+            </div>
+        </div>
+    </div>
+</div>

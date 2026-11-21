@@ -1,0 +1,52 @@
+//
+// accordion.scss
+//
+
+.accordion{
+    .accordion-item {
+        .accordion-button{
+            svg{
+                fill: var(--#{$prefix}accordion-btn-color);
+            }
+            i{
+                color: var(--#{$prefix}accordion-btn-color);
+            }
+             &:not(.collapsed){
+                color: var(--#{$prefix}primary);
+                 svg{
+                     fill: var(--#{$prefix}primary);
+                 }
+                 i{
+                     color: var(--#{$prefix}primary);
+                 }
+             }
+        }
+    }
+    &.accordion-border {
+        .accordion-item {
+            border-top: $accordion-border-width solid $accordion-border-color;
+            @include border-radius($accordion-border-radius);
+            
+            &:not(:first-of-type) {
+                margin-top: 8px;
+            }
+            
+            .accordion-button {
+                @include border-radius($accordion-border-radius);
+    
+                &:not(.collapsed) {
+                    @include border-bottom-radius(0);
+                }
+            }
+        }
+    }
+}
+
+// Collapse Based
+
+.collapse{
+    .card{
+        margin-bottom: 0;
+        border: 1px solid var(--#{$prefix}border-color);
+    }
+}

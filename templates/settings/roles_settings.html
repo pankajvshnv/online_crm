@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="all-leads-page single-filter-page">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Roles & Permissions</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item active">Roles & Permissions</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            
+            <!-- Top Row: Status Filter (LEFT) + Search, Reset & Add Role (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Status Filter (LEFT) -->
+                <div>
+                    <label class="form-label" for="statusFilter">Status</label>
+                    <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 160px;">
+                        <option value="all" selected>All Status</option>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+
+                <!-- Search, Reset & Add Role Button (RIGHT) -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 600px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="roleSearch">Search</label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="roleSearch" name="search" value="" placeholder="Search role name..." autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-light" id="btnResetFilters"><i class="mdi mdi-refresh me-1"></i>Reset</button>
+                    <a href="{{ url_for('add_role_page') }}" class="btn btn-outline-primary text-nowrap"><i class="mdi mdi-plus me-1"></i>Add Role</a>
+                </div>
+            </div>
+
+            <!-- Inner All Leads Card with Table -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+                    <!-- Role Table -->
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="rolesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 60px;">#</th>
+                                    <th class="text-nowrap">Role Name <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i></th>
+                                    <th class="text-nowrap">Assigned Users <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i></th>
+                                    <th class="text-nowrap">Status <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i></th>
+                                    <th class="text-center text-nowrap" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roleTableBody">
+                                {% if not roles %}
+                                    <tr id="noRolesRow">
+                                        <td colspan="5" class="text-center py-4 text-muted">No roles found. Click <strong>Add Role</strong> to create your first role.</td>
+                                    </tr>
+                                {% else %}
+                                    {% for role in roles %}
+                                    <tr class="role-row" data-name="{{ role.role_name | lower }}" data-status="{{ role.status }}">
+                                        <td class="text-center fw-semibold text-muted row-index-td">{{ loop.index }}</td>
+                                        <td>
+                                            <div class="fw-semibold text-dark fs-14">{{ role.role_name }}</div>
+                                        </td>
+                                        <td class="text-nowrap">
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1">
+                                                <i class="mdi mdi-account-multiple me-1"></i>{{ role.user_count }} Users
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if role.status == 1 %}
+                                                <span class="lead-tone-chip lead-tone-success">Active</span>
+                                            {% else %}
+                                                <span class="lead-tone-chip lead-tone-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center text-nowrap">
+                                            <a href="{{ url_for('edit_role_page', role_uuid=role.role_uuid) }}" class="btn btn-soft-primary btn-sm rounded-circle me-1 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" title="Edit Role" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-pencil-outline"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-soft-danger btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" onclick="deleteRole('{{ role.role_uuid }}', '{{ role.role_name | escape }}')" title="Delete Role" data-bs-toggle="tooltip">
+                                                <i class="mdi mdi-trash-can-outline"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 p-3 pt-0">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted" id="paginationInfo">Showing 1 to {{ roles | length }} of {{ roles | length }} records</div>
+                </div>
+                <nav aria-label="Role pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+
+    const allRows = [];
+    document.querySelectorAll('#rolesTable tbody .role-row').forEach(function (tr, index) {
+        allRows.push({
+            element: tr,
+            originalIndex: index + 1,
+            name: tr.getAttribute('data-name') || '',
+            status: tr.getAttribute('data-status') || ''
+        });
+    });
+
+    function renderRolesTable() {
+        const searchInput = document.getElementById('roleSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusVal = statusFilter ? statusFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || item.name.includes(searchVal);
+            const matchesStatus = statusVal === 'all' || item.status === String(statusVal);
+            return matchesSearch && matchesStatus;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        filtered.slice(startIndex, endIndex).forEach(function (item, idx) {
+            item.element.style.display = '';
+            const indexTd = item.element.querySelector('.row-index-td');
+            if (indexTd) {
+                indexTd.textContent = startIndex + idx + 1;
+            }
+        });
+
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showStart = startIndex + 1;
+                const showEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showStart} to ${showEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        renderPaginationNav(total, currentPage, pageSize, totalPages);
+
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            if (!bootstrap.Tooltip.getInstance(el)) {
+                new bootstrap.Tooltip(el);
+            }
+        });
+    }
+
+    function renderPaginationNav(total, page, pSize, totalPages) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+        if (total === 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+        let navHtml = '';
+        const prevDisabled = page <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-role-page" data-page="${page - 1}">Previous</button></li>`;
+        
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === page ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-role-page" data-page="${i}">${i}</button></li>`;
+        }
+        
+        const nextDisabled = page >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-role-page" data-page="${page + 1}">Next</button></li>`;
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-role-page').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== page) {
+                    currentPage = targetPage;
+                    renderRolesTable();
+                }
+            });
+        });
+    }
+
+    const searchInput = document.getElementById('roleSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function () { currentPage = 1; renderRolesTable(); });
+    }
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function () { currentPage = 1; renderRolesTable(); });
+    }
+    const pageSizeSelect = document.getElementById('pageSize');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function () { currentPage = 1; renderRolesTable(); });
+    }
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = 'all';
+            if (pageSizeSelect) pageSizeSelect.value = '10';
+            currentPage = 1;
+            renderRolesTable();
+        });
+    }
+
+    renderRolesTable();
+});
+
+function deleteRole(roleUuid, roleName) {
+    if (!confirm(`Are you sure you want to delete role "${roleName}"?`)) {
+        return;
+    }
+    fetch('/settings/api/roles/delete-selected', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [roleUuid] })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to delete role.');
+        }
+    })
+    .catch(err => {
+        alert('Server error while deleting role.');
+    });
+}
+</script>
+{% endblock %}

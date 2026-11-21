@@ -1,0 +1,173 @@
+// Followup Pages: Assign & Delete Bulk Action JS
+(function () {
+    // ---- Checkbox select-all ----
+    const selectAllCb = document.getElementById('selectAllLeads');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function () {
+            document.querySelectorAll('#followupsTable tbody .lead-checkbox').forEach(cb => {
+                if (cb.closest('tr') && cb.closest('tr').style.display !== 'none') {
+                    cb.checked = selectAllCb.checked;
+                }
+            });
+        });
+    }
+
+    function getCheckedLeadUuids() {
+        return Array.from(
+            document.querySelectorAll('#followupsTable tbody .lead-checkbox:checked')
+        ).map(cb => cb.value).filter(Boolean);
+    }
+
+    function getCheckedFollowupUuids() {
+        return Array.from(
+            document.querySelectorAll('#followupsTable tbody .lead-checkbox:checked')
+        ).map(cb => cb.getAttribute('data-followup-uuid')).filter(Boolean);
+    }
+
+    // ---- DELETE Modal ----
+    const deleteModal   = document.getElementById('deleteLeadModal');
+    const deleteTitleEl = document.getElementById('deleteLeadModalTitle');
+    const deleteMsgEl   = document.getElementById('deleteLeadModalMessage');
+    const confirmDeleteBtn = document.getElementById('btnConfirmDeleteLead');
+    let pendingDeleteUuids = [];
+
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            pendingDeleteUuids = getCheckedFollowupUuids();
+            const leadUuids = getCheckedLeadUuids();
+            const count = pendingDeleteUuids.length || leadUuids.length;
+
+            if (confirmDeleteBtn) confirmDeleteBtn.disabled = false;
+
+            if (count > 0) {
+                if (deleteTitleEl) deleteTitleEl.textContent = `Delete ${count} selected follow-up(s)?`;
+                if (deleteMsgEl)  deleteMsgEl.textContent  = `Are you sure you want to permanently delete ${count} selected follow-up(s)? This action cannot be undone.`;
+            } else {
+                if (deleteTitleEl) deleteTitleEl.textContent = 'No follow-ups selected';
+                if (deleteMsgEl)  deleteMsgEl.textContent  = 'Please select at least one follow-up from the table checkboxes to delete.';
+                if (confirmDeleteBtn) confirmDeleteBtn.disabled = true;
+            }
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function () {
+            const followupUuids = getCheckedFollowupUuids();
+            const leadUuids = getCheckedLeadUuids();
+
+            if ((!followupUuids || followupUuids.length === 0) && (!leadUuids || leadUuids.length === 0)) {
+                showToastNotification('Please select at least one follow-up to delete.', 'warning');
+                return;
+            }
+
+            confirmDeleteBtn.disabled = true;
+            const originalHtml = confirmDeleteBtn.innerHTML;
+            confirmDeleteBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Deleting...`;
+
+            fetch('/api/followups/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ followup_uuids: followupUuids, lead_uuids: leadUuids })
+            })
+            .then(res => res.json().catch(() => ({ success: false, message: 'Server returned error status ' + res.status })))
+            .then(data => {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+
+                if (data && data.success) {
+                    showToastNotification(data.message || 'Follow-up(s) deleted successfully.', 'success');
+                    const mi = bootstrap.Modal.getInstance(deleteModal) || new bootstrap.Modal(deleteModal);
+                    if (mi) mi.hide();
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToastNotification((data && data.message) || 'Failed to delete follow-up(s).', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Delete error:', err);
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while deleting follow-up(s).', 'danger');
+            });
+        });
+    }
+
+    // ---- ASSIGN Modal ----
+    const assignModal    = document.getElementById('assignLeadModal');
+    const assignOwnerEl  = document.getElementById('assignLeadOwner');
+    const assignSourceEl = document.getElementById('assignLeadSource');
+    const assignResetEl  = document.getElementById('assignResetLeadData');
+    const assignAllEl    = document.getElementById('assignAllMatchingLeads');
+    const confirmAssignBtn = document.getElementById('btnConfirmAssignLeads');
+
+    if (assignModal) {
+        assignModal.addEventListener('show.bs.modal', function () {
+            if (assignOwnerEl)  assignOwnerEl.value   = '';
+            if (assignSourceEl) assignSourceEl.value  = '';
+            if (assignResetEl)  assignResetEl.checked  = false;
+            if (assignAllEl)    assignAllEl.checked    = false;
+            
+            // Hide Lead Source and Reset Lead Data on Follow-ups page
+            if (assignSourceEl) assignSourceEl.closest('.mb-3').style.display = 'none';
+            if (assignResetEl) assignResetEl.closest('.mb-3').style.display = 'none';
+        });
+    }
+
+    if (confirmAssignBtn) {
+        confirmAssignBtn.addEventListener('click', function () {
+            const targetUserUuid = assignOwnerEl ? assignOwnerEl.value : '';
+            if (!targetUserUuid) {
+                showToastNotification('Please select a target user for assignment.', 'warning');
+                if (assignOwnerEl) assignOwnerEl.focus();
+                return;
+            }
+
+            const newSource      = assignSourceEl ? assignSourceEl.value  : '';
+            const resetData      = assignResetEl  ? assignResetEl.checked  : false;
+            const applyAllMatch  = assignAllEl    ? assignAllEl.checked    : false;
+            const selectedUuids  = applyAllMatch  ? [] : getCheckedLeadUuids();
+
+            if (!applyAllMatch && selectedUuids.length === 0) {
+                showToastNotification('Please select at least one follow-up checkbox to assign.', 'warning');
+                return;
+            }
+
+            confirmAssignBtn.disabled = true;
+            const originalHtml = confirmAssignBtn.innerHTML;
+            confirmAssignBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Assigning...`;
+
+            fetch('/api/leads/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    target_user_uuid: targetUserUuid,
+                    lead_uuids: selectedUuids,
+                    new_source: newSource,
+                    reset_data: resetData,
+                    apply_all_matching: applyAllMatch,
+                    filters: {}
+                })
+            })
+            .then(res => res.json().catch(() => ({ success: false, message: 'Server returned error status ' + res.status })))
+            .then(data => {
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+
+                if (data && data.success) {
+                    showToastNotification(data.message || 'Follow-ups assigned successfully.', 'success');
+                    const mi = bootstrap.Modal.getInstance(assignModal) || new bootstrap.Modal(assignModal);
+                    if (mi) mi.hide();
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToastNotification((data && data.message) || 'Failed to assign follow-ups.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Assign error:', err);
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while assigning follow-ups.', 'danger');
+            });
+        });
+    }
+})();

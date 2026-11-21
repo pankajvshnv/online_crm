@@ -1,0 +1,65 @@
+// project.scss
+
+.task-item{
+    padding: 9px 12px;
+
+    .task-checkbox{
+        .form-check-input:checked + .form-check-label {
+            text-decoration: line-through;
+            color: $text-muted;
+        }
+    }
+}
+.rotate-10deg{
+    rotate: 10deg;
+}
+.-rotate-10deg{
+    rotate: 10deg;
+}
+.timeline{
+    &.project-activity{
+        &.timeline-timed{
+            padding-left: 2.6rem;
+
+            &::before{
+                left: 1.05rem;
+            }
+        }
+    }
+}
+
+.hrm-widget-card{
+    .hrm-widget-curve{
+        width: 3.375rem;
+        height: 3.375rem;
+        position: absolute;
+        top: -0.5rem;
+        right: -0.5rem;
+        border-radius: var(--#{$prefix}border-radius-xl);
+        border: 7px solid var(--#{$prefix}body-bg);
+        background-color: var(--#{$prefix}body-bg);
+    
+        &::before{
+            content: '';
+            height: 0.75rem;
+            width: 0.75rem;
+            background-color: var(--#{$prefix}secondary-bg);
+            border-top-right-radius: 10px;
+            box-shadow: 0.1938rem -0.1925rem 0 0.1825rem var(--#{$prefix}body-bg);
+            position: absolute;
+            top: 3rem;
+            right: 0.0625rem;
+        }
+        &::after{
+            content: '';
+            height: 0.75rem;
+            width: 0.75rem;
+            background-color: var(--#{$prefix}secondary-bg);
+            border-top-right-radius: 10px;
+            box-shadow: 0.1938rem -0.1925rem 0 0.1825rem var(--#{$prefix}body-bg);
+            position: absolute;
+            top: 0.0625rem;
+            right: 3rem;
+        }
+    }
+}

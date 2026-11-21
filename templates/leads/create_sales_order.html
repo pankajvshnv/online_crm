@@ -1,0 +1,1275 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0 fw-bold">Sales Order - Lead Code {{ lead.id }}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">Sales Order</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% if has_pending_so %}
+{% set p_so = pending_so or latest_so %}
+<!-- Pending Sales Order Details Card -->
+<div class="card shadow-sm border-0 mb-4 overflow-hidden">
+    <div class="card-body p-4">
+        <!-- Direct 2-Column Grid: Customer & Tax Profile + Order & Payment Details -->
+        <div class="row g-4 mb-4">
+            <!-- Customer & Tax Profile -->
+            <div class="col-lg-6">
+                <div class="border rounded-3 p-3 bg-light-subtle h-100">
+                    <h6 class="fw-bold text-uppercase fs-12 text-muted border-bottom pb-2 mb-3">
+                        <i class="mdi mdi-account-circle-outline me-1 text-primary"></i> Customer & Tax Profile
+                    </h6>
+                    <table class="table table-sm table-borderless mb-0 fs-13">
+                        <tr>
+                            <td class="text-muted fw-medium py-1" style="width: 150px;">Invoice Name:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.invoice_name or lead.name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Email Address:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.email or lead.email or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Mobile Number:</td>
+                            <td class="fw-bold text-dark py-1">{{ lead.masked_mobile or lead.mobile_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Date of Birth:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.dob or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">GST Number:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.gst_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">PAN Card:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.pan_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Aadhaar Card:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.aadhaar_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Billing Address:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.address or lead.address or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales Order & Payment Details -->
+            <div class="col-lg-6">
+                <div class="border rounded-3 p-3 bg-light-subtle h-100">
+                    <h6 class="fw-bold text-uppercase fs-12 text-muted border-bottom pb-2 mb-3">
+                        <i class="mdi mdi-cart-outline me-1 text-primary"></i> Order & Payment Details
+                    </h6>
+                    <table class="table table-sm table-borderless mb-0 fs-13">
+                        <tr>
+                            <td class="text-muted fw-medium py-1" style="width: 150px;">Order Number:</td>
+                            <td class="fw-bold text-primary py-1">#{{ p_so.order_number }} <span class="badge bg-warning text-dark ms-1 fs-11">Pending Approval</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Product Name:</td>
+                            <td class="fw-bold text-primary py-1">{{ p_so.product_name or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Plan / Duration:</td>
+                            <td class="fw-bold text-dark text-capitalize py-1">{{ p_so.plan_name.replace('_', ' ') if p_so.plan_name else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Service Start Date:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.start_date or p_so.service_start_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Service Expiry Date:</td>
+                            <td class="fw-bold text-success py-1">{{ p_so.expiry_date or p_so.service_expiry_date or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Service Delivery Mode:</td>
+                            <td class="fw-bold text-dark py-1"><span class="badge bg-soft-primary text-primary fs-12">{{ p_so.service_mode or 'N/A' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Gross Payment:</td>
+                            <td class="fw-bold text-success fs-15 py-1">₹{{ "%.2f"|format(p_so.gross_amount or 0) }} <small class="text-muted fs-11">(inc. GST)</small></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Net Payment (ex. GST):</td>
+                            <td class="fw-bold text-dark py-1">₹{{ "%.2f"|format(p_so.net_amount or 0) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Tax Amount (GST):</td>
+                            <td class="fw-bold text-dark py-1">₹{{ "%.2f"|format(p_so.tax_amount or 0) }} ({{ p_so.tax_percentage or 18.0 }}%)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Payment Mode:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.payment_mode or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Ref / Txn Number:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.reference_number or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-medium py-1">Order Notes:</td>
+                            <td class="fw-bold text-dark py-1">{{ p_so.notes or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Action Row (Below the 2 Cards) -->
+        <div class="border-top pt-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+                <i class="mdi mdi-clock-outline fs-20 me-2 text-warning"></i>
+                <div class="fs-13 text-muted">
+                    <strong>Notice:</strong> Sales Order <strong>'{{ p_so.order_number }}'</strong> is currently pending approval. A new order cannot be created until it is approved or rejected.
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <a href="{{ url_for('all_leads') }}" class="btn btn-light border px-3 fw-medium">
+                    <i class="mdi mdi-arrow-left me-1"></i> Back to Leads
+                </a>
+
+                <!-- Edit Button (Protected with payments.edit permission) -->
+                {% if has_permission('payments', 'edit') %}
+                    <a href="{{ url_for('edit_sales_order_page', sales_order_uuid=p_so.sales_order_uuid) }}" class="btn btn-warning px-3 fw-medium shadow-sm">
+                        <i class="mdi mdi-pencil me-1"></i> Edit SO
+                    </a>
+                {% endif %}
+
+                <!-- Delete Button (Protected with payments.delete permission) -->
+                {% if has_permission('payments', 'delete') %}
+                    <button type="button" class="btn btn-danger px-3 fw-medium shadow-sm" onclick="deleteSalesOrderFromPage('{{ p_so.sales_order_uuid }}', '{{ p_so.order_number }}')">
+                        <i class="mdi mdi-delete me-1"></i> Delete SO
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Flash Messages & Backend Error Alert Banner -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category in ['danger', 'error'] else category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                <i class="mdi mdi-{{ 'alert-circle' if category in ['danger', 'error'] else 'check-circle' }} me-2 fs-16"></i>
+                <strong>{{ message }}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{% if error_message %}
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+        <i class="mdi mdi-alert-circle me-2 fs-16"></i>
+        <strong>{{ error_message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endif %}
+
+{% if not has_pending_so %}
+<form id="createSalesOrderPageForm" method="POST" action="{{ url_for('create_sales_order_page') }}">
+    <input type="hidden" id="soLeadUuid" name="lead_uuid" value="{{ lead.lead_uuid }}">
+
+    <div class="row g-4 mb-4">
+        <!-- LEFT COLUMN (col-lg-6): Customer & Tax Profile -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100 mb-0">
+                <div class="card-header d-flex align-items-center justify-content-between py-3">
+                    <h5 class="card-title fw-bold mb-0">Customer & Tax Profile</h5>
+                    <span class="badge bg-soft-primary text-primary fs-12">Person Info</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soInvoiceName">Invoice Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="soInvoiceName" name="invoice_name" value="{% set raw_inv = form_data.get('invoice_name') if form_data.get('invoice_name') is not none else (latest_so.invoice_name or lead.name or '') %}{% if raw_inv and raw_inv|string|lower not in ['none', 'no name', 'none none', 'null', 'na', 'n/a'] %}{{ raw_inv }}{% endif %}" placeholder="Customer / Billing Name" required>
+                            <div class="invalid-feedback" id="soInvoiceNameFeedback">Please enter customer invoice name.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soMobile">Mobile Number <small class="text-muted">(Lead)</small></label>
+                            <input type="text" class="form-control bg-light-subtle opacity-75" id="soMobile" name="mobile" value="{{ lead.masked_mobile or lead.mobile_number }}" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soEmail">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="soEmail" name="email" value="{{ form_data.get('email', latest_so.email or lead.email or '') }}" placeholder="customer@example.com" required>
+                            <div class="invalid-feedback" id="soEmailFeedback">Please enter a valid email address.</div>
+                        </div>
+                        <!-- Date of Birth -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soDob">Date of Birth <span class="text-danger">*</span> <small class="text-muted">(Required)</small></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control bs-datepicker" id="soDob" name="dob" value="{{ form_data.get('dob', latest_so.dob or '') }}" placeholder="DD/MM/YYYY" required autocomplete="off">
+                                <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soDob').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                            </div>
+                            <div class="invalid-feedback" id="soDobFeedback">Please enter a valid Date of Birth (Customer must be 18+ years old).</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soGst">GST Number <small class="text-muted">(Optional)</small></label>
+                            <input type="text" class="form-control text-uppercase" id="soGst" name="gst_number" value="{{ form_data.get('gst_number', latest_so.gst_number or '') }}" placeholder="e.g. 27AAAAA0000A1Z5" maxlength="15">
+                            <div class="invalid-feedback" id="soGstFeedback">Invalid GST Number format.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soPan">PAN Card Number <small class="text-muted">(Optional)</small></label>
+                            <input type="text" class="form-control text-uppercase" id="soPan" name="pan_number" value="{{ form_data.get('pan_number', latest_so.pan_number or '') }}" placeholder="e.g. ABCDE1234F" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+                            <div class="invalid-feedback" id="soPanFeedback">Invalid PAN format (e.g. ABCDE1234F).</div>
+                            <small class="text-muted fs-12">Format: ABCDE1234F</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-medium" for="soAadhaar">Aadhaar Number <small class="text-muted">(Optional - 12 Digits)</small></label>
+                            <input type="text" class="form-control" id="soAadhaar" name="aadhaar_number" value="{{ form_data.get('aadhaar_number', latest_so.aadhaar_number or '') }}" placeholder="e.g. 123456789012" maxlength="12" pattern="\d{12}" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+                            <div class="invalid-feedback" id="soAadhaarFeedback">Must be exactly 12 numeric digits without spaces.</div>
+                        </div>
+
+                        <!-- State Dropdown -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soState">State <span class="text-danger">*</span></label>
+                            <select class="form-select" id="soState" name="state" required>
+                                <option value="">-- Select State --</option>
+                            </select>
+                            <div class="invalid-feedback">Please select state.</div>
+                        </div>
+
+                        <!-- City Dropdown -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium" for="soCity">City <span class="text-danger">*</span></label>
+                            <select class="form-select" id="soCity" name="city" required>
+                                <option value="">-- Select City --</option>
+                            </select>
+                            <div class="invalid-feedback">Please select city.</div>
+                        </div>
+
+                        <!-- Billing Address (Required) -->
+                        <div class="col-12">
+                            <label class="form-label fw-medium" for="soAddress">Billing Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="soAddress" name="address" rows="3" placeholder="Flat / House No., Street, Area, Landmark, Pincode..." required>{{ form_data.get('address', latest_so.address or lead.address or '') }}</textarea>
+                            <div class="invalid-feedback">Please enter billing address.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN (col-lg-6): Order & Payment Details -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100 mb-0 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="card-header d-flex align-items-center justify-content-between py-3">
+                        <h5 class="card-title fw-bold mb-0">Sales Order & Payment Details</h5>
+                        <span class="badge bg-soft-success text-success fs-12">Payment & Plan</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soProductSelect">Product <span class="text-danger">*</span></label>
+                                <select class="form-select" id="soProductSelect" name="product_id" required>
+                                    <option value="" selected>-- Select Product --</option>
+                                    {% if products %}
+                                        {% for prod in products %}
+                                            <option value="{{ prod.id }}" {% if form_data.get('product_id')|string == prod.id|string %}selected{% endif %}>{{ prod.product_name }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <div class="invalid-feedback" id="soProductSelectFeedback">Please select a product.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soPlanSelect">Plan / Duration <span class="text-danger">*</span></label>
+                                <select class="form-select" id="soPlanSelect" name="plan_name" required>
+                                    <option value="" selected>-- Select Plan --</option>
+                                </select>
+                                <div class="invalid-feedback" id="soPlanSelectFeedback">Please select a plan duration.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soStartDate">Service Start Date <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control bs-datepicker" id="soStartDate" name="service_start_date" value="{{ form_data.get('service_start_date', '') }}" placeholder="DD/MM/YYYY" required autocomplete="off">
+                                    <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#soStartDate').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                                </div>
+                                <div class="invalid-feedback" id="soStartDateFeedback">Please select service start date.</div>
+                            </div>
+                            {% set can_manual_expiry = has_permission('payments', 'manual_expiry_date') or has_permission('payments', 'auto_expiry_date_calc') %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soExpiryDate">
+                                    Service Expiry Date 
+                                    {% if can_manual_expiry %}
+                                        <small class="text-primary fw-bold">(Manual Pick Enabled)</small>
+                                    {% else %}
+                                        <small class="text-muted">(Auto-Calculated)</small>
+                                    {% endif %}
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control fw-bold text-success bs-datepicker {% if not can_manual_expiry %}bg-light opacity-75{% endif %}" id="soExpiryDate" name="service_expiry_date" value="{{ form_data.get('service_expiry_date', '') }}" placeholder="{% if can_manual_expiry %}DD/MM/YYYY{% else %}Auto-calculated...{% endif %}" {% if not can_manual_expiry %}readonly{% endif %} autocomplete="off">
+                                    <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="{% if can_manual_expiry %}$('#soExpiryDate').datepicker('show');{% endif %}"><i class="mdi mdi-calendar-clock text-success"></i></span>
+                                </div>
+                            </div>
+
+                            <!-- Payment Section (Tamper-Proof Backend Calculation) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soGrossAmount">Gross Payment <small class="text-muted">(inc. GST ₹)</small> <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0.01" class="form-control fw-bold" id="soGrossAmount" name="gross_amount" value="{{ form_data.get('gross_amount', '') }}" placeholder="0.00" required>
+                                <div class="invalid-feedback" id="soGrossAmountFeedback">Please enter valid gross payment amount.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soNetAmount">Net Payment <small class="text-muted">(ex. GST ₹)</small></label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" class="form-control fw-semibold opacity-75 bg-light" id="soNetAmount" value="{{ form_data.get('net_amount', '') }}" placeholder="0.00" readonly tabindex="-1" style="pointer-events: none;">
+                                    <span class="input-group-text fw-bold border-start-0">{{ tax_percentage }}% GST</span>
+                                </div>
+                                <small class="text-muted fs-12 mt-1 d-block" id="soTaxAmountText">Tax Amount (GST): ₹0.00</small>
+                            </div>
+
+                            {% set can_back_date = has_permission('payments', 'back_date_sales_order') %}
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soPaymentDate">
+                                    Payment Date <span class="text-danger">*</span>
+                                    {% if can_back_date %}
+                                        <small class="text-primary fw-bold">(Back Date Pick Enabled)</small>
+                                    {% else %}
+                                        <small class="text-muted">(Today's Date)</small>
+                                    {% endif %}
+                                </label>
+                                <div class="input-group">
+                                    {% if can_back_date %}
+                                        <input type="text" class="form-control bs-datepicker" id="soPaymentDate" name="payment_date" value="{{ form_data.get('payment_date', '') }}" placeholder="DD/MM/YYYY" required autocomplete="off">
+                                    {% else %}
+                                        <input type="text" class="form-control bg-light opacity-75 fw-semibold" id="soPaymentDateDisplay" name="payment_date" value="{{ form_data.get('payment_date', '') }}" placeholder="Today's Date" readonly tabindex="-1" style="pointer-events: none;">
+                                    {% endif %}
+                                    <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="{% if can_back_date %}$('#soPaymentDate').datepicker('show');{% endif %}"><i class="mdi mdi-calendar text-primary"></i></span>
+                                </div>
+                                <div class="invalid-feedback" id="soPaymentDateFeedback">Please select payment date.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soServiceMode">Service Delivery Mode <span class="text-danger">*</span></label>
+                                <select class="form-select" id="soServiceMode" name="service_mode" required>
+                                    <option value="" selected>-- Select Delivery Mode --</option>
+                                    <option value="App" {% if form_data.get('service_mode') == 'App' %}selected{% endif %}>Mobile App</option>
+                                    <option value="Web" {% if form_data.get('service_mode') == 'Web' %}selected{% endif %}>Web Portal</option>
+                                    <option value="WhatsApp" {% if form_data.get('service_mode') == 'WhatsApp' %}selected{% endif %}>WhatsApp</option>
+                                    <option value="Telegram" {% if form_data.get('service_mode') == 'Telegram' %}selected{% endif %}>Telegram</option>
+                                    <option value="App & Web" {% if form_data.get('service_mode') == 'App & Web' %}selected{% endif %}>App & Web</option>
+                                    <option value="All Modes" {% if form_data.get('service_mode') == 'All Modes' %}selected{% endif %}>All Modes (App, Web, WA, Telegram)</option>
+                                    <option value="Other" {% if form_data.get('service_mode') == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                                <div class="invalid-feedback" id="soServiceModeFeedback">Please select service delivery mode.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soPaymentMode">Payment Mode <small class="text-muted">(Optional)</small></label>
+                                <select class="form-select" id="soPaymentMode" name="payment_mode">
+                                    <option value="" selected>-- Select Payment Mode --</option>
+                                    <option value="UPI" {% if form_data.get('payment_mode') == 'UPI' %}selected{% endif %}>UPI (GPay / PhonePe / Paytm)</option>
+                                    <option value="Net Banking" {% if form_data.get('payment_mode') == 'Net Banking' %}selected{% endif %}>Net Banking (NEFT / RTGS / IMPS)</option>
+                                    <option value="Bank Transfer" {% if form_data.get('payment_mode') == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+                                    <option value="Cheque" {% if form_data.get('payment_mode') == 'Cheque' %}selected{% endif %}>Cheque</option>
+                                    <option value="Cash" {% if form_data.get('payment_mode') == 'Cash' %}selected{% endif %}>Cash</option>
+                                    <option value="Credit / Debit Card" {% if form_data.get('payment_mode') == 'Credit / Debit Card' %}selected{% endif %}>Credit / Debit Card</option>
+                                    <option value="Other" {% if form_data.get('payment_mode') == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium" for="soReferenceNumber">Ref / Txn Number <small class="text-muted">(Optional)</small></label>
+                                <input type="text" class="form-control" id="soReferenceNumber" name="reference_number" value="{{ form_data.get('reference_number', '') }}" placeholder="e.g. UTR / Txn Ref ID">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-medium" for="soNotes">Order Notes <small class="text-muted">(Optional)</small></label>
+                                <input type="text" class="form-control" id="soNotes" name="notes" value="{{ form_data.get('notes', '') }}" placeholder="Optional notes...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-transparent border-top p-4 d-flex align-items-center justify-content-end gap-2">
+                    <a href="{{ url_for('all_leads') }}" class="btn btn-light px-4">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 fw-medium" id="btnSubmitSalesOrderPage">
+                        <i class="mdi mdi-content-save-outline me-1"></i> Create Sales Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endif %}
+
+<!-- Approved Previous Sales Orders & Invoice History -->
+<div class="card shadow-sm border-0">
+    {% set approved_orders = [] %}
+    {% if existing_orders %}
+        {% for o in existing_orders %}
+            {% if o.order_status == 'approved' %}
+                {% set _ = approved_orders.append(o) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0 fw-bold">
+            Approved Sales Orders & Invoices
+        </h5>
+        <span class="badge bg-soft-success text-success fs-12 px-3 py-2">
+            {{ approved_orders|length }} Approved Invoices
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap fs-13">
+                <thead class="bg-light-subtle text-uppercase fs-11 text-muted">
+                    <tr>
+                        <th class="ps-4">Order No / Date</th>
+                        <th>Product & Plan</th>
+                        <th>Start & End Date</th>
+                        <th class="text-end">Gross Amount</th>
+                        <th class="text-center pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if approved_orders %}
+                        {% set ns = namespace(total_gross=0) %}
+                        {% for o in approved_orders %}
+                            {% set ns.total_gross = ns.total_gross + (o.gross_amount or 0) %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-primary">{{ o.order_number }}</div>
+                                    <small class="text-muted fs-11">{{ o.created_date }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ o.product_name or 'N/A' }}</div>
+                                    <small class="text-muted text-capitalize fs-11">{{ o.plan_name.replace('_', ' ') if o.plan_name else 'N/A' }}</small>
+                                </td>
+                                <td>
+                                    <small class="fw-medium">
+                                        {% if o.start_date and o.expiry_date %}
+                                            {{ o.start_date }} &rarr; {{ o.expiry_date }}
+                                        {% else %}
+                                            {{ o.start_date or 'N/A' }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-end fw-bold text-success">₹{{ "%.2f"|format(o.gross_amount or 0) }}</td>
+                                <td class="text-center pe-4 text-nowrap">
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{{ url_for('view_sales_order_page', sales_order_uuid=o.sales_order_uuid) }}" class="btn btn-sm btn-info text-white px-2 py-1 shadow-sm fw-medium" title="View Sales Order">
+                                            <i class="mdi mdi-eye me-1"></i>View
+                                        </a>
+                                        {% if has_permission('payments', 'edit') %}
+                                            <a href="{{ url_for('edit_sales_order_page', sales_order_uuid=o.sales_order_uuid) }}" class="btn btn-sm btn-warning text-dark px-2 py-1 shadow-sm fw-medium" title="Edit Sales Order">
+                                                <i class="mdi mdi-pencil me-1"></i>Edit
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted fs-13">No approved sales orders found for this lead.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+                {% if approved_orders %}
+                <tfoot class="bg-light-subtle fw-bold fs-13 border-top">
+                    <tr>
+                        <td colspan="3" class="text-end text-uppercase fs-11 ps-4">Total ({{ approved_orders|length }} Approved Orders):</td>
+                        <td class="text-end text-success">₹{{ "%.2f"|format(ns.total_gross) }}</td>
+                        <td class="pe-4"></td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- View Sales Order Modal (Full View) -->
+<div class="modal fade" id="viewSoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold" id="viewSoTitle">Sales Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="viewSoBody">
+                <!-- Loaded dynamically -->
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Sales Order Modal (Full Edit Support) -->
+<div class="modal fade" id="editSoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title fw-bold" id="editSoTitle">Edit Sales Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="editSoUuid">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Invoice Name</label>
+                        <input type="text" class="form-control" id="editSoInvoiceName">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <input type="email" class="form-control" id="editSoEmail">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">GST Number</label>
+                        <input type="text" class="form-control text-uppercase" id="editSoGst" maxlength="15">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">PAN Card Number</label>
+                        <input type="text" class="form-control text-uppercase" id="editSoPan" maxlength="10">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Aadhaar Number</label>
+                        <input type="text" class="form-control" id="editSoAadhaar" maxlength="14">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Product</label>
+                        <select class="form-select" id="editSoProductSelect" onchange="updateEditPlanDropdown(this.value)">
+                            <option value="">-- Select Product --</option>
+                            {% if products %}
+                                {% for prod in products %}
+                                    <option value="{{ prod.id }}">{{ prod.product_name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Plan / Duration</label>
+                        <select class="form-select" id="editSoPlanSelect">
+                            <option value="">-- Select Plan --</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Service Start Date</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bs-datepicker" id="editSoStartDate" placeholder="DD/MM/YYYY" autocomplete="off">
+                            <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#editSoStartDate').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Service Expiry Date</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bs-datepicker" id="editSoExpiryDate" placeholder="DD/MM/YYYY" autocomplete="off">
+                            <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#editSoExpiryDate').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Gross Payment (inc. GST ₹)</label>
+                        <input type="number" step="0.01" min="0" class="form-control fw-bold" id="editSoGrossAmount">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Payment Mode</label>
+                        <select class="form-select" id="editSoPaymentMode">
+                            <option value="">-- Select Payment Mode --</option>
+                            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                            <option value="Net Banking">Net Banking (NEFT / RTGS / IMPS)</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Credit / Debit Card">Credit / Debit Card</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Reference / Txn Number</label>
+                        <input type="text" class="form-control" id="editSoRef">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Date of Birth (DOB)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control bs-datepicker" id="editSoDob" placeholder="DD/MM/YYYY" autocomplete="off">
+                            <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#editSoDob').datepicker('show');"><i class="mdi mdi-calendar text-primary"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">State</label>
+                        <select class="form-select" id="editSoState">
+                            <option value="">-- Select State --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">City</label>
+                        <select class="form-select" id="editSoCity">
+                            <option value="">-- Select City --</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Billing Address</label>
+                        <textarea class="form-control" id="editSoAddress" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Order Notes</label>
+                        <input type="text" class="form-control" id="editSoNotes">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveEditSo" onclick="saveEditSoModal()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Page JavaScript -->
+<script>
+window.showToastNotification = function (message, category = 'info') {
+    let toastContainer = document.getElementById('globalToastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'globalToastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '99999';
+        document.body.appendChild(toastContainer);
+    }
+    const bgClass = category === 'success' ? 'bg-success' : (category === 'danger' ? 'bg-danger' : (category === 'warning' ? 'bg-warning text-dark' : 'bg-info'));
+    const textClass = category === 'warning' ? 'text-dark' : 'text-white';
+
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center ${textClass} ${bgClass} border-0 show shadow-lg mb-2`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body fs-13 fw-semibold">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    toastContainer.appendChild(toastEl);
+    setTimeout(() => {
+        toastEl.classList.remove('show');
+        setTimeout(() => toastEl.remove(), 300);
+    }, 4000);
+};
+
+function markInvalidField(element, msg) {
+    if (!element) return;
+    
+    let targetEl = element;
+    if (element._flatpickr && element._flatpickr.altInput) {
+        targetEl = element._flatpickr.altInput;
+    }
+
+    element.classList.add('is-invalid');
+    targetEl.classList.add('is-invalid');
+    
+    let feedback = element.nextElementSibling;
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        const feedbackId = element.id + 'Feedback';
+        feedback = document.getElementById(feedbackId);
+    }
+    if (feedback) {
+        feedback.textContent = msg;
+        feedback.style.display = 'block';
+    }
+
+    showToastNotification(msg, 'danger');
+    targetEl.focus();
+    if (targetEl.scrollIntoView) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function clearFieldValidation() {
+    const fields = document.querySelectorAll('#createSalesOrderPageForm .form-control, #createSalesOrderPageForm .form-select');
+    fields.forEach(f => {
+        f.classList.remove('is-invalid');
+        if (f._flatpickr && f._flatpickr.altInput) {
+            f._flatpickr.altInput.classList.remove('is-invalid');
+        }
+    });
+    const feedbacks = document.querySelectorAll('#createSalesOrderPageForm .invalid-feedback');
+    feedbacks.forEach(fb => {
+        fb.style.display = 'none';
+    });
+}
+
+function initCreateSalesOrderPage() {
+    const productsData = {{ products|tojson|safe if products else '[]' }};
+    window.productsData = productsData;
+    const leadUuid = document.getElementById('soLeadUuid') ? document.getElementById('soLeadUuid').value : '';
+    
+    const productSelect = document.getElementById('soProductSelect');
+    const planSelect = document.getElementById('soPlanSelect');
+    const startDateInput = document.getElementById('soStartDate');
+    const expiryDateInput = document.getElementById('soExpiryDate');
+    const netAmountInput = document.getElementById('soNetAmount');
+    const taxPercentInput = document.getElementById('soTaxPercent');
+    const taxAmountText = document.getElementById('soTaxAmountText');
+    const grossAmountInput = document.getElementById('soGrossAmount');
+    const submitBtn = document.getElementById('btnSubmitSalesOrderPage');
+    const form = document.getElementById('createSalesOrderPageForm');
+    
+    let startDateFp = null;
+
+    const planDaysMap = {
+        'weekly': 7, 'two_weekly': 14, 'monthly': 30, 'two_monthly': 60,
+        'quarterly': 90, 'six_monthly': 180, 'nine_monthly': 270,
+        'yearly': 365, 'eighteen_monthly': 545, 'twenty_four_monthly': 730
+    };
+
+    const planConfigMap = [
+        { key: 'weekly', label: 'Weekly (7 Days)' },
+        { key: 'two_weekly', label: '2-Weekly (14 Days)' },
+        { key: 'monthly', label: 'Monthly (1 Month)' },
+        { key: 'two_monthly', label: '2-Monthly (2 Months)' },
+        { key: 'quarterly', label: 'Quarterly (3 Months)' },
+        { key: 'six_monthly', label: '6-Monthly (6 Months)' },
+        { key: 'nine_monthly', label: '9-Monthly (9 Months)' },
+        { key: 'yearly', label: 'Yearly (1 Year)' },
+        { key: 'eighteen_monthly', label: '18-Monthly (1.5 Years)' },
+        { key: 'twenty_four_monthly', label: '2-Yearly (2 Years)' }
+    ];
+
+    function updatePlanDropdown(productId, selectedPlanKey = '') {
+        if (!planSelect) return;
+        if (!productId) {
+            planSelect.innerHTML = '<option value="" selected>-- Select Plan --</option>';
+            return;
+        }
+        const pIdInt = parseInt(productId, 10);
+        const prod = productsData.find(p => parseInt(p.id, 10) === pIdInt || String(p.id) === String(productId));
+        let html = '<option value="">-- Select Plan --</option>';
+        if (prod) {
+            planConfigMap.forEach(plan => {
+                const priceVal = parseFloat(prod[plan.key]) || 0;
+                if (priceVal > 0 || (selectedPlanKey && plan.key === selectedPlanKey)) {
+                    const priceLabel = priceVal > 0 ? ` - ₹${priceVal.toLocaleString('en-IN')}` : '';
+                    const isSel = (plan.key === selectedPlanKey || String(plan.key) === String(selectedPlanKey)) ? 'selected' : '';
+                    html += `<option value="${plan.key}" data-price="${priceVal}" ${isSel}>${plan.label}${priceLabel}</option>`;
+                }
+            });
+        }
+        planSelect.innerHTML = html;
+    }
+
+    const fixedTaxPercent = parseFloat('{{ tax_percentage }}') || 18.0;
+    const canManualExpiry = {{ 'true' if (has_permission('payments', 'manual_expiry_date') or has_permission('payments', 'auto_expiry_date_calc')) else 'false' }};
+    function calculateExpiryDate() {
+        const productId = productSelect ? productSelect.value : '';
+        const planName = planSelect ? planSelect.value : '';
+        const customGross = parseFloat(grossAmountInput ? grossAmountInput.value : 0) || 0;
+
+        let sObj = new Date();
+        if ($('#soStartDate').length && window.jQuery && $('#soStartDate').datepicker('getDate')) {
+            const d = $('#soStartDate').datepicker('getDate');
+            if (d && !isNaN(d.getTime())) sObj = d;
+        } else if (startDateInput && startDateInput.value) {
+            const v = startDateInput.value.trim();
+            if (v.includes('/')) {
+                const parts = v.split('/');
+                if (parts.length === 3) sObj = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+            } else if (v.includes('-')) {
+                const parts = v.split('-');
+                if (parts.length === 3) sObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            }
+        }
+
+        let stdGrossPrice = 0;
+        if (productId && planName && productsData.length > 0) {
+            const pIdInt = parseInt(productId, 10);
+            const prod = productsData.find(p => parseInt(p.id, 10) === pIdInt || String(p.id) === String(productId));
+            if (prod && prod[planName] !== undefined && prod[planName] !== null) {
+                stdGrossPrice = parseFloat(prod[planName]) || 0;
+            }
+        }
+
+        if (planName) {
+            const stdDays = planDaysMap[planName] || 30;
+            let effectiveDays = stdDays;
+            if (stdGrossPrice > 0 && customGross > 0) {
+                effectiveDays = Math.max(1, Math.round(stdDays * (customGross / stdGrossPrice)));
+            }
+            let expiry = new Date(sObj);
+            expiry.setDate(expiry.getDate() + effectiveDays);
+
+            const dd = String(expiry.getDate()).padStart(2, '0');
+            const mm = String(expiry.getMonth() + 1).padStart(2, '0');
+            const yyyy = expiry.getFullYear();
+            const formattedExpStr = `${dd}/${mm}/${yyyy}`;
+
+            if (canManualExpiry && $('#soExpiryDate').length && window.jQuery && $.fn.datepicker) {
+                $('#soExpiryDate').datepicker('setStartDate', sObj);
+                $('#soExpiryDate').datepicker('update', formattedExpStr);
+            } else if (expiryDateInput) {
+                expiryDateInput.value = formattedExpStr;
+            }
+        } else {
+            if (canManualExpiry && $('#soExpiryDate').length && window.jQuery && $.fn.datepicker) {
+                $('#soExpiryDate').datepicker('clearDates');
+            } else if (expiryDateInput) {
+                expiryDateInput.value = '';
+            }
+        }
+    }
+
+    function calculateFromGross() {
+        const grossVal = parseFloat(grossAmountInput ? grossAmountInput.value : 0) || 0;
+        const netVal = fixedTaxPercent > 0 ? (grossVal / (1 + (fixedTaxPercent / 100.0))) : grossVal;
+        const taxAmt = grossVal - netVal;
+
+        if (taxAmountText) taxAmountText.textContent = `Tax Amount (GST): ₹${taxAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (netAmountInput) netAmountInput.value = netVal > 0 ? netVal.toFixed(2) : '';
+        calculateExpiryDate();
+    }
+
+    if (grossAmountInput) grossAmountInput.addEventListener('input', calculateFromGross);
+
+    if (productSelect) {
+        productSelect.addEventListener('change', function () {
+            updatePlanDropdown(this.value);
+            if (grossAmountInput) grossAmountInput.value = '';
+            if (netAmountInput) netAmountInput.value = '';
+            calculateFromGross();
+        });
+        if (productSelect.value) {
+            const initialPlanVal = "{{ form_data.get('plan_name', '') }}";
+            updatePlanDropdown(productSelect.value, initialPlanVal);
+        }
+    }
+
+    if (planSelect) {
+        planSelect.addEventListener('change', function () {
+            const pId = productSelect ? productSelect.value : '';
+            const pName = this.value;
+            if (pId && pName && productsData.length > 0) {
+                const pIdInt = parseInt(pId, 10);
+                const prod = productsData.find(p => parseInt(p.id, 10) === pIdInt || String(p.id) === String(pId));
+                if (prod && prod[pName] !== undefined && prod[pName] !== null) {
+                    const grossPrice = parseFloat(prod[pName]) || 0;
+                    if (grossAmountInput) grossAmountInput.value = grossPrice > 0 ? grossPrice.toFixed(2) : '';
+                }
+            }
+            calculateFromGross();
+        });
+    }
+
+    const canBackDate = {{ 'true' if has_permission('payments', 'back_date_sales_order') else 'false' }};
+    const todayObj = new Date();
+    const maxDobDate = new Date(todayObj.getFullYear() - 18, todayObj.getMonth(), todayObj.getDate());
+
+    const dobInput = document.getElementById('soDob');
+    if (dobInput && window.jQuery && $.fn.datepicker) {
+        $('#soDob').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            endDate: maxDobDate,
+            orientation: 'bottom auto'
+        });
+    }
+
+    if (startDateInput && window.jQuery && $.fn.datepicker) {
+        $('#soStartDate').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            startDate: canBackDate ? false : '0d',
+            orientation: 'bottom auto'
+        }).on('changeDate change input', function () {
+            calculateExpiryDate();
+        });
+    }
+
+    const paymentDateInput = document.getElementById('soPaymentDate');
+    if (paymentDateInput && canBackDate && window.jQuery && $.fn.datepicker) {
+        $('#soPaymentDate').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: 'bottom auto'
+        });
+    }
+
+    if (canManualExpiry && expiryDateInput && window.jQuery && $.fn.datepicker) {
+        $('#soExpiryDate').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: 'bottom auto'
+        });
+    }
+
+    // Modal datepickers
+    if (window.jQuery && $.fn.datepicker) {
+        $('#editSoStartDate, #editSoExpiryDate').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: 'bottom auto'
+        });
+        $('#editSoDob').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            endDate: maxDobDate,
+            orientation: 'bottom auto'
+        });
+    }
+
+    // Initialize State & City Dependent Dropdowns
+    const defaultState = "{{ form_data.get('state', latest_so.state or lead.state or '') }}";
+    const defaultCity = "{{ form_data.get('city', latest_so.city or lead.city or '') }}";
+    if (window.initIndianStateCityDropdowns) {
+        window.initIndianStateCityDropdowns('soState', 'soCity', defaultState, defaultCity);
+    }
+
+    // Real-time live duplicate check handler for Email, PAN, Aadhaar, GST
+    const debounceTimers = {};
+
+    function checkFieldDuplicateLive(fieldName, element) {
+        if (!element) return;
+        const value = element.value.trim();
+        if (!value) {
+            element.classList.remove('is-invalid');
+            const fb = document.getElementById(element.id + 'Feedback');
+            if (fb) fb.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(debounceTimers[fieldName]);
+        debounceTimers[fieldName] = setTimeout(() => {
+            fetch('/api/leads/check-field-duplicate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    field_name: fieldName,
+                    field_value: value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const fb = document.getElementById(element.id + 'Feedback');
+                if (data.is_duplicate) {
+                    element.classList.add('is-invalid');
+                    if (fb) {
+                        fb.textContent = data.message;
+                        fb.style.display = 'block';
+                    }
+                } else {
+                    element.classList.remove('is-invalid');
+                    if (fb) {
+                        fb.style.display = 'none';
+                    }
+                }
+            })
+            .catch(err => console.error('Duplicate check error:', err));
+        }, 350);
+    }
+
+    const emailInputEl = document.getElementById('soEmail');
+    const panInputEl = document.getElementById('soPan');
+    const aadhaarInputEl = document.getElementById('soAadhaar');
+    const gstInputEl = document.getElementById('soGst');
+
+    if (emailInputEl) {
+        emailInputEl.addEventListener('input', () => checkFieldDuplicateLive('email', emailInputEl));
+        emailInputEl.addEventListener('blur', () => checkFieldDuplicateLive('email', emailInputEl));
+        if (emailInputEl.value) checkFieldDuplicateLive('email', emailInputEl);
+    }
+    if (panInputEl) {
+        panInputEl.addEventListener('input', () => checkFieldDuplicateLive('pan_number', panInputEl));
+        panInputEl.addEventListener('blur', () => checkFieldDuplicateLive('pan_number', panInputEl));
+        if (panInputEl.value) checkFieldDuplicateLive('pan_number', panInputEl);
+    }
+    if (aadhaarInputEl) {
+        aadhaarInputEl.addEventListener('input', () => checkFieldDuplicateLive('aadhaar_number', aadhaarInputEl));
+        aadhaarInputEl.addEventListener('blur', () => checkFieldDuplicateLive('aadhaar_number', aadhaarInputEl));
+        if (aadhaarInputEl.value) checkFieldDuplicateLive('aadhaar_number', aadhaarInputEl);
+    }
+    if (gstInputEl) {
+        gstInputEl.addEventListener('input', () => checkFieldDuplicateLive('gst_number', gstInputEl));
+        gstInputEl.addEventListener('blur', () => checkFieldDuplicateLive('gst_number', gstInputEl));
+        if (gstInputEl.value) checkFieldDuplicateLive('gst_number', gstInputEl);
+    }
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            clearFieldValidation();
+            const dobVal = dobInput ? dobInput.value.trim() : '';
+            if (!dobVal) {
+                e.preventDefault();
+                markInvalidField(dobInput, 'Date of Birth is required.');
+                return false;
+            }
+            const parts = dobVal.split('/');
+            if (parts.length === 3) {
+                const dobDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+                const today = new Date();
+                if (isNaN(dobDate.getTime())) {
+                    e.preventDefault();
+                    markInvalidField(dobInput, 'Please enter a valid Date of Birth in DD/MM/YYYY format.');
+                    return false;
+                }
+                let calculatedAge = today.getFullYear() - dobDate.getFullYear();
+                const monthDiff = today.getMonth() - dobDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dobDate.getDate())) {
+                    calculatedAge--;
+                }
+                if (calculatedAge < 18) {
+                    e.preventDefault();
+                    markInvalidField(dobInput, 'Customer must be 18 years or older.');
+                    return false;
+                }
+            }
+
+            const startVal = startDateInput ? startDateInput.value.trim() : '';
+            if (!startVal) {
+                e.preventDefault();
+                markInvalidField(startDateInput, 'Please select Service Start Date.');
+                return false;
+            }
+        });
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCreateSalesOrderPage);
+} else {
+    initCreateSalesOrderPage();
+}
+
+window.openViewSoModal = function(o) {
+    if (!o) return;
+    document.getElementById('viewSoTitle').textContent = `Sales Order: ${o.order_number || ''}`;
+    const statusBadge = o.order_status === 'approved' 
+        ? '<span class="badge bg-soft-success text-success px-3 py-1 fs-12">Approved</span>' 
+        : (o.order_status === 'rejected' || o.order_status === 'cancelled' 
+            ? `<span class="badge bg-soft-danger text-danger px-3 py-1 fs-12 text-capitalize">${o.order_status}</span>` 
+            : '<span class="badge bg-soft-warning text-warning px-3 py-1 fs-12">Pending</span>');
+
+    document.getElementById('viewSoBody').innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6"><small class="text-muted">Order Number:</small><div class="fw-bold text-primary fs-15">${o.order_number || ''}</div></div>
+            <div class="col-md-6"><small class="text-muted">Order Status:</small><div>${statusBadge}</div></div>
+            <div class="col-md-6"><small class="text-muted">Invoice / Client Name:</small><div class="fw-semibold text-dark">${o.invoice_name || ''}</div></div>
+            <div class="col-md-6"><small class="text-muted">Email Address:</small><div class="fw-semibold text-dark">${o.email || 'N/A'}</div></div>
+            <div class="col-md-6"><small class="text-muted">Product & Plan:</small><div class="fw-semibold text-dark">${o.product_name || ''} (${(o.plan_name || '').replace('_', ' ')})</div></div>
+            <div class="col-md-6"><small class="text-muted">Service Duration:</small><div class="fw-semibold text-dark">${o.start_date || 'N/A'} &rarr; ${o.expiry_date || 'N/A'}</div></div>
+            <div class="col-md-4"><small class="text-muted">Gross Amount (inc. GST):</small><div class="fw-bold text-success fs-15">₹${(o.gross_amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</div></div>
+            <div class="col-md-4"><small class="text-muted">Net Amount (ex. GST):</small><div class="fw-semibold text-primary fs-15">₹${(o.net_amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</div></div>
+            <div class="col-md-4"><small class="text-muted">Tax Amount (GST):</small><div class="fw-semibold text-dark">₹${(o.tax_amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</div></div>
+            <div class="col-md-4"><small class="text-muted">GST Number:</small><div class="fw-medium">${o.gst_number || 'N/A'}</div></div>
+            <div class="col-md-4"><small class="text-muted">PAN Card:</small><div class="fw-medium">${o.pan_number || 'N/A'}</div></div>
+            <div class="col-md-4"><small class="text-muted">Aadhaar / DOB:</small><div class="fw-medium">${o.aadhaar_number || 'N/A'} ${o.dob ? '(' + o.dob + ')' : ''}</div></div>
+            <div class="col-md-6"><small class="text-muted">Payment Mode:</small><div class="fw-medium">${o.payment_mode || 'N/A'}</div></div>
+            <div class="col-md-6"><small class="text-muted">Txn / Ref Number:</small><div class="fw-medium">${o.reference_number || 'N/A'}</div></div>
+            <div class="col-12"><small class="text-muted">Billing Address:</small><div class="fw-medium">${o.address || 'N/A'}</div></div>
+            <div class="col-12"><small class="text-muted">Order Notes:</small><div class="fw-medium">${o.notes || 'N/A'}</div></div>
+        </div>
+    `;
+    const bsModal = new bootstrap.Modal(document.getElementById('viewSoModal'));
+    bsModal.show();
+};
+
+window.updateEditPlanDropdown = function(productId, selectedPlanName = '') {
+    const editPlanSelect = document.getElementById('editSoPlanSelect');
+    if (!editPlanSelect) return;
+    editPlanSelect.innerHTML = '<option value="">-- Select Plan --</option>';
+    if (!productId) return;
+    const productsData = window.productsData || [];
+    const pIdInt = parseInt(productId, 10);
+    const prod = productsData.find(p => parseInt(p.id, 10) === pIdInt || String(p.id) === String(productId));
+    const planConfigMap = [
+        { key: 'weekly', label: 'Weekly (7 Days)' },
+        { key: 'two_weekly', label: '2-Weekly (14 Days)' },
+        { key: 'monthly', label: 'Monthly (1 Month)' },
+        { key: 'two_monthly', label: '2-Monthly (2 Months)' },
+        { key: 'quarterly', label: 'Quarterly (3 Months)' },
+        { key: 'six_monthly', label: '6-Monthly (6 Months)' },
+        { key: 'nine_monthly', label: '9-Monthly (9 Months)' },
+        { key: 'yearly', label: 'Yearly (1 Year)' },
+        { key: 'eighteen_monthly', label: '18-Monthly (1.5 Years)' },
+        { key: 'twenty_four_monthly', label: '2-Yearly (2 Years)' }
+    ];
+    if (prod) {
+        planConfigMap.forEach(plan => {
+            const pVal = parseFloat(prod[plan.key]) || 0;
+            if (pVal > 0 || (selectedPlanName && plan.key === selectedPlanName)) {
+                const priceStr = pVal > 0 ? ` - ₹${pVal.toLocaleString('en-IN')}` : '';
+                const opt = document.createElement('option');
+                opt.value = plan.key;
+                opt.textContent = `${plan.label}${priceStr}`;
+                if (plan.key === selectedPlanName) opt.selected = true;
+                editPlanSelect.appendChild(opt);
+            }
+        });
+    }
+};
+
+window.openEditSoModal = function(o) {
+    if (!o) return;
+    document.getElementById('editSoUuid').value = o.sales_order_uuid || '';
+    document.getElementById('editSoTitle').textContent = `Edit Sales Order: ${o.order_number || ''}`;
+    document.getElementById('editSoInvoiceName').value = o.invoice_name || '';
+    document.getElementById('editSoEmail').value = o.email || '';
+    document.getElementById('editSoGst').value = o.gst_number || '';
+    document.getElementById('editSoPan').value = o.pan_number || '';
+    document.getElementById('editSoAadhaar').value = o.aadhaar_number || '';
+    if (document.getElementById('editSoDob')) {
+        document.getElementById('editSoDob').value = o.dob || '';
+        if (window.jQuery && $.fn.datepicker) $('#editSoDob').datepicker('update', o.dob || '');
+    }
+
+    if (window.initIndianStateCityDropdowns) {
+        window.initIndianStateCityDropdowns('editSoState', 'editSoCity', o.state || defaultState, o.city || defaultCity);
+    }
+
+    const pSel = document.getElementById('editSoProductSelect');
+    if (pSel) {
+        pSel.value = o.product_id || '';
+        updateEditPlanDropdown(o.product_id, o.plan_name);
+    }
+    if (document.getElementById('editSoGrossAmount')) {
+        document.getElementById('editSoGrossAmount').value = o.gross_amount || o.order_amount || '';
+    }
+    if (document.getElementById('editSoStartDate')) {
+        document.getElementById('editSoStartDate').value = o.start_date || '';
+        if (window.jQuery && $.fn.datepicker) $('#editSoStartDate').datepicker('update', o.start_date || '');
+    }
+    if (document.getElementById('editSoExpiryDate')) {
+        document.getElementById('editSoExpiryDate').value = o.expiry_date || '';
+        if (window.jQuery && $.fn.datepicker) $('#editSoExpiryDate').datepicker('update', o.expiry_date || '');
+    }
+
+    document.getElementById('editSoPaymentMode').value = o.payment_mode || '';
+    document.getElementById('editSoRef').value = o.reference_number || '';
+    document.getElementById('editSoAddress').value = o.address || '';
+    document.getElementById('editSoNotes').value = o.notes || '';
+
+    const bsModal = new bootstrap.Modal(document.getElementById('editSoModal'));
+    bsModal.show();
+};
+
+window.saveEditSoModal = function() {
+    const salesOrderUuid = document.getElementById('editSoUuid').value;
+    const btn = document.getElementById('btnSaveEditSo');
+    if (!salesOrderUuid) return;
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+    const payload = {
+        sales_order_uuid: salesOrderUuid,
+        invoice_name: document.getElementById('editSoInvoiceName').value.trim(),
+        email: document.getElementById('editSoEmail').value.trim(),
+        gst_number: document.getElementById('editSoGst').value.trim(),
+        pan_number: document.getElementById('editSoPan').value.trim(),
+        aadhaar_number: document.getElementById('editSoAadhaar').value.trim(),
+        dob: document.getElementById('editSoDob') ? document.getElementById('editSoDob').value : '',
+        state: document.getElementById('editSoState') ? document.getElementById('editSoState').value : '',
+        city: document.getElementById('editSoCity') ? document.getElementById('editSoCity').value : '',
+        product_id: document.getElementById('editSoProductSelect') ? document.getElementById('editSoProductSelect').value : '',
+        plan_name: document.getElementById('editSoPlanSelect') ? document.getElementById('editSoPlanSelect').value : '',
+        gross_amount: document.getElementById('editSoGrossAmount') ? document.getElementById('editSoGrossAmount').value : '',
+        service_start_date: document.getElementById('editSoStartDate') ? document.getElementById('editSoStartDate').value : '',
+        service_expiry_date: document.getElementById('editSoExpiryDate') ? document.getElementById('editSoExpiryDate').value : '',
+        payment_mode: document.getElementById('editSoPaymentMode').value,
+        reference_number: document.getElementById('editSoRef').value.trim(),
+        address: document.getElementById('editSoAddress').value.trim(),
+        notes: document.getElementById('editSoNotes').value.trim()
+    };
+
+    fetch('/api/leads/update-sales-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        if (data.success) {
+            showToastNotification(data.message || 'Sales order updated successfully.', 'success');
+            setTimeout(() => { window.location.reload(); }, 800);
+        } else {
+            showToastNotification(data.message || 'Failed to update sales order.', 'warning');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+        showToastNotification('An error occurred while updating sales order.', 'danger');
+    });
+};
+window.deleteSalesOrderFromPage = function(soUuid, orderNumber) {
+    if (!soUuid) return;
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Delete Sales Order?',
+            text: `Are you sure you want to delete Sales Order '${orderNumber}'? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete Order'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executeDeleteSo(soUuid);
+            }
+        });
+    } else {
+        if (confirm(`Are you sure you want to delete Sales Order '${orderNumber}'?`)) {
+            executeDeleteSo(soUuid);
+        }
+    }
+};
+
+function executeDeleteSo(soUuid) {
+    fetch('/api/sales-orders/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sales_order_uuid: soUuid })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showToastNotification === 'function') {
+                showToastNotification(data.message || 'Sales order deleted successfully.', 'success');
+            }
+            setTimeout(() => { window.location.reload(); }, 600);
+        } else {
+            if (typeof showToastNotification === 'function') {
+                showToastNotification(data.message || 'Failed to delete sales order.', 'danger');
+            } else {
+                alert(data.message || 'Failed to delete sales order.');
+            }
+        }
+    })
+    .catch(err => {
+        alert('An error occurred while deleting sales order.');
+    });
+}
+</script>
+{% endblock %}

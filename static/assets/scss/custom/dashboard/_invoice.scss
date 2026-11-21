@@ -1,0 +1,66 @@
+// invoice.scss
+
+.blury-effect {
+    filter: blur(75px);
+    opacity: 0.2;
+    bottom: -20px;
+    right: -20px;
+}
+.revenue-icon {
+    outline: 1px solid;
+    outline-offset: 3px;
+}
+.apex-charts .apexcharts-bar-series path,
+.apex-charts .apexcharts-pie-series path {
+    stroke: var(--#{$prefix}secondary-bg) !important;
+}
+.upcoming-invoice {
+    height: 118px;
+    width: 118px;
+}
+.Paid-invoice {
+    bottom: -26%;
+    right: 22.7%;
+    height: 95px;
+    width: 95px;
+    @media (max-width: 320px) {
+        right: 12%;
+    }
+}
+.Partial-invoice {
+    bottom: 11%;
+    right: 12.5%;
+    @media (max-width: 320px) {
+        right: -2%;
+    }
+}
+.sales-revenue-circle {
+    height: 90px;
+    width: 90px;
+}
+.sales-revenue-circle-1 {
+    top: 10px;
+    left: 57px;
+    @media (max-width: 320px) {
+        left: 9px;
+    }
+    @include media-breakpoint-up(md) {
+        left: 220px;
+    }
+    @include media-breakpoint-up(xl) {
+        left: 60px;
+    }
+}
+.sales-revenue-circle-2 {
+    bottom: 20px;
+    right: 50px;
+    @media (max-width: 320px) {
+        right: 7px;
+    }
+    @include media-breakpoint-up(md) {
+        right: 215px;
+    }
+    @include media-breakpoint-up(xl) {
+        right: 55px;
+    }
+}

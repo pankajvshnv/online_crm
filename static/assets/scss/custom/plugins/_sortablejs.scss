@@ -1,0 +1,39 @@
+// _sortablejs.scss
+
+.sortable-handle {
+    cursor: move;
+    padding: 0.25rem;
+}
+
+.sortable-handle > i {
+    font-size: 1rem;
+    color: var(--#{$prefix}secondary-color);
+}
+
+.sortable {
+    &.rich-list-bordered {
+        .sortable,
+        .sortable-item:not(:first-of-type) {
+            margin-top: 0.625rem;
+        }
+    }
+    .sortable {
+        padding-left: 1.25rem;
+    }
+}
+
+.sortable {
+    display: flex;
+    flex-direction: column;
+}
+.sortable-item{
+    .rich-list-item{
+        margin-bottom: 0;
+    }
+    &.selected{
+        background-color: var(--#{$prefix}tertiary-bg);
+    }
+    &.highlight{
+        background-color: var(--#{$prefix}tertiary-bg);
+    }
+}

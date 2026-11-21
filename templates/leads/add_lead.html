@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Add Lead</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">Add Lead</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section Card (Matching Company Settings Layout) -->
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">Lead Information</h5>
+            <a href="{{ url_for('all_leads') }}" class="btn btn-sm btn-outline-primary">
+                <i class="mdi mdi-arrow-left me-1"></i> Back to Leads
+            </a>
+        </div>
+        <div class="card-body">
+            <form id="addLeadForm" method="POST" action="{{ url_for('add_lead') }}" novalidate>
+                <div class="row g-4">
+
+                    <!-- Lead Name -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Lead Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="leadName" 
+                               name="name" 
+                               required 
+                               minlength="2" 
+                               maxlength="100" 
+                               placeholder="Enter lead name">
+                        <div class="invalid-feedback">Please enter valid lead name.</div>
+                    </div>
+
+                    <!-- Mobile Number -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Mobile Number <span class="text-danger">*</span></label>
+                        <input type="tel" 
+                               class="form-control" 
+                               id="leadMobile" 
+                               name="mobile_number" 
+                               required 
+                               pattern="[0-9]{10,15}" 
+                               maxlength="15" 
+                               placeholder="10 digit mobile number">
+                        <div class="invalid-feedback" id="leadMobileFeedback">Please enter 10 digit mobile number.</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Email</label>
+                        <input type="email" 
+                               class="form-control" 
+                               id="leadEmail" 
+                               name="email" 
+                               maxlength="120" 
+                               placeholder="name@example.com">
+                        <div class="invalid-feedback" id="leadEmailFeedback">Please enter valid email address.</div>
+                    </div>
+
+                    <!-- Lead Source -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Lead Source <span class="text-danger">*</span></label>
+                        <select class="form-select" id="leadSource" name="lead_source" required>
+                            <option value="">Select Source</option>
+                            {% if lead_sources %}
+                                {% for src in lead_sources %}
+                                    <option value="{{ src.id }}" {% if form_data and (form_data.lead_source == src.id or form_data.lead_source == src.source_name) %}selected{% endif %}>{{ src.source_name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Lead Status -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Lead Status</label>
+                        <select class="form-select" id="leadStatus" name="lead_status">
+                            <option value="">Select Status</option>
+                            {% if lead_statuses %}
+                                {% for st in lead_statuses %}
+                                    <option value="{{ st.id }}" {% if form_data and (form_data.lead_status == st.id or form_data.lead_status == st.status_name) %}selected{% endif %}>{{ st.status_name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Assigned To (current_owner_user_id) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Assigned To <span class="text-danger">*</span></label>
+                        <select class="form-select" id="current_owner_user_id" name="current_owner_user_id" required>
+                            {% if team_users %}
+                                {% for u in team_users %}
+                                    <option value="{{ u.id }}" {% if u.id == logged_user.id %}selected{% endif %}>
+                                        {{ u.full_name }}
+                                    </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="{{ logged_user.id }}" selected>
+                                    {{ logged_user.full_name }}
+                                </option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Address</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="leadAddress" 
+                               name="address" 
+                               maxlength="255" 
+                               placeholder="Enter address">
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Notes</label>
+                        <textarea class="form-control" 
+                                  id="leadComment" 
+                                  name="comment" 
+                                  rows="4" 
+                                  placeholder="Enter lead notes" 
+                                  maxlength="500"></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 pt-3">
+                        <button type="submit" class="btn btn-primary" id="btnSubmitAddLead">
+                            <i class="mdi mdi-content-save-outline me-1"></i> Save Lead
+                        </button>
+                        <a href="{{ url_for('all_leads') }}" class="btn btn-light ms-2">
+                            Cancel
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('addLeadForm');
+    const mobileInput = document.getElementById('leadMobile');
+    const emailInput = document.getElementById('leadEmail');
+
+    function setupLiveDuplicateCheck(inputEl, fieldName, feedbackElId) {
+        if (!inputEl) return;
+        let timer;
+        const doCheck = () => {
+            const val = inputEl.value.trim();
+            const fb = document.getElementById(feedbackElId);
+            if (!val) {
+                inputEl.classList.remove('is-invalid');
+                if (fb) fb.style.display = 'none';
+                return;
+            }
+
+            fetch('/api/leads/check-field-duplicate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ field_name: fieldName, field_value: val })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.is_duplicate) {
+                    inputEl.classList.add('is-invalid');
+                    if (fb) { fb.textContent = data.message; fb.style.display = 'block'; }
+                } else {
+                    inputEl.classList.remove('is-invalid');
+                    if (fb) { fb.style.display = 'none'; }
+                }
+            })
+            .catch(err => console.error('Duplicate check error:', err));
+        };
+
+        inputEl.addEventListener('input', function() {
+            clearTimeout(timer);
+            timer = setTimeout(doCheck, 350);
+        });
+        inputEl.addEventListener('blur', doCheck);
+    }
+
+    setupLiveDuplicateCheck(mobileInput, 'mobile_number', 'leadMobileFeedback');
+    setupLiveDuplicateCheck(emailInput, 'email', 'leadEmailFeedback');
+
+    form.addEventListener('submit', function (e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+<!-- Lead filters -->
+<div
+    class="d-flex flex-column flex-xl-row justify-content-between flex-wrap align-items-xl-end gap-3 mb-3"
+>
+    <!-- Action filter -->
+    {% if has_permission('leads', 'transfer') or has_permission('leads', 'delete') %}
+    <div>
+        <label class="form-label">
+            Action
+        </label>
+
+        <div class="dropdown">
+            <button
+                type="button"
+                class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+            >
+                Select Action
+            </button>
+
+            <ul class="dropdown-menu">
+                {% if has_permission('leads', 'transfer') %}
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#assignLeadModal"
+                    >
+                        <i class="mdi mdi-account-plus-outline me-2"></i>
+                        Assign
+                    </button>
+                </li>
+                {% endif %}
+
+                {% if has_permission('leads', 'delete') %}
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item text-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteLeadModal"
+                    >
+                        <i class="mdi mdi-delete-outline me-2"></i>
+                        Delete
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Call status filter -->
+    <div>
+        <label
+            class="form-label"
+            for="callStatusFilter"
+        >
+            Call Status
+        </label>
+
+        <select
+            class="form-select lead-filter-input"
+            id="callStatusFilter"
+            name="call_status"
+            onchange="if(typeof fetchTableDataAJAX==='function') fetchTableDataAJAX(1);"
+            style="min-width: 150px;"
+        >
+            <option value="" {% if not request.args.get('call_status') %}selected{% endif %}>
+                All
+            </option>
+
+            <option
+                value="0"
+                {% if request.args.get('call_status') == '0' %}selected{% endif %}
+            >
+                Not Called
+            </option>
+
+            <option value="1" {% if request.args.get('call_status') == '1' %}selected{% endif %}>
+                Called
+            </option>
+        </select>
+    </div>
+
+    <!-- Lead status filter -->
+    <div>
+        <label
+            class="form-label"
+            for="statusFilter"
+        >
+            Status
+        </label>
+
+        <select
+            class="form-select lead-filter-input"
+            id="statusFilter"
+            name="status"
+            onchange="if(typeof fetchTableDataAJAX==='function') fetchTableDataAJAX(1);"
+            style="min-width: 160px;"
+        >
+            <option value="all" {% if request.args.get('status') in [None, '', 'all'] %}selected{% endif %}>
+                All Status
+            </option>
+
+            {% for filter in filters %}
+                {% if filter.name == 'status' %}
+                    {% for opt in filter.options %}
+                        <option value="{{ opt.value }}" {% if request.args.get('status') == opt.value %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Source filter -->
+    <div>
+        <label
+            class="form-label"
+            for="sourceFilter"
+        >
+            Source
+        </label>
+
+        <select
+            class="form-select lead-filter-input"
+            id="sourceFilter"
+            name="source"
+            onchange="if(typeof fetchTableDataAJAX==='function') fetchTableDataAJAX(1);"
+            style="min-width: 160px;"
+        >
+            <option value="">
+                All Sources
+            </option>
+
+            {% for filter in filters %}
+                {% if filter.name == 'source' %}
+                    {% for opt in filter.options %}
+                        <option value="{{ opt.value }}" {% if request.args.get('source') == opt.value %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Owner filter -->
+    <div>
+        <label
+            class="form-label"
+            for="ownerFilter"
+        >
+            Owner
+        </label>
+
+        <select
+            class="form-select lead-filter-input"
+            id="ownerFilter"
+            name="owner"
+            data-default-owner="{{ logged_user_uuid }}"
+            onchange="if(typeof fetchTableDataAJAX==='function') fetchTableDataAJAX(1);"
+            style="min-width: 170px;"
+        >
+            <option value="all" {% if selected_owner in ['all', 'ALL'] %}selected{% endif %}>
+                All Owners
+            </option>
+            <option value="unassigned" {% if selected_owner in ['unassigned', '0'] %}selected{% endif %}>
+                Not Assigned
+            </option>
+
+            {% for filter in filters %}
+                {% if filter.name == 'owner' %}
+                    {% for opt in filter.options %}
+                        <option value="{{ opt.value }}" {% if selected_owner == opt.value or (not request.args.get('owner') and opt.value == logged_user_uuid) %}selected{% endif %}>
+                            {{ opt.label }}
+                        </option>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Dispose filter (Only visible to Admin or users with assign_disposed_lead permission) -->
+    {% if has_permission('leads', 'assign_disposed_lead') or session.get('user', {}).get('is_admin') == 1 %}
+    <div>
+        <label
+            class="form-label"
+            for="disposedFilter"
+        >
+            Dispose
+        </label>
+
+        <select
+            class="form-select lead-filter-input"
+            id="disposedFilter"
+            name="disposed"
+            onchange="if(typeof fetchTableDataAJAX==='function') fetchTableDataAJAX(1);"
+            style="min-width: 140px;"
+        >
+            <option value="0" {% if request.args.get('disposed') == '0' or request.args.get('disposed') is none %}selected{% endif %}>
+                No Dispose
+            </option>
+            <option value="1" {% if request.args.get('disposed') == '1' %}selected{% endif %}>
+                Disposed
+            </option>
+            <option value="all" {% if request.args.get('disposed') == 'all' %}selected{% endif %}>
+                All
+            </option>
+        </select>
+    </div>
+    {% else %}
+    <input type="hidden" id="disposedFilter" name="disposed" value="0">
+    {% endif %}
+
+
+    <!-- Date filter -->
+    <div>
+        <label class="form-label">
+            Dates
+        </label>
+
+        <div class="dropdown">
+            <button
+                type="button"
+                class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+            >
+                <i class="mdi mdi-calendar-range-outline me-1"></i>
+                Select Date
+            </button>
+
+            <ul class="dropdown-menu">
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createdDateModal"
+                    >
+                        <i class="mdi mdi-calendar-plus-outline me-2"></i>
+                        Created
+                    </button>
+                </li>
+
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modifiedDateModal"
+                    >
+                        <i class="mdi mdi-calendar-edit-outline me-2"></i>
+                        Modification
+                    </button>
+                </li>
+
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#assignedDateModal"
+                    >
+                        <i class="mdi mdi-calendar-account-outline me-2"></i>
+                        Assigned
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

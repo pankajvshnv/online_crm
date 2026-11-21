@@ -1,0 +1,74 @@
+// progress
+
+// Progress height Extre small
+.progress-xs {
+    height: 4px;
+}
+
+// Progress height small
+.progress-sm {
+    height: 6px;
+}
+
+// Progress height medium
+.progress-md {
+    height: 8px;
+}
+
+// Progress height Extra large
+.progress-xl {
+    height: 16px;
+}
+
+.animated-progess {
+    position: relative;
+    .progress-bar {
+        position: relative;
+        border-radius: 6px;
+        animation: animate-positive 2s;
+    }
+}
+
+@keyframes animate-positive {
+    0% {
+        width: 0;
+    }
+}
+
+.progress-gradient-primary {
+    background: linear-gradient(45deg, #40684a, #11998e);
+}
+.progress-gradient-info {
+    background: linear-gradient(45deg, #008aff, #084eaa);
+}
+.progress-gradient-peach {
+    background: linear-gradient(45deg, #93d1be, #f3c995);
+}
+.custome-progress {
+    .progress-bar {
+        border-radius: var(--#{$prefix}border-radius-pill);
+        position: relative;
+        &::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 3px;
+            width: 7px;
+            height: 7px;
+            transform: translateY(-50%);
+            background-color: var(--#{$prefix}white);
+            border-radius: var(--#{$prefix}border-radius-pill);
+        }
+    }
+}
+.progress-md {
+    &.custome-progress {
+        .progress-bar {
+            &::before {
+                right: 2px;
+                width: 4px;
+                height: 4px;
+            }
+        }
+    }
+}

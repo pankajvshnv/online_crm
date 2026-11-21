@@ -1,0 +1,969 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+/* Shimmer Skeleton Animation */
+@keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #f0f2f5 25%, #e2e5e9 37%, #f0f2f5 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.avatar-initials {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: 50%;
+}
+
+.batch-row {
+    transition: background-color 0.15s ease-in-out;
+}
+.batch-row:hover {
+    background-color: #f8fafc;
+}
+
+.lead-filter-input {
+    border-radius: 6px;
+    border-color: #e2e8f0;
+    font-size: 13px;
+}
+.lead-filter-input:focus {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+.all-leads-card {
+    border: 1px solid #edf2f7;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border-radius: 8px;
+}
+
+.modal-table-scroll {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.metric-stat-box {
+    border-radius: 6px;
+    padding: 7px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.metric-stat-box:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.metric-stat-box:not(.lead-status-card):hover {
+    filter: brightness(0.98);
+}
+.lead-status-row-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    min-height: 40px;
+    border-radius: 6px;
+}
+.lead-status-row-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    filter: brightness(0.98);
+}
+.metric-stat-box .stat-num.text-dark {
+    color: #0f172a !important;
+}
+.metric-stat-box .stat-lbl.text-dark {
+    color: #334155 !important;
+}
+.metric-stat-box .stat-num {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.metric-stat-box .stat-lbl {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+}
+</style>
+
+<div class="container-fluid px-3 py-2">
+
+    <!-- Page Header & Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between py-1">
+                <div>
+                    <h4 class="mb-0 fs-18 fw-bold text-dark">Lead Report</h4>
+                </div>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0 fs-12">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item">Reports</li>
+                        <li class="breadcrumb-item active">Lead Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card Container (Matches /contacts style) -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Filter Row: Dropdowns (LEFT) + Search & Reset (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Left Side: Dropdowns (Upload Type, Lead Source, Uploaded By) -->
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    
+                    <!-- Upload Type Filter -->
+                    <div>
+                        <label class="form-label fs-12 fw-semibold mb-1" for="batchUploadTypeFilter">Upload Type</label>
+                        <select class="form-select lead-filter-input" id="batchUploadTypeFilter" onchange="handleFilterChange()" style="min-width: 150px;">
+                            <option value="all" selected>All Upload Types</option>
+                            <option value="quick_paste">Quick Paste</option>
+                            <option value="file">File Upload</option>
+                        </select>
+                    </div>
+
+                    <!-- Lead Source Filter -->
+                    <div>
+                        <label class="form-label fs-12 fw-semibold mb-1" for="batchSourceFilter">Lead Source</label>
+                        <select class="form-select lead-filter-input" id="batchSourceFilter" onchange="handleFilterChange()" style="min-width: 160px;">
+                            <option value="all" selected>All Sources</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Uploaded By Filter -->
+                    <div>
+                        <label class="form-label fs-12 fw-semibold mb-1" for="batchUploaderFilter">Uploaded By</label>
+                        <select class="form-select lead-filter-input" id="batchUploaderFilter" onchange="handleFilterChange()" style="min-width: 160px;">
+                            <option value="all" selected>All Uploaders</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Right Side: Search & Reset (Matching /contacts style) -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 420px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label fs-12 fw-semibold mb-1" for="batchSearchInput">Search</label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="batchSearchInput" placeholder="Search batch name or ID..." oninput="handleSearchInput(this.value)" autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-light" id="btnResetFilters" onclick="resetFilters()">
+                        <i class="mdi mdi-refresh me-1"></i>Reset
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Inner Table Container -->
+            <div class="card all-leads-card">
+                <div class="card-body p-0">
+
+                    <!-- Table Scroll Container (Single-row filter matching contacts) -->
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="batchesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap ps-3" style="width: 75px;">Batch ID</th>
+                                    <th class="text-nowrap" style="min-width: 220px;">Batch Name</th>
+                                    <th class="text-nowrap text-center" style="width: 65px;">View</th>
+                                    <th class="text-nowrap text-end" style="width: 95px;">Total Rows</th>
+                                    <th class="text-nowrap text-end" style="width: 95px;">Imported</th>
+                                    <th class="text-nowrap text-end" style="width: 95px;">Duplicates</th>
+                                    <th class="text-nowrap" style="width: 125px;">Upload Type</th>
+                                    <th class="text-nowrap" style="width: 135px;">Lead Source</th>
+                                    <th class="text-nowrap pe-3" style="width: 200px;">Recent Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchesTableBody">
+                                <!-- Skeleton rows generated immediately on page load -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer (Matching /contacts style) -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted fs-12" for="pageSizeSelect">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSizeSelect" onchange="handlePageSizeChange(this.value)" style="width: 80px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <div class="text-muted fs-12" id="paginationInfo">Showing 0 to 0 of 0 records</div>
+                </div>
+
+                <nav aria-label="Batch pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav">
+                        <!-- Dynamic pagination buttons -->
+                    </ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal: Batch Details & Live Lead Status Breakdown Popup -->
+<div class="modal fade" id="batchDetailsModal" tabindex="-1" aria-labelledby="batchDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content border-0 shadow">
+            
+            <div class="modal-header border-bottom py-2.5 px-3 bg-light">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar-initials bg-primary text-white" style="width: 32px; height: 32px; font-size: 14px;">
+                        <i class="mdi mdi-layers-outline"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h6 class="modal-title fs-14 fw-bold text-dark mb-0" id="modalBatchTitle">Batch Details</h6>
+                            <span class="badge bg-light text-dark border fw-bold fs-11" id="modalBatchIdBadge"></span>
+                            <span id="modalBatchTypeBadge"></span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-3" id="modalBatchBody">
+                <!-- Loaded via AJAX -->
+            </div>
+
+            <div class="modal-footer border-top py-2 px-3 d-flex justify-content-between align-items-center bg-light">
+                <div class="fs-12 text-muted" id="modalFooterInfo">
+                    Uploaded by <strong class="text-dark" id="modalFooterUploader">-</strong> • <span id="modalFooterTime">-</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+var CAN_EXPORT = {{ 'true' if can_export else 'false' }};
+
+// State Management
+var currentPage = 1;
+var currentPerPage = 10;
+var currentSearch = '';
+var currentUploadType = 'all';
+var currentUploader = 'all';
+var currentSource = 'all';
+var searchDebounceTimer = null;
+var filtersInitialized = false;
+var batchModalInstance = null;
+
+// Initial Skeleton render on DOM ready
+function initLeadReportPage() {
+    if (!document.getElementById('leadReportPageContainer')) return;
+    renderSkeleton();
+    fetchBatches(1);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLeadReportPage);
+} else {
+    initLeadReportPage();
+}
+document.addEventListener('pjax:contentLoaded', initLeadReportPage);
+
+// Render animated skeleton shimmer rows (8 columns matching headers)
+function renderSkeleton() {
+    const tbody = document.getElementById('batchesTableBody');
+    if (!tbody) return;
+
+    let html = '';
+    for (let i = 0; i < currentPerPage; i++) {
+        html += `
+            <tr>
+                <td class="ps-3">
+                    <span class="skeleton-shimmer rounded" style="width: 36px; height: 18px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-shimmer rounded" style="width: 180px; height: 16px;"></span>
+                </td>
+                <td class="text-center">
+                    <span class="skeleton-shimmer rounded" style="width: 30px; height: 24px;"></span>
+                </td>
+                <td class="text-end">
+                    <span class="skeleton-shimmer rounded" style="width: 65px; height: 20px;"></span>
+                </td>
+                <td class="text-end">
+                    <span class="skeleton-shimmer rounded-pill" style="width: 50px; height: 20px;"></span>
+                </td>
+                <td class="text-end">
+                    <span class="skeleton-shimmer rounded-pill" style="width: 40px; height: 20px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-shimmer rounded" style="width: 80px; height: 16px;"></span>
+                </td>
+                <td>
+                    <span class="skeleton-shimmer rounded" style="width: 90px; height: 16px;"></span>
+                </td>
+                <td class="pe-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="skeleton-shimmer rounded-circle" style="width: 28px; height: 28px;"></span>
+                        <div class="d-flex flex-column gap-1">
+                            <span class="skeleton-shimmer rounded" style="width: 80px; height: 12px;"></span>
+                            <span class="skeleton-shimmer rounded" style="width: 110px; height: 11px;"></span>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    tbody.innerHTML = html;
+}
+
+// Fetch Paginated Batches from Backend API
+function fetchBatches(page) {
+    currentPage = page || 1;
+    renderSkeleton();
+
+    const params = new URLSearchParams({
+        page: currentPage,
+        per_page: currentPerPage,
+        search: currentSearch,
+        upload_type: currentUploadType,
+        uploaded_by: currentUploader,
+        source_id: currentSource
+    });
+
+    fetch(`/api/reports/lead-batches?${params.toString()}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load batches');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (!filtersInitialized && data.filter_options) {
+                    populateFilterDropdowns(data.filter_options);
+                    filtersInitialized = true;
+                }
+                renderBatchesTable(data.batches);
+                renderPagination(data.pagination);
+            } else {
+                renderError(data.message || 'Error loading batch data.');
+            }
+        })
+        .catch(err => {
+            renderError('Unable to connect to server. Please try again.');
+        });
+}
+
+// Populate Filter Dropdowns dynamically
+function populateFilterDropdowns(options) {
+    // 1. Lead Sources
+    const srcSelect = document.getElementById('batchSourceFilter');
+    if (srcSelect && Array.isArray(options.lead_sources)) {
+        options.lead_sources.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.source_name;
+            srcSelect.appendChild(opt);
+        });
+    }
+
+    // 2. Uploaders
+    const uploaderSelect = document.getElementById('batchUploaderFilter');
+    if (uploaderSelect && Array.isArray(options.uploaders)) {
+        options.uploaders.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.uuid || u.uploaded_by;
+            opt.textContent = u.name;
+            uploaderSelect.appendChild(opt);
+        });
+    }
+}
+
+// Render Batches Table Rows
+function renderBatchesTable(batches) {
+    const tbody = document.getElementById('batchesTableBody');
+    if (!tbody) return;
+
+    if (!batches || batches.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5 text-muted fs-13">
+                    <i class="mdi mdi-package-variant-remove fs-28 d-block mb-1 text-muted"></i>
+                    No lead batches found matching your criteria.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let rowsHtml = '';
+    batches.forEach(b => {
+        const initials = getInitials(b.uploaded_by);
+
+        // Upload Type: plain text without icon
+        const typeText = (b.upload_type === 'file')
+            ? `<span class="fs-12 text-dark">File Upload</span>`
+            : `<span class="fs-12 text-dark">Quick Paste</span>`;
+
+        // Lead Source: plain text without background
+        const sourceName = (b.source_names || '-').trim();
+        const sourceText = (sourceName && sourceName !== '-')
+            ? `<span class="fs-12 text-dark fw-medium">${escapeHtml(sourceName)}</span>`
+            : `<span class="text-muted fs-12">-</span>`;
+
+        const importedBadge = b.imported_leads > 0
+            ? `<span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-0.5 fs-12 rounded-pill">${b.imported_leads.toLocaleString('en-IN')}</span>`
+            : `<span class="badge bg-light text-muted border px-2 py-0.5 fs-11 rounded-pill">0</span>`;
+
+        const duplicatesBadge = b.duplicate_leads > 0
+            ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-2 py-0.5 fs-12 rounded-pill">${b.duplicate_leads.toLocaleString('en-IN')}</span>`
+            : `<span class="badge bg-light text-muted border px-2 py-0.5 fs-11 rounded-pill">0</span>`;
+
+        const safeBatchName = escapeHtml(b.batch_name);
+        const escapedForClick = safeBatchName.replace(/'/g, "\\'");
+
+        // View Action Button in its dedicated column right after Batch Name
+        const viewActionCell = `
+            <button type="button" class="btn btn-sm btn-outline-primary py-0.5 px-2 rounded d-inline-flex align-items-center" onclick="openBatchDetailsModal(${b.id}, '${escapedForClick}')" title="View Batch &amp; Live Details">
+                <i class="mdi mdi-eye-outline fs-14"></i>
+            </button>
+        `;
+
+        // Recent Activity: Uploaded By + Upload Date & Time + Time ago in last column
+        const recentActivityCell = `
+            <div class="d-flex align-items-center gap-2">
+                <div class="avatar-initials bg-primary-subtle text-primary border border-primary-subtle" style="width: 28px; height: 28px; min-width: 28px; font-size: 11px;">
+                    ${initials}
+                </div>
+                <div>
+                    <span class="fs-13 text-dark fw-medium d-block lh-sm">${escapeHtml(b.uploaded_by)}</span>
+                    <small class="text-muted fs-11">${escapeHtml(b.created_at_fmt)} (${escapeHtml(b.time_ago)})</small>
+                </div>
+            </div>
+        `;
+
+        rowsHtml += `
+            <tr class="batch-row">
+                <td class="ps-3">
+                    <span class="badge bg-light text-dark border fw-bold fs-12">${b.id}</span>
+                </td>
+                <td>
+                    <span class="fw-semibold text-dark fs-13">${safeBatchName}</span>
+                </td>
+                <td class="text-center">${viewActionCell}</td>
+                <td class="text-end fw-bold text-dark fs-12">${b.total_uploaded.toLocaleString('en-IN')}</td>
+                <td class="text-end">${importedBadge}</td>
+                <td class="text-end">${duplicatesBadge}</td>
+                <td>${typeText}</td>
+                <td>${sourceText}</td>
+                <td class="pe-3">${recentActivityCell}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = rowsHtml;
+}
+
+// Render Dynamic Pagination Controls (Matching /contacts style)
+function renderPagination(p) {
+    if (!p) return;
+
+    // Info text
+    const info = document.getElementById('paginationInfo');
+    if (info) {
+        if (p.total_records === 0) {
+            info.textContent = 'Showing 0 to 0 of 0 records';
+        } else {
+            info.textContent = `Showing ${p.start_index} to ${p.end_index} of ${p.total_records} records`;
+        }
+    }
+
+    // Pagination buttons
+    const nav = document.getElementById('paginationNav');
+    if (!nav) return;
+
+    if (p.total_pages <= 1) {
+        nav.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Prev Button
+    html += `
+        <li class="page-item ${!p.has_prev ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="${p.has_prev ? `fetchBatches(${p.page - 1})` : 'return false;'}">
+                <i class="mdi mdi-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page Numbers logic (window around current page)
+    const maxButtons = 5;
+    let startPage = Math.max(1, p.page - Math.floor(maxButtons / 2));
+    let endPage = Math.min(p.total_pages, startPage + maxButtons - 1);
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    if (startPage > 1) {
+        html += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="fetchBatches(1)">1</a></li>`;
+        if (startPage > 2) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = (i === p.page) ? 'active' : '';
+        html += `
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="javascript:void(0)" onclick="fetchBatches(${i})">${i}</a>
+            </li>
+        `;
+    }
+
+    if (endPage < p.total_pages) {
+        if (endPage < p.total_pages - 1) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="fetchBatches(${p.total_pages})">${p.total_pages}</a></li>`;
+    }
+
+    // Next Button
+    html += `
+        <li class="page-item ${!p.has_next ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="${p.has_next ? `fetchBatches(${p.page + 1})` : 'return false;'}">
+                <i class="mdi mdi-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    nav.innerHTML = html;
+}
+
+// Error state rendering
+function renderError(msg) {
+    const tbody = document.getElementById('batchesTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center py-5 text-danger fs-13">
+                    <i class="mdi mdi-alert-circle-outline fs-24 d-block mb-1"></i>
+                    ${escapeHtml(msg)}
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fetchBatches(currentPage)">
+                            <i class="mdi mdi-refresh me-1"></i>Retry
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// ==========================================
+// Batch Details & Lead Status Breakdown Modal
+// ==========================================
+function openBatchDetailsModal(batchId, batchName) {
+    const modalEl = document.getElementById('batchDetailsModal');
+    if (!modalEl) return;
+
+    if (!batchModalInstance) {
+        batchModalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    // Reset Modal Header
+    document.getElementById('modalBatchTitle').textContent = batchName || `Batch ${batchId}`;
+    document.getElementById('modalBatchIdBadge').textContent = `${batchId}`;
+    document.getElementById('modalBatchTypeBadge').innerHTML = '';
+    document.getElementById('modalFooterUploader').textContent = 'Loading...';
+    document.getElementById('modalFooterTime').textContent = '';
+
+    // Show skeleton in modal body
+    const bodyEl = document.getElementById('modalBatchBody');
+    bodyEl.innerHTML = `
+        <div class="p-1">
+            <!-- Shimmer Summary Cards (10 cards: 4 + 4 + 2) -->
+            <div class="row g-2 mb-2">
+                ${Array(4).fill(0).map(() => `
+                    <div class="col-6 col-md-3">
+                        <div class="metric-stat-box text-center p-2">
+                            <div class="skeleton-shimmer rounded mx-auto mb-1" style="width: 45px; height: 16px;"></div>
+                            <div class="skeleton-shimmer rounded mx-auto" style="width: 60px; height: 10px;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="row g-2 mb-2">
+                ${Array(4).fill(0).map(() => `
+                    <div class="col-6 col-md-3">
+                        <div class="metric-stat-box text-center p-2">
+                            <div class="skeleton-shimmer rounded mx-auto mb-1" style="width: 45px; height: 16px;"></div>
+                            <div class="skeleton-shimmer rounded mx-auto" style="width: 60px; height: 10px;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="row g-2 mb-3">
+                ${Array(2).fill(0).map(() => `
+                    <div class="col-6">
+                        <div class="metric-stat-box text-center p-2">
+                            <div class="skeleton-shimmer rounded mx-auto mb-1" style="width: 45px; height: 16px;"></div>
+                            <div class="skeleton-shimmer rounded mx-auto" style="width: 60px; height: 10px;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <!-- Shimmer Status Cards (4 per row) -->
+            <div class="row g-2">
+                ${Array(8).fill(0).map(() => `
+                    <div class="col-6 col-md-3">
+                        <div class="metric-stat-box text-center p-2.5">
+                            <div class="skeleton-shimmer rounded mx-auto mb-1" style="width: 45px; height: 18px;"></div>
+                            <div class="skeleton-shimmer rounded mx-auto" style="width: 70px; height: 11px;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    batchModalInstance.show();
+
+    // Fetch batch breakdown
+    fetch(`/api/reports/batch-breakdown/${batchId}`)
+        .then(res => {
+            if (!res.ok) throw new Error('Failed to load batch breakdown');
+            return res.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                bodyEl.innerHTML = `
+                    <div class="alert alert-danger mb-0 fs-13">
+                        <i class="mdi mdi-alert-circle-outline me-1"></i>
+                        ${escapeHtml(data.message || 'Failed to load batch breakdown.')}
+                    </div>
+                `;
+                return;
+            }
+
+            renderBatchModalContent(data);
+        })
+        .catch(err => {
+            bodyEl.innerHTML = `
+                <div class="alert alert-danger mb-0 fs-13">
+                    <i class="mdi mdi-alert-circle-outline me-1"></i>
+                    Network error while fetching batch details. Please try again.
+                </div>
+            `;
+        });
+}
+
+function renderBatchModalContent(data) {
+    const b = data.batch || {};
+    const up = data.upload_stats || {};
+    const live = data.live_stats || {};
+    const statuses = data.statuses || [];
+    const bodyEl = document.getElementById('modalBatchBody');
+
+    // Update Header Badges
+    const typeBadge = (b.upload_type === 'file')
+        ? `<span class="badge bg-purple-subtle text-purple border border-purple-subtle fs-11 px-2 py-0.5" style="background-color: #f3e8ff; color: #6f42c1; border-color: #e9d5ff;"><i class="mdi mdi-file-excel-outline me-1"></i>File Upload</span>`
+        : `<span class="badge bg-info-subtle text-info border border-info-subtle fs-11 px-2 py-0.5"><i class="mdi mdi-clipboard-text-outline me-1"></i>Quick Paste</span>`;
+    document.getElementById('modalBatchTypeBadge').innerHTML = typeBadge;
+
+    document.getElementById('modalFooterUploader').textContent = b.uploaded_by || 'System';
+    document.getElementById('modalFooterTime').textContent = `${b.created_at_fmt} (${b.time_ago})`;
+
+    const canExport = (data.can_export !== undefined) ? !!data.can_export : CAN_EXPORT;
+
+    let html = `
+        <!-- Section 1: Batch Overview -->
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="fs-12 fw-bold text-dark text-uppercase letter-spacing-sm">
+                <i class="mdi mdi-view-dashboard-outline text-primary me-1"></i>Batch Overview
+            </span>
+            ${canExport && live.total_leads > 0 ? `
+                <a href="/reports/batch-leads/export?batch_id=${b.id}&type=all" class="btn btn-xs btn-outline-primary py-0.5 px-2 rounded d-inline-flex align-items-center gap-1 fs-11" title="Download all leads in this batch">
+                    <i class="mdi mdi-download fs-13"></i>Download All Leads
+                </a>
+            ` : ''}
+        </div>
+
+        <!-- Row 1: Upload & Intake (4 cards) -->
+        <div class="row g-2 mb-2">
+            <div class="col-6 col-md-3">
+                <div class="metric-stat-box text-center p-2.5 rounded-2" style="background: #dbeafe !important; border-color: #bfdbfe !important;">
+                    <div class="stat-num text-dark fs-18">${(up.total_items || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Total Uploaded</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-stat-box text-center p-2.5 rounded-2" style="background: #d1fae5 !important; border-color: #a7f3d0 !important;">
+                    <div class="stat-num text-dark fs-18">${(up.imported_count || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Imported</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-stat-box text-center p-2.5 rounded-2" style="background: #fee2e2 !important; border-color: #fecaca !important;">
+                    <div class="stat-num text-dark fs-18">${(up.duplicate_count || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Duplicates</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="metric-stat-box text-center p-2.5 rounded-2" style="background: #e2e8f0 !important; border-color: #cbd5e1 !important;">
+                    <div class="stat-num text-dark fs-18">${(live.disposed_leads || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Disposed Leads</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Pipeline Activity (6 compact cards across 1 neat row) -->
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #d1fae5 !important; border-color: #a7f3d0 !important;">
+                    <div class="stat-num text-dark fs-16 d-inline-flex align-items-center justify-content-center">
+                        <i class="mdi mdi-phone me-1 fs-14 text-success"></i>${(live.called_leads !== undefined ? live.called_leads : (live.assigned_leads || 0)).toLocaleString('en-IN')}
+                    </div>
+                    <div class="stat-lbl text-dark mt-1">Called</div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #fee2e2 !important; border-color: #fecaca !important;">
+                    <div class="stat-num text-dark fs-16 d-inline-flex align-items-center justify-content-center">
+                        <i class="mdi mdi-phone-off me-1 fs-14 text-danger"></i>${(live.not_called_leads !== undefined ? live.not_called_leads : (live.unassigned_leads || 0)).toLocaleString('en-IN')}
+                    </div>
+                    <div class="stat-lbl text-dark mt-1">No called</div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #cffafe !important; border-color: #a5f3fc !important;">
+                    <div class="stat-num text-dark fs-16">${(live.followup_leads || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Follow-ups</div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #f3e8ff !important; border-color: #e9d5ff !important;">
+                    <div class="stat-num text-dark fs-16">${(live.trial_leads || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Free Trials</div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #ccfbf1 !important; border-color: #99f6e4 !important;">
+                    <div class="stat-num text-dark fs-16">${(live.so_leads || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">SO</div>
+                </div>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2">
+                <div class="metric-stat-box text-center p-2 rounded-2" style="background: #fef3c7 !important; border-color: #fde68a !important;">
+                    <div class="stat-num text-dark fs-16">${(live.client_leads || 0).toLocaleString('en-IN')}</div>
+                    <div class="stat-lbl text-dark mt-1">Paid Clients</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Section 2: Lead Status Breakdown (Distinct Horizontal Status Chip Layout with Dot & Counter Badge)
+    if (statuses.length === 0 || live.total_leads === 0) {
+        html += `
+            <div class="border rounded p-3 text-center bg-light mt-3">
+                <i class="mdi mdi-information-outline fs-24 text-muted d-block mb-1"></i>
+                <div class="fs-13 fw-semibold text-dark">No live leads found for this batch</div>
+                <div class="fs-12 text-muted">
+                    ${up.total_items > 0 && up.duplicate_count === up.total_items 
+                        ? `All ${up.total_items.toLocaleString('en-IN')} rows in this batch were duplicates at upload time. No leads were created.` 
+                        : 'No leads currently exist with this batch ID in the leads table.'}
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="d-flex align-items-center justify-content-between mb-2 mt-2 pt-2 border-top">
+                <span class="fs-12 fw-bold text-dark text-uppercase letter-spacing-sm">
+                    <i class="mdi mdi-chart-pie text-primary me-1"></i>Lead Status (${statuses.length})
+                </span>
+                <span class="fs-11 text-muted">
+                    Total: <strong class="text-dark">${(live.total_leads || 0).toLocaleString('en-IN')}</strong>
+                </span>
+            </div>
+
+            <!-- Distinct Horizontal Status Chip Grid (4 per row) -->
+            <div class="row g-2">
+        `;
+
+        const TONE_STYLE_MAP = {
+            blue: { bg: '#dbeafe', border: '#bfdbfe', dot: '#2563eb' },
+            primary: { bg: '#dbeafe', border: '#bfdbfe', dot: '#2563eb' },
+            green: { bg: '#d1fae5', border: '#a7f3d0', dot: '#059669' },
+            success: { bg: '#d1fae5', border: '#a7f3d0', dot: '#059669' },
+            cyan: { bg: '#cffafe', border: '#a5f3fc', dot: '#0891b2' },
+            info: { bg: '#cffafe', border: '#a5f3fc', dot: '#0891b2' },
+            teal: { bg: '#ccfbf1', border: '#99f6e4', dot: '#0d9488' },
+            purple: { bg: '#f3e8ff', border: '#e9d5ff', dot: '#9333ea' },
+            indigo: { bg: '#e0e7ff', border: '#c7d2fe', dot: '#4f46e5' },
+            pink: { bg: '#fce7f3', border: '#fbcfe8', dot: '#db2777' },
+            rose: { bg: '#ffe4e6', border: '#fecdd3', dot: '#e11d48' },
+            red: { bg: '#fee2e2', border: '#fecaca', dot: '#dc2626' },
+            danger: { bg: '#fee2e2', border: '#fecaca', dot: '#dc2626' },
+            orange: { bg: '#ffedd5', border: '#fed7aa', dot: '#ea580c' },
+            amber: { bg: '#fef3c7', border: '#fde68a', dot: '#d97706' },
+            warning: { bg: '#fef3c7', border: '#fde68a', dot: '#d97706' },
+            yellow: { bg: '#fef9c3', border: '#fef08a', dot: '#ca8a04' },
+            lime: { bg: '#ecfccb', border: '#d9f99d', dot: '#65a30d' },
+            slate: { bg: '#e2e8f0', border: '#cbd5e1', dot: '#64748b' },
+            secondary: { bg: '#e2e8f0', border: '#cbd5e1', dot: '#64748b' },
+            gray: { bg: '#f3f4f6', border: '#e5e7eb', dot: '#6b7280' },
+        };
+
+        statuses.forEach((st) => {
+            const tone = (st.status_tone || 'slate').toLowerCase();
+            const toneStyle = TONE_STYLE_MAP[tone] || { bg: '#f1f5f9', border: '#e2e8f0', dot: '#64748b' };
+            html += `
+                <div class="col-6 col-md-3">
+                    <div class="lead-status-row-card d-flex align-items-center justify-content-between p-2 px-2.5 rounded-2" style="background: ${toneStyle.bg} !important; border: 1px solid ${toneStyle.border} !important;">
+                        <span class="fs-12 fw-bold text-dark text-truncate me-1" title="${escapeHtml(st.status_name)}">${escapeHtml(st.status_name)}</span>
+                        <span class="badge bg-white text-dark border fw-bold fs-12 px-1.5 py-0.5 shadow-xs flex-shrink-0">${st.total_leads.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            </div>
+        `;
+    }
+
+    // Section 3: Live Lead Source Breakdown (Handles multi-source / reassigned leads)
+    const sources = data.sources || [];
+    if (sources.length > 0 && live.total_leads > 0) {
+        html += `
+            <div class="d-flex align-items-center justify-content-between mb-2 mt-3 pt-2 border-top">
+                <span class="fs-12 fw-bold text-dark text-uppercase letter-spacing-sm">
+                    <i class="mdi mdi-source-branch text-primary me-1"></i>Lead Source (${sources.length})
+                </span>
+                <span class="fs-11 text-muted">
+                    Total: <strong class="text-dark">${(live.total_leads || 0).toLocaleString('en-IN')}</strong>
+                </span>
+            </div>
+
+            <!-- Lead Source Chip Grid (4 per row) -->
+            <div class="row g-2">
+        `;
+
+        sources.forEach((src) => {
+            html += `
+                <div class="col-6 col-md-3">
+                    <div class="lead-status-row-card d-flex align-items-center justify-content-between p-2 px-2.5 rounded-2" style="background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important;">
+                        <span class="fs-12 fw-bold text-dark text-truncate me-1" title="${escapeHtml(src.source_name)}">${escapeHtml(src.source_name)}</span>
+                        <span class="badge bg-white text-dark border fw-bold fs-12 px-1.5 py-0.5 shadow-xs flex-shrink-0">${src.total_leads.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            </div>
+        `;
+    }
+
+    bodyEl.innerHTML = html;
+}
+
+// Filter and Search Handlers
+function handleSearchInput(val) {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+        currentSearch = (val || '').trim();
+        fetchBatches(1);
+    }, 300);
+}
+
+function handleFilterChange() {
+    const typeSelect = document.getElementById('batchUploadTypeFilter');
+    currentUploadType = typeSelect ? typeSelect.value : 'all';
+
+    const sourceSelect = document.getElementById('batchSourceFilter');
+    currentSource = sourceSelect ? sourceSelect.value : 'all';
+
+    const uploaderSelect = document.getElementById('batchUploaderFilter');
+    currentUploader = uploaderSelect ? uploaderSelect.value : 'all';
+
+    fetchBatches(1);
+}
+
+function handlePageSizeChange(val) {
+    currentPerPage = parseInt(val, 10) || 10;
+    fetchBatches(1);
+}
+
+function resetFilters() {
+    const searchInput = document.getElementById('batchSearchInput');
+    if (searchInput) searchInput.value = '';
+    currentSearch = '';
+
+    const typeSelect = document.getElementById('batchUploadTypeFilter');
+    if (typeSelect) typeSelect.value = 'all';
+    currentUploadType = 'all';
+
+    const sourceSelect = document.getElementById('batchSourceFilter');
+    if (sourceSelect) sourceSelect.value = 'all';
+    currentSource = 'all';
+
+    const uploaderSelect = document.getElementById('batchUploaderFilter');
+    if (uploaderSelect) uploaderSelect.value = 'all';
+    currentUploader = 'all';
+
+    const sizeSelect = document.getElementById('pageSizeSelect');
+    if (sizeSelect) sizeSelect.value = '10';
+    currentPerPage = 10;
+
+    fetchBatches(1);
+}
+
+// Helper Utilities
+function getInitials(name) {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+</script>
+{% endblock %}

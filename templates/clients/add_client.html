@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Add Client</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item">Clients</li>
+                    <li class="breadcrumb-item active">Add Client</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Section -->
+<div class="card">
+    <div class="card-header"><h5 class="card-title">Client Information</h5></div>
+    <div class="card-body">
+        <form>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label">Client Name</label>
+                    <input type="text" class="form-control" name="client_name" required minlength="2" maxlength="100" placeholder="Enter client name">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" class="form-control" name="contact_person" required minlength="2" maxlength="80" placeholder="Primary contact person">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" name="email" required maxlength="120" placeholder="client@example.com">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-control" name="phone" required minlength="10" maxlength="15" placeholder="10 digit phone number">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Industry</label>
+                    <select class="form-select" name="industry" required>
+                        <option value="">Select Industry</option>
+                        <option value="real_estate">Real Estate</option>
+                        <option value="saas">SaaS</option>
+                        <option value="fmcg">FMCG</option>
+                        <option value="manufacturing">Manufacturing</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Account Owner</label>
+                    <select class="form-select" name="account_owner" required>
+                        <option value="">Select Owner</option>
+                        <option value="priya">Priya Sharma</option>
+                        <option value="rohan">Rohan Iyer</option>
+                        <option value="neha">Neha Joshi</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Billing Address</label>
+                    <textarea class="form-control" name="billing_address" rows="3" maxlength="300" placeholder="Enter billing address"></textarea>
+                </div>
+                <div class="col-12">
+                    <!-- Action Buttons -->
+                    <button type="submit" class="btn btn-primary">Save Client</button>
+                    <button type="reset" class="btn btn-light ms-2">Reset</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

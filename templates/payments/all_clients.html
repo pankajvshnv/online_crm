@@ -1,0 +1,817 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+/* Shimmer Skeleton Animation */
+@keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+    background: linear-gradient(90deg, #f0f2f5 25%, #e2e5e9 37%, #f0f2f5 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease infinite;
+    border-radius: 4px;
+    display: inline-block;
+}
+</style>
+
+<div class="all-leads-page single-filter-page" id="clientsPageContainer">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{{ page_heading }}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_payments') }}">Sales Orders</a></li>
+                        <li class="breadcrumb-item active">Clients</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Filter Bar — single row, auto-fit (Matching Free Trials Layout) -->
+            <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+                <!-- 1. Status Filter -->
+                <div>
+                    <label class="form-label" for="statusFilter">Status</label>
+                    <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 140px;">
+                        <option value="all" selected>All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="hold">On Hold</option>
+                        <option value="terminated">Terminated</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+
+                <!-- 2. Owner Filter -->
+                <div>
+                    <label class="form-label" for="ownerFilter">Owner</label>
+                    <select class="form-select lead-filter-input" id="ownerFilter" name="owner" style="min-width: 140px;">
+                        <option value="all" {% if selected_owner == 'all' %}selected{% endif %}>All Owners</option>
+                        <option value="unassigned" {% if selected_owner == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                        {% if owners %}
+                            {% for o in owners %}
+                                <option value="{{ o.user_uuid }}" {% if selected_owner == o.user_uuid or (selected_owner is none and o.user_uuid == logged_user_uuid) %}selected{% endif %}>{{ o.full_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 3. Manager Filter -->
+                <div>
+                    <label class="form-label" for="managerFilter">Manager</label>
+                    <select class="form-select lead-filter-input" id="managerFilter" name="manager" style="min-width: 140px;">
+                        <option value="all" selected>All Managers</option>
+                        {% if managers %}
+                            {% for m in managers %}
+                                <option value="{{ m.user_uuid }}">{{ m.full_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 4. Date Filter -->
+                <div>
+                    <label class="form-label" for="datePresetFilter">Date</label>
+                    <select class="form-select lead-filter-input" id="datePresetFilter" style="min-width: 130px;">
+                        <option value="all" selected>All Time</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="this_week">This Week</option>
+                        <option value="this_month">This Month</option>
+                    </select>
+                </div>
+
+                <!-- 5. Search + Reset — pushed to RIGHT with ms-auto -->
+                <div class="d-flex align-items-end gap-2 ms-auto">
+                    <div style="min-width: 200px; max-width: 280px;">
+                        <label class="form-label" for="clientSearch">Search</label>
+                        <div class="position-relative">
+                            <input
+                                type="search"
+                                class="form-control lead-filter-input"
+                                id="clientSearch"
+                                name="search"
+                                value=""
+                                placeholder="Search name, code, mobile, owner..."
+                                autocomplete="off"
+                            >
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="button" class="btn btn-light" id="btnResetFilters">
+                            <i class="mdi mdi-refresh me-1"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="clientsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 40px;">
+                                        <input type="checkbox" id="selectAllLeads" class="form-check-input">
+                                    </th>
+                                    <th class="text-nowrap" style="width: 110px;">Lead Code</th>
+                                    <th class="text-nowrap">Client Name</th>
+                                    <th class="text-nowrap">Mobile</th>
+                                    <th class="text-nowrap">Email Address</th>
+                                    <th class="text-center text-nowrap" style="width: 120px;">Total Invoices</th>
+                                    <th class="text-end text-nowrap" style="width: 140px;">Total Payments</th>
+                                    <th class="text-nowrap">Owner</th>
+                                    <th class="text-nowrap">Manager</th>
+                                    <th class="text-center text-nowrap" style="width: 110px;">Status</th>
+                                    <th class="lead-comment-col">Recent Activity</th>
+                                    <th class="text-center text-nowrap pe-3" style="width: 180px;">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="clientsTableBody">
+                                {% for _ in range(10) %}
+                                <tr class="client-skeleton-row">
+                                    <td class="text-center"><span class="skeleton-shimmer rounded" style="width: 16px; height: 16px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 70px; height: 16px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 140px; height: 16px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 105px; height: 26px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 130px; height: 16px;"></span></td>
+                                    <td class="text-center"><span class="skeleton-shimmer rounded-pill" style="width: 80px; height: 22px;"></span></td>
+                                    <td class="text-end"><span class="skeleton-shimmer rounded" style="width: 85px; height: 18px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 100px; height: 16px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 100px; height: 16px;"></span></td>
+                                    <td class="text-center"><span class="skeleton-shimmer rounded-pill" style="width: 70px; height: 22px;"></span></td>
+                                    <td><span class="skeleton-shimmer rounded" style="width: 160px; height: 16px;"></span></td>
+                                    <td class="text-center pe-3"><span class="skeleton-shimmer rounded" style="width: 140px; height: 28px;"></span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted" id="paginationInfo">Showing 0 to 0 of 0 records</div>
+                </div>
+
+                <nav aria-label="Clients pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- View All Invoices Modal -->
+<div class="modal fade" id="clientInvoicesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold text-white mb-0" id="clientInvoicesModalTitle">
+                    <i class="mdi mdi-receipt-text-outline me-2"></i>Client Invoices & Service Status
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Client Overview Bar -->
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-3">
+                                <span class="fs-12 text-muted text-uppercase fw-bold d-block">Client Name</span>
+                                <span class="fs-15 fw-bold text-primary" id="modalClientName">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="fs-12 text-muted text-uppercase fw-bold d-block">Client Code</span>
+                                <span class="fs-15 fw-bold text-dark" id="modalClientCode">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="fs-12 text-muted text-uppercase fw-bold d-block">Total Invoices</span>
+                                <span class="fs-15 fw-bold text-info" id="modalTotalInvoices">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="fs-12 text-muted text-uppercase fw-bold d-block">Total Payment</span>
+                                <span class="fs-15 fw-bold text-success" id="modalTotalPayment">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoices List Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle mb-0 text-nowrap fs-13">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3 text-nowrap">Order / Invoice No</th>
+                                <th class="text-nowrap">Product & Plan</th>
+                                <th class="text-nowrap">Service Start & Expiry</th>
+                                <th class="text-end text-nowrap">Grand Total</th>
+                                <th class="text-center text-nowrap">Order Status</th>
+                                <th class="text-center text-nowrap pe-3" style="min-width: 280px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalInvoicesTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.clientsDataMap = {};
+let currentClientsPage = 1;
+let currentClientsPerPage = 10;
+let clientsAbortController = null;
+let searchDebounceTimer = null;
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function renderSkeleton(perPage) {
+    const tbody = document.getElementById('clientsTableBody');
+    if (!tbody) return;
+    const count = perPage || currentClientsPerPage || 10;
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        html += `
+            <tr class="client-skeleton-row">
+                <td class="text-center"><span class="skeleton-shimmer rounded" style="width: 16px; height: 16px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 70px; height: 16px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 140px; height: 16px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 105px; height: 26px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 130px; height: 16px;"></span></td>
+                <td class="text-center"><span class="skeleton-shimmer rounded-pill" style="width: 80px; height: 22px;"></span></td>
+                <td class="text-end"><span class="skeleton-shimmer rounded" style="width: 85px; height: 18px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 100px; height: 16px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 100px; height: 16px;"></span></td>
+                <td class="text-center"><span class="skeleton-shimmer rounded-pill" style="width: 70px; height: 22px;"></span></td>
+                <td><span class="skeleton-shimmer rounded" style="width: 160px; height: 16px;"></span></td>
+                <td class="text-center pe-3"><span class="skeleton-shimmer rounded" style="width: 140px; height: 28px;"></span></td>
+            </tr>
+        `;
+    }
+    tbody.innerHTML = html;
+}
+
+function renderClickToCall(client) {
+    const displayNum = escapeHtml(client.mobile_display || client.decrypted_mobile || client.mobile_number || 'NA');
+    const leadName = escapeHtml(client.client_name || 'Lead');
+    const leadCode = escapeHtml(String(client.lead_id || client.client_code || ''));
+    const leadUuid = escapeHtml(client.lead_uuid || '');
+    
+    if (client.click_to_call_active) {
+        if (client.is_last_dialed) {
+            return `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${leadUuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Last Dialed Call: ${displayNum}">
+                <span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span>
+                ${displayNum}
+            </button>`;
+        } else if (client.call_status === 1) {
+            return `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${leadUuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Called: ${displayNum}">
+                <i class="mdi mdi-phone-check-outline me-1"></i>
+                ${displayNum}
+            </button>`;
+        } else {
+            return `<button type="button" class="btn btn-outline-primary btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${leadUuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Click to Call ${leadName}">
+                <i class="mdi mdi-phone-outline me-1"></i>
+                ${displayNum}
+            </button>`;
+        }
+    } else {
+        return `<span class="fw-medium">${displayNum}</span>`;
+    }
+}
+
+function renderClientStatusBadge(status) {
+    const st = (status || 'active').toLowerCase();
+    if (st === 'active') {
+        return `<span class="badge bg-success-subtle text-success"><i class="mdi mdi-check-circle-outline me-1"></i>Active</span>`;
+    } else if (st === 'hold') {
+        return `<span class="badge bg-warning-subtle text-warning"><i class="mdi mdi-pause-circle-outline me-1"></i>On Hold</span>`;
+    } else if (['terminated', 'expired', 'cancelled'].includes(st)) {
+        const capitalized = st.charAt(0).toUpperCase() + st.slice(1);
+        return `<span class="badge bg-danger-subtle text-danger"><i class="mdi mdi-close-circle-outline me-1"></i>${capitalized}</span>`;
+    } else {
+        const capitalized = st.charAt(0).toUpperCase() + st.slice(1);
+        return `<span class="badge bg-secondary-subtle text-secondary">${capitalized}</span>`;
+    }
+}
+
+function renderRecentActivity(client) {
+    const noteVal = (client.notes || '').trim();
+    const hasNote = noteVal && !['no notes', 'no note', 'none', 'null', 'na'].includes(noteVal.toLowerCase());
+    const actDate = client.created_at_fmt || (client.created_at ? client.created_at.substring(0, 16) : '');
+    const creatorName = client.creator_name || '';
+
+    let noteHtml = '';
+    if (hasNote) {
+        const safeNote = escapeHtml(noteVal);
+        noteHtml = `
+            <div class="d-flex align-items-center gap-1" style="max-width: 235px;">
+                <span class="text-truncate fs-13 text-dark flex-grow-1" 
+                      style="max-width: 215px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" 
+                      data-bs-toggle="tooltip" 
+                      data-bs-placement="top" 
+                      data-bs-custom-class="lead-comment-tooltip"
+                      title="${safeNote}">
+                    ${safeNote}
+                </span>
+                ${noteVal.length > 25 ? `<i class="mdi mdi-information-outline text-primary fs-14 flex-shrink-0" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="lead-comment-tooltip" title="${safeNote}" style="cursor: pointer;"></i>` : ''}
+            </div>
+        `;
+    } else {
+        noteHtml = `<span class="text-muted fs-12">Client Created</span>`;
+    }
+
+    let metaHtml = '';
+    if (actDate || creatorName) {
+        const parts = [];
+        if (actDate) parts.push(escapeHtml(actDate));
+        if (creatorName) parts.push(`By: ${escapeHtml(creatorName)}`);
+        metaHtml = `<small class="text-muted d-block fs-11 mt-1">${parts.join(' • ')}</small>`;
+    }
+
+    return `<div style="max-width: 235px;">${noteHtml}${metaHtml}</div>`;
+}
+
+function renderActions(client) {
+    const leadUuid = escapeHtml(client.lead_uuid || '');
+    const safeClientName = escapeHtml(client.client_name || '');
+    return `
+        <div class="d-inline-flex align-items-center gap-1">
+            <button type="button" class="btn btn-sm btn-success text-white px-2 py-1 shadow-sm fw-medium waves-effect waves-light" onclick="openCreateSalesOrderPage('${leadUuid}')" title="Add Sales Order for ${safeClientName}">
+                <i class="mdi mdi-plus-circle-outline me-1"></i>Add SO
+            </button>
+            <button type="button" class="btn btn-sm btn-info text-white px-2 py-1 shadow-sm fw-medium waves-effect waves-light" onclick="openClientInvoicesModalById(${client.lead_id})" title="All Invoices">
+                <i class="mdi mdi-receipt-text-outline me-1"></i>All Invoices
+            </button>
+        </div>
+    `;
+}
+
+function renderClients(clients) {
+    const tbody = document.getElementById('clientsTableBody');
+    if (!tbody) return;
+
+    window.clientsDataMap = {};
+
+    if (!clients || clients.length === 0) {
+        tbody.innerHTML = `
+            <tr id="noClientsRow">
+                <td colspan="12" class="text-center py-4 text-muted">
+                    No client records found matching active filters.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let rowsHtml = '';
+    clients.forEach(c => {
+        window.clientsDataMap[c.lead_id] = c;
+
+        const safeCode = escapeHtml(c.client_code || String(c.lead_id));
+        const safeName = escapeHtml(c.client_name || 'No Name');
+        const safeEmail = escapeHtml(c.email || 'N/A');
+        const safeOwner = escapeHtml(c.owner_name || 'Unassigned');
+        const safeManager = escapeHtml(c.manager_name || 'N/A');
+        const totalPaymentFormatted = '₹' + (c.total_payment ? Number(c.total_payment).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
+        const invoicesCount = c.invoices_count || (c.invoices ? c.invoices.length : 0);
+
+        rowsHtml += `
+            <tr class="client-row" data-lead-id="${c.lead_id}">
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input lead-checkbox" value="${escapeHtml(c.lead_uuid || '')}">
+                </td>
+                <td class="text-nowrap fw-bold text-dark">
+                    ${safeCode}
+                </td>
+                <td class="fw-medium">
+                    <i class="mdi mdi-account-outline text-muted me-1"></i> ${safeName}
+                </td>
+                <td class="text-nowrap">
+                    ${renderClickToCall(c)}
+                </td>
+                <td class="text-nowrap">
+                    ${safeEmail}
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-soft-info text-info px-3 py-1 fs-12 fw-semibold rounded-pill">
+                        ${invoicesCount} Invoices
+                    </span>
+                </td>
+                <td class="text-end fw-bold text-success fs-14">
+                    ${totalPaymentFormatted}
+                </td>
+                <td class="text-nowrap fw-medium text-dark">
+                    <i class="mdi mdi-account-tie-outline text-muted me-1"></i>${safeOwner}
+                </td>
+                <td class="text-nowrap fw-medium text-dark">
+                    <i class="mdi mdi-account-supervisor-outline text-muted me-1"></i>${safeManager}
+                </td>
+                <td class="text-center">
+                    ${renderClientStatusBadge(c.client_status)}
+                </td>
+                <td class="lead-comment-col align-middle">
+                    ${renderRecentActivity(c)}
+                </td>
+                <td class="text-center pe-3 text-nowrap">
+                    ${renderActions(c)}
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = rowsHtml;
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        document.querySelectorAll('#clientsTable [data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    }
+}
+
+function renderPagination(p) {
+    if (!p) return;
+
+    const info = document.getElementById('paginationInfo');
+    if (info) {
+        if (p.total_records === 0) {
+            info.textContent = 'Showing 0 to 0 of 0 records';
+        } else {
+            info.textContent = `Showing ${p.start_index} to ${p.end_index} of ${p.total_records} records`;
+        }
+    }
+
+    const nav = document.getElementById('paginationNav');
+    if (!nav) return;
+
+    if (p.total_pages <= 1) {
+        nav.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Prev Button
+    html += `
+        <li class="page-item ${!p.has_prev ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="${p.has_prev ? `fetchClients(${p.page - 1})` : 'return false;'}">
+                <i class="mdi mdi-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page Numbers window logic
+    const maxButtons = 5;
+    let startPage = Math.max(1, p.page - Math.floor(maxButtons / 2));
+    let endPage = Math.min(p.total_pages, startPage + maxButtons - 1);
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    if (startPage > 1) {
+        html += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="fetchClients(1)">1</a></li>`;
+        if (startPage > 2) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = (i === p.page) ? 'active' : '';
+        html += `
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="javascript:void(0)" onclick="fetchClients(${i})">${i}</a>
+            </li>
+        `;
+    }
+
+    if (endPage < p.total_pages) {
+        if (endPage < p.total_pages - 1) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="fetchClients(${p.total_pages})">${p.total_pages}</a></li>`;
+    }
+
+    // Next Button
+    html += `
+        <li class="page-item ${!p.has_next ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="${p.has_next ? `fetchClients(${p.page + 1})` : 'return false;'}">
+                <i class="mdi mdi-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    nav.innerHTML = html;
+}
+
+function fetchClients(page) {
+    currentClientsPage = page || 1;
+
+    const pageSizeEl = document.getElementById('pageSize');
+    if (pageSizeEl) {
+        currentClientsPerPage = parseInt(pageSizeEl.value) || 10;
+    }
+
+    const statusFilter = document.getElementById('statusFilter');
+    const ownerFilter = document.getElementById('ownerFilter');
+    const managerFilter = document.getElementById('managerFilter');
+    const datePresetFilter = document.getElementById('datePresetFilter');
+    const clientSearch = document.getElementById('clientSearch');
+
+    const params = new URLSearchParams({
+        page: currentClientsPage,
+        per_page: currentClientsPerPage,
+        status: statusFilter ? statusFilter.value : 'all',
+        owner: ownerFilter ? ownerFilter.value : 'all',
+        manager: managerFilter ? managerFilter.value : 'all',
+        date_preset: datePresetFilter ? datePresetFilter.value : 'all',
+        search: clientSearch ? clientSearch.value.trim() : ''
+    });
+
+    renderSkeleton(currentClientsPerPage);
+
+    if (clientsAbortController) {
+        clientsAbortController.abort();
+    }
+    clientsAbortController = new AbortController();
+
+    // Persist filters in session silently
+    fetch('/api/clients/save-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            status: params.get('status'),
+            owner: params.get('owner'),
+            manager: params.get('manager'),
+            date_preset: params.get('date_preset'),
+            search: params.get('search'),
+            page_size: currentClientsPerPage,
+            page: currentClientsPage
+        })
+    }).catch(() => {});
+
+    fetch(`/api/clients/data?${params.toString()}`, {
+        signal: clientsAbortController.signal
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            renderClients(data.clients || []);
+            renderPagination(data.pagination);
+        } else {
+            const tbody = document.getElementById('clientsTableBody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-danger">${escapeHtml(data.message || 'Error loading clients')}</td></tr>`;
+            }
+        }
+    })
+    .catch(err => {
+        if (err.name === 'AbortError') return;
+        console.error('Error fetching clients:', err);
+        const tbody = document.getElementById('clientsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-danger">Failed to load client data. Please refresh.</td></tr>`;
+        }
+    });
+}
+
+function initClientsPage() {
+    if (!document.getElementById('clientsPageContainer')) return;
+    const tableBody = document.getElementById('clientsTableBody');
+    if (!tableBody) return;
+
+    const savedFilters = {{ saved_filters | tojson | safe if saved_filters else '{}' }};
+    if (savedFilters && Object.keys(savedFilters).length > 0) {
+        if (savedFilters.status && document.getElementById('statusFilter')) document.getElementById('statusFilter').value = savedFilters.status;
+        if (savedFilters.owner && document.getElementById('ownerFilter')) document.getElementById('ownerFilter').value = savedFilters.owner;
+        if (savedFilters.manager && document.getElementById('managerFilter')) document.getElementById('managerFilter').value = savedFilters.manager;
+        if (savedFilters.date_preset && document.getElementById('datePresetFilter')) document.getElementById('datePresetFilter').value = savedFilters.date_preset;
+        if (savedFilters.search && document.getElementById('clientSearch')) document.getElementById('clientSearch').value = savedFilters.search;
+        if (savedFilters.page_size && document.getElementById('pageSize')) document.getElementById('pageSize').value = savedFilters.page_size;
+        if (savedFilters.page) currentClientsPage = parseInt(savedFilters.page) || 1;
+    }
+
+    const clientSearch = document.getElementById('clientSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const ownerFilter = document.getElementById('ownerFilter');
+    const managerFilter = document.getElementById('managerFilter');
+    const datePresetFilter = document.getElementById('datePresetFilter');
+    const pageSizeEl = document.getElementById('pageSize');
+    const btnResetFilters = document.getElementById('btnResetFilters');
+
+    if (clientSearch) {
+        clientSearch.addEventListener('input', function () {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                fetchClients(1);
+            }, 300);
+        });
+    }
+
+    if (statusFilter) statusFilter.addEventListener('change', () => fetchClients(1));
+    if (ownerFilter) ownerFilter.addEventListener('change', () => fetchClients(1));
+    if (managerFilter) managerFilter.addEventListener('change', () => fetchClients(1));
+    if (datePresetFilter) datePresetFilter.addEventListener('change', () => fetchClients(1));
+    if (pageSizeEl) pageSizeEl.addEventListener('change', () => fetchClients(1));
+
+    if (btnResetFilters) {
+        btnResetFilters.addEventListener('click', function () {
+            if (clientSearch) clientSearch.value = '';
+            if (statusFilter) statusFilter.value = 'all';
+            if (ownerFilter) ownerFilter.value = 'all';
+            if (managerFilter) managerFilter.value = 'all';
+            if (datePresetFilter) datePresetFilter.value = 'all';
+            if (pageSizeEl) pageSizeEl.value = '10';
+            fetchClients(1);
+        });
+    }
+
+    const selectAllLeads = document.getElementById('selectAllLeads');
+    if (selectAllLeads) {
+        selectAllLeads.addEventListener('change', function () {
+            const isChecked = this.checked;
+            document.querySelectorAll('#clientsTable .lead-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+            });
+        });
+    }
+
+    fetchClients(currentClientsPage);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClientsPage);
+} else {
+    initClientsPage();
+}
+document.addEventListener('pjax:contentLoaded', initClientsPage);
+
+function openClientInvoicesModalById(leadId) {
+    const clientObj = window.clientsDataMap ? window.clientsDataMap[leadId] : null;
+    if (!clientObj) return;
+    openClientInvoicesModal(clientObj);
+}
+
+function openClientInvoicesModal(clientObj) {
+    if (!clientObj) return;
+
+    document.getElementById('modalClientName').innerText = clientObj.client_name || 'N/A';
+    document.getElementById('modalClientCode').innerText = clientObj.client_code || 'N/A';
+    document.getElementById('modalTotalInvoices').innerText = (clientObj.invoices ? clientObj.invoices.length : 0) + ' Invoices';
+    document.getElementById('modalTotalPayment').innerText = '₹' + (clientObj.total_payment ? Number(clientObj.total_payment).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00');
+
+    const tbody = document.getElementById('modalInvoicesTableBody');
+    tbody.innerHTML = '';
+
+    if (!clientObj.invoices || clientObj.invoices.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No invoices found for this client.</td></tr>`;
+    } else {
+        clientObj.invoices.forEach(inv => {
+            const tr = document.createElement('tr');
+
+            const orderNum = escapeHtml(inv.order_number || ('SO-' + inv.sales_order_id));
+            const viewUrl = `/leads/view-sales-order/${escapeHtml(inv.sales_order_uuid || '')}`;
+            
+            const startDate = escapeHtml(inv.service_start_date || 'N/A');
+            const expiryDate = escapeHtml(inv.service_expiry_date || 'N/A');
+            const grossAmt = inv.grand_total ? '₹' + Number(inv.grand_total).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '₹0.00';
+
+            const currentStatus = (inv.client_status || 'active').toLowerCase();
+
+            let statusBadge = '';
+            if (inv.so_status === 'approved') {
+                statusBadge = '<span class="badge bg-success text-white px-2 py-1 fs-11">Approved</span>';
+            } else if (['rejected', 'cancelled'].includes(inv.so_status)) {
+                statusBadge = `<span class="badge bg-danger text-white px-2 py-1 fs-11 text-capitalize">${escapeHtml(inv.so_status)}</span>`;
+            } else {
+                statusBadge = '<span class="badge bg-warning text-dark px-2 py-1 fs-11">Pending</span>';
+            }
+
+            tr.innerHTML = `
+                <td class="ps-3 fw-bold text-dark">
+                    ${orderNum}
+                </td>
+                <td>
+                    <div class="fw-semibold text-dark">${escapeHtml(inv.product_name || 'N/A')}</div>
+                    <small class="text-muted text-capitalize fs-11">${escapeHtml((inv.plan_name || 'N/A').replace(/_/g, ' '))}</small>
+                </td>
+                <td>
+                    <small class="fw-medium text-dark">${startDate} &rarr; ${expiryDate}</small>
+                </td>
+                <td class="text-end fw-bold text-success fs-14">
+                    ${grossAmt}
+                </td>
+                <td class="text-center">
+                    ${statusBadge}
+                </td>
+                <td class="text-center pe-3">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
+                        <select class="form-select form-select-sm fw-semibold shadow-sm text-capitalize" style="width: 145px;" onchange="updateClientServiceStatus(this, '${inv.id}')">
+                            <option value="active" ${currentStatus === 'active' ? 'selected' : ''}>Active / Service</option>
+                            <option value="hold" ${currentStatus === 'hold' ? 'selected' : ''}>On Hold</option>
+                            <option value="terminated" ${currentStatus === 'terminated' ? 'selected' : ''}>Terminated</option>
+                            <option value="expired" ${currentStatus === 'expired' ? 'selected' : ''}>Expired</option>
+                        </select>
+                        <a href="${viewUrl}" class="btn btn-sm btn-info text-white px-2 py-1 shadow-sm fw-medium waves-effect waves-light text-nowrap" title="View Sales Order Details">
+                            <i class="mdi mdi-eye me-1"></i>View Invoice
+                        </a>
+                    </div>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('clientInvoicesModal'));
+    modal.show();
+}
+
+function updateClientServiceStatus(selectElem, clientId) {
+    if (!clientId) return;
+    const newStatus = selectElem.value;
+    selectElem.disabled = true;
+
+    fetch('/api/clients/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            client_id: clientId,
+            client_status: newStatus
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        selectElem.disabled = false;
+        if (data.success) {
+            alert(data.message || 'Service status updated successfully.');
+        } else {
+            alert(data.message || 'Failed to update service status.');
+        }
+    })
+    .catch(err => {
+        selectElem.disabled = false;
+        alert('An error occurred while updating status.');
+        console.error(err);
+    });
+}
+
+function openCreateSalesOrderPage(leadUuid) {
+    if (!leadUuid) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/leads/select-sales-order-lead';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'lead_uuid';
+    input.value = leadUuid;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

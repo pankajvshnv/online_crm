@@ -1,0 +1,106 @@
+<div class="row">
+    <div class="col-12">
+        <div
+            class="page-title-box d-sm-flex align-items-center justify-content-between"
+        >
+            <h4 class="mb-sm-0">
+                All Leads
+            </h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item">
+                        <a href="#">
+                            Leads
+                        </a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        All Leads
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+
+        <!-- Lead source buttons and search -->
+        <div
+            class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3"
+        >
+            <div class="d-flex flex-wrap gap-2">
+                {% for btn in source_limit_buttons %}
+                <button
+                    type="button"
+                    class="btn btn-outline-primary btn-fetch-lead-source d-inline-flex align-items-center {% if btn.is_limit_reached %}disabled{% endif %}"
+                    data-source-id="{{ btn.source_id }}"
+                    data-source-name="{{ btn.source_name }}"
+                    data-pending-limit="{{ btn.pending_lead_limit }}"
+                    data-daily-limit="{{ btn.daily_lead_limit }}"
+                    data-fetch-limit="{{ btn.fetch_lead_limit }}"
+                    data-pending-count="{{ btn.pending_lead_count }}"
+                    data-daily-count="{{ btn.daily_fetched_count }}"
+                    data-unassigned-count="{{ btn.unassigned_count }}"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    title="Available Unassigned Leads in System: {{ btn.unassigned_count }}"
+                >
+                    <i class="mdi mdi-cloud-download-outline fs-5 me-2"></i>
+
+                    <span class="text-start">
+                        <span class="d-block fw-medium">
+                            {{ btn.source_name }}
+                        </span>
+
+                        <small class="lead-button-count">
+                            {{ btn.remaining_today }}/{{ btn.daily_lead_limit }}
+                        </small>
+                    </span>
+                </button>
+                {% else %}
+                <div class="text-muted small py-2 align-self-center">No assigned lead sources.</div>
+                {% endfor %}
+            </div>
+
+            <div
+                class="d-flex align-items-end gap-2 ms-xl-auto"
+                style="width: min(100%, 500px);"
+            >
+                <div class="flex-grow-1">
+                    <label
+                        class="form-label"
+                        for="leadSearch"
+                    >
+                        Search
+                    </label>
+
+                    <div class="position-relative">
+                        <input
+                            type="search"
+                            class="form-control lead-filter-input"
+                            id="leadSearch"
+                            name="search"
+                            value="{{ request.args.get('search', '') }}"
+                            placeholder="Search name, mobile, code or email"
+                            autocomplete="off"
+                        >
+
+                        <i
+                            class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                        ></i>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    id="btnResetFilters"
+                >
+                    <i class="mdi mdi-refresh me-1"></i>
+                    Reset
+                </button>
+            </div>
+        </div>

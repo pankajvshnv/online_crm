@@ -1,0 +1,2085 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12">
+        <div
+            class="page-title-box d-sm-flex align-items-center justify-content-between"
+        >
+            <h4 class="mb-sm-0">
+                All Leads
+            </h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item">
+                        <a href="#">
+                            Leads
+                        </a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        All Leads
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+
+        <!-- Lead source buttons and search -->
+        <div
+            class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3"
+        >
+            <div class="d-flex flex-wrap gap-2">
+
+                <button
+                    type="button"
+                    class="btn btn-outline-primary d-inline-flex align-items-center"
+                >
+                    <i class="mdi mdi-cloud-download-outline fs-5 me-2"></i>
+
+                    <span class="text-start">
+                        <span class="d-block fw-medium">
+                            Fresh Lead
+                        </span>
+
+                        <small>
+                            10/50
+                        </small>
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-primary d-inline-flex align-items-center"
+                >
+                    <i class="mdi mdi-cloud-download-outline fs-5 me-2"></i>
+
+                    <span class="text-start">
+                        <span class="d-block fw-medium">
+                            Website Lead
+                        </span>
+
+                        <small>
+                            6/25
+                        </small>
+                    </span>
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-primary d-inline-flex align-items-center"
+                >
+                    <i class="mdi mdi-cloud-download-outline fs-5 me-2"></i>
+
+                    <span class="text-start">
+                        <span class="d-block fw-medium">
+                            Facebook Lead
+                        </span>
+
+                        <small>
+                            12/40
+                        </small>
+                    </span>
+                </button>
+
+            </div>
+
+            <div
+                class="d-flex align-items-end gap-2 ms-xl-auto"
+                style="width: min(100%, 500px);"
+            >
+                <div class="flex-grow-1">
+                    <label
+                        class="form-label"
+                        for="leadSearch"
+                    >
+                        Search
+                    </label>
+
+                    <div class="position-relative">
+                        <input
+                            type="search"
+                            class="form-control"
+                            id="leadSearch"
+                            placeholder="Search name, mobile, code or email"
+                            autocomplete="off"
+                        >
+
+                        <i
+                            class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                        ></i>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-light"
+                >
+                    <i class="mdi mdi-refresh me-1"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+     <!-- Lead filters -->
+<div
+    class="d-flex flex-column flex-xl-row flex-wrap align-items-xl-end gap-3 mb-3"
+>
+    <!-- Action filter -->
+    <div>
+        <label class="form-label">
+            Action
+        </label>
+
+        <div class="dropdown">
+            <button
+                type="button"
+                class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+            >
+                Select Action
+            </button>
+
+            <ul class="dropdown-menu">
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#assignLeadModal"
+                    >
+                        <i class="mdi mdi-account-plus-outline me-2"></i>
+                        Assign
+                    </button>
+                </li>
+
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item text-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteLeadModal"
+                    >
+                        <i class="mdi mdi-delete-outline me-2"></i>
+                        Delete
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Call status filter -->
+    <div>
+        <label
+            class="form-label"
+            for="callStatusFilter"
+        >
+            Call Status
+        </label>
+
+        <select
+            class="form-select"
+            id="callStatusFilter"
+            style="min-width: 150px;"
+        >
+            <option value="">
+                All
+            </option>
+
+            <option
+                value="0"
+                selected
+            >
+                Not Called
+            </option>
+
+            <option value="1">
+                Called
+            </option>
+        </select>
+    </div>
+
+    <!-- Lead status filter -->
+    <div>
+        <label
+            class="form-label"
+            for="statusFilter"
+        >
+            Status
+        </label>
+
+        <select
+            class="form-select"
+            id="statusFilter"
+            style="min-width: 160px;"
+        >
+            <option value="">
+                All Statuses
+            </option>
+
+            <option selected>
+                No Status
+            </option>
+
+            <option>
+                Interested
+            </option>
+
+            <option>
+                Follow-up
+            </option>
+
+            <option>
+                Not Interested
+            </option>
+
+            <option>
+                Converted
+            </option>
+        </select>
+    </div>
+
+    <!-- Source filter -->
+    <div>
+        <label
+            class="form-label"
+            for="sourceFilter"
+        >
+            Source
+        </label>
+
+        <select
+            class="form-select"
+            id="sourceFilter"
+            style="min-width: 160px;"
+        >
+            <option value="">
+                All Sources
+            </option>
+
+            <option>
+                Fresh Lead
+            </option>
+
+            <option>
+                Website Lead
+            </option>
+
+            <option>
+                Facebook Lead
+            </option>
+
+            <option>
+                Referral
+            </option>
+        </select>
+    </div>
+
+    <!-- Owner filter -->
+    <div>
+        <label
+            class="form-label"
+            for="ownerFilter"
+        >
+            Owner
+        </label>
+
+        <select
+            class="form-select"
+            id="ownerFilter"
+            style="min-width: 170px;"
+        >
+            <option value="">
+                All Owners
+            </option>
+
+            <option>
+                Vijay Vaishnav
+            </option>
+
+            <option>
+                Amit Sharma
+            </option>
+
+            <option>
+                Rahul Verma
+            </option>
+        </select>
+    </div>
+
+    <!-- Lifecycle filter -->
+    <div>
+        <label
+            class="form-label"
+            for="lifecycleFilter"
+        >
+            Lifecycle
+        </label>
+
+        <select
+            class="form-select"
+            id="lifecycleFilter"
+            style="min-width: 160px;"
+        >
+            <option value="">
+                All Lifecycles
+            </option>
+
+            <option>
+                Lead
+            </option>
+
+            <option>
+                Prospect
+            </option>
+
+            <option>
+                Client
+            </option>
+
+            <option>
+                Suspended
+            </option>
+        </select>
+    </div>
+
+    <!-- Date filter -->
+    <div>
+        <label class="form-label">
+            Dates
+        </label>
+
+        <div class="dropdown">
+            <button
+                type="button"
+                class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+            >
+                <i class="mdi mdi-calendar-range-outline me-1"></i>
+                Select Date
+            </button>
+
+            <ul class="dropdown-menu">
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#createdDateModal"
+                    >
+                        <i class="mdi mdi-calendar-plus-outline me-2"></i>
+                        Created
+                    </button>
+                </li>
+
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modifiedDateModal"
+                    >
+                        <i class="mdi mdi-calendar-edit-outline me-2"></i>
+                        Modification
+                    </button>
+                </li>
+
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#assignedDateModal"
+                    >
+                        <i class="mdi mdi-calendar-account-outline me-2"></i>
+                        Assigned
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Reset filter -->
+    <div>
+        <button
+            type="button"
+            class="btn btn-light"
+        >
+            <i class="mdi mdi-refresh me-1"></i>
+            Reset
+        </button>
+    </div>
+</div>
+       
+        <!-- Lead table -->
+        <div class="clientos-table-scroll">
+            <table
+                class="table table-bordered table-hover align-middle mb-0"
+            >
+                <thead class="table-light">
+                    <tr>
+                        <th
+                            class="text-center"
+                            style="width: 45px;"
+                        >
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                            >
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                           
+                        >
+                            Lead Code
+                        
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                           
+                        >
+                            Name
+                            <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                           
+                        >
+                            Mobile
+                            <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                          
+                        >
+                            Status
+                            <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                           
+                        >
+                            Activity
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                           
+                        >
+                            Source
+                            <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                        </th>
+
+                      
+
+                       
+                     
+
+                        <th
+                            class="text-center text-nowrap"
+                           
+                        >
+                            Actions
+                        </th>
+
+                          <th
+                            class="text-nowrap"
+                          
+                        >
+                            Owner
+                            <i class="mdi mdi-unfold-more-horizontal text-muted ms-1"></i>
+                        </th>
+                         <th style="min-width: 280px;">
+                            Latest Comment
+                        </th>
+
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <!-- Lead row 1 -->
+                    <tr>
+                        <td class="text-center">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                            >
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold">
+                                    885
+                                </span>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-soft-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    style="width: 30px; height: 30px;"
+                                    title="View Lead Timeline"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#timelineModal"
+                                >
+                                    <i class="mdi mdi-clock-outline fs-5"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-medium">
+                                Rahul Sharma Dindore
+                            </div>
+
+                            <small class="text-muted">
+                                rahul@example.com
+                            </small>
+                        </td>
+
+                        <td>
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1"
+                            >
+                                <i class="mdi mdi-phone-outline"></i>
+                                9876543300
+                            </button>
+                        </td>
+
+                        <td>
+                            <span
+                                class="badge bg-secondary-subtle text-secondary"
+                            >
+                                No Status
+                            </span>
+                        </td>
+
+                        <td class="text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-soft-primary btn-sm rounded-circle"
+                                title="View Contact List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="contactListModal"
+                            >
+                                <i class="mdi mdi-account-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-warning btn-sm rounded-circle"
+                                title="View Follow-up List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="followupListModal"
+                            >
+                                <i class="mdi mdi-calendar-clock-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-info btn-sm rounded-circle"
+                                title="View Free Trial List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="freeTrialListModal"
+                            >
+                                <i class="mdi mdi-flask-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-success btn-sm rounded-circle"
+                                title="View Sales Order List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="salesOrderListModal"
+                            >
+                                <i class="mdi mdi-file-document-outline"></i>
+                            </button>
+                        </td>
+
+                        <td>
+                            Fresh Lead
+                        </td>
+
+                      
+                        <td class="text-center text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#manageLeadModal"
+                            >
+                                <i class="mdi mdi-account-edit-outline me-1"></i>
+                                Add Respose
+                            </button>
+                        </td>  <td>
+                            Vijay Vaishnav
+                        </td>
+
+                        <td>
+                            <div
+                                class="text-truncate"
+                               
+                                title="Client requested a callback in the evening."
+                            >
+                                Client requested a callback in the evening.
+                            </div>
+
+                            <small class="text-muted">
+                                Today, 11:30 AM
+                            </small>
+                        </td>
+
+                      
+
+                    </tr>
+
+                    <!-- Lead row 2 -->
+                    <tr>
+                        <td class="text-center">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                            >
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold">
+                                    884
+                                </span>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-soft-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    style="width: 30px; height: 30px;"
+                                    title="View Lead Timeline"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#timelineModal"
+                                >
+                                    <i class="mdi mdi-clock-outline fs-5"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-medium">
+                                Ankit Kumar
+                            </div>
+
+                            <small class="text-muted">
+                                ankit@example.com
+                            </small>
+                        </td>
+
+                        <td>
+                            <button
+                                type="button"
+                                class="btn btn-success btn-sm d-inline-flex align-items-center gap-1"
+                            >
+                                <i class="mdi mdi-phone-outline"></i>
+                                9876543211
+                            </button>
+                        </td>
+
+                        <td>
+                            <span
+                                class="badge bg-warning-subtle text-warning"
+                            >
+                                Follow-up
+                            </span>
+                        </td>
+
+                        <td class="text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-soft-primary btn-sm rounded-circle"
+                                title="View Contact List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="contactListModal"
+                            >
+                                <i class="mdi mdi-account-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-warning btn-sm rounded-circle"
+                                title="View Follow-up List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="followupListModal"
+                            >
+                                <i class="mdi mdi-calendar-clock-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-info btn-sm rounded-circle"
+                                title="View Free Trial List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="freeTrialListModal"
+                            >
+                                <i class="mdi mdi-flask-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-success btn-sm rounded-circle"
+                                title="View Sales Order List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="salesOrderListModal"
+                            >
+                                <i class="mdi mdi-file-document-outline"></i>
+                            </button>
+                        </td>
+
+                        <td>
+                            Website Lead
+                        </td>
+
+                        
+
+
+                        <td class="text-center text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#manageLeadModal"
+                            >
+                                <i class="mdi mdi-account-edit-outline me-1"></i>
+                                Add Response
+                            </button>
+                        </td>
+<td>
+                            Amit Sharma
+                        </td>
+                        <td>
+                            <div
+                                class="text-truncate"
+                              
+                                title="Follow-up scheduled for tomorrow."
+                            >
+                                Follow-up scheduled for tomorrow.
+                            </div>
+
+                            <small class="text-muted">
+                                Yesterday, 05:15 PM
+                            </small>
+                        </td>
+
+                       
+
+                    </tr>
+
+                    <!-- Lead row 3 -->
+                    <tr>
+                        <td class="text-center">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                            >
+                        </td>
+
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold">
+                                    883
+                                </span>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-soft-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
+                                    style="width: 30px; height: 30px;"
+                                    title="View Lead Timeline"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#timelineModal"
+                                >
+                                    <i class="mdi mdi-clock-outline fs-5"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-medium">
+                                Priya Verma
+                            </div>
+
+                            <small class="text-muted">
+                                priya@example.com
+                            </small>
+                        </td>
+
+                        <td>
+                            <button
+                                type="button"
+                                class="btn btn-success btn-sm d-inline-flex align-items-center gap-1"
+                            >
+                                <i class="mdi mdi-phone-outline"></i>
+                                9876543212
+                            </button>
+                        </td>
+
+                        <td>
+                            <span
+                                class="badge bg-success-subtle text-success"
+                            >
+                                Interested
+                            </span>
+                        </td>
+
+                        <td class="text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-soft-primary btn-sm rounded-circle"
+                                title="View Contact List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="contactListModal"
+                            >
+                                <i class="mdi mdi-account-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-warning btn-sm rounded-circle"
+                                title="View Follow-up List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="followupListModal"
+                            >
+                                <i class="mdi mdi-calendar-clock-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-info btn-sm rounded-circle"
+                                title="View Free Trial List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="freeTrialListModal"
+                            >
+                                <i class="mdi mdi-flask-outline"></i>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-soft-success btn-sm rounded-circle"
+                                title="View Sales Order List"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-activity-modal="salesOrderListModal"
+                            >
+                                <i class="mdi mdi-file-document-outline"></i>
+                            </button>
+                        </td>
+
+                        <td>
+                            Facebook Lead
+                        </td>
+
+                       
+
+                        <td class="text-center text-nowrap">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#manageLeadModal"
+                            >
+                                <i class="mdi mdi-account-edit-outline me-1"></i>
+                                Add Response
+                            </button>
+                        </td>
+                         <td>
+                            Vijay Vaishnav
+                        </td>
+
+                        <td>
+                            <div
+                                class="text-truncate"
+                               
+                                title="Free trial account has been activated."
+                            >
+                                Free trial account has been activated.
+                            </div>
+
+                            <small class="text-muted">
+                                10 Jul 2026, 03:20 PM
+                            </small>
+                        </td>
+
+
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3"
+        >
+            <div class="d-flex flex-wrap align-items-center gap-3">
+
+                <div class="d-flex align-items-center gap-2">
+                    <label
+                        class="mb-0 text-muted"
+                        for="pageSize"
+                    >
+                        Rows
+                    </label>
+
+                    <select
+                        class="form-select form-select-sm"
+                        id="pageSize"
+                        style="width: 90px;"
+                    >
+                        <option>
+                            10
+                        </option>
+
+                        <option selected>
+                            25
+                        </option>
+
+                        <option>
+                            50
+                        </option>
+
+                        <option>
+                            100
+                        </option>
+                    </select>
+                </div>
+
+                <div class="text-muted">
+                    Showing 1 to 25 of 125 records
+                </div>
+
+            </div>
+
+            <nav aria-label="Lead pagination">
+                <ul class="pagination pagination-sm mb-0">
+
+                    <li class="page-item disabled">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            Previous
+                        </button>
+                    </li>
+
+                    <li class="page-item active">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            1
+                        </button>
+                    </li>
+
+                    <li class="page-item">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            2
+                        </button>
+                    </li>
+
+                    <li class="page-item">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            3
+                        </button>
+                    </li>
+
+                    <li class="page-item">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            4
+                        </button>
+                    </li>
+
+                    <li class="page-item">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            5
+                        </button>
+                    </li>
+
+                    <li class="page-item">
+                        <button
+                            type="button"
+                            class="page-link"
+                        >
+                            Next
+                        </button>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+
+    </div>
+</div>
+
+<!-- Manage lead modal -->
+<div
+    class="modal fade"
+    id="manageLeadModal"
+    tabindex="-1"
+    aria-labelledby="manageLeadModalLabel"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5
+                        class="modal-title"
+                        id="manageLeadModalLabel"
+                    >
+                        Manage Lead
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+
+                    <div class="col-12">
+                        <label
+                            class="form-label"
+                            for="manageLeadStatus"
+                        >
+                            Lead Status
+                        </label>
+
+                        <select
+                            class="form-select"
+                            id="manageLeadStatus"
+                        >
+                            <option>
+                                No Status
+                            </option>
+
+                            <option>
+                                Interested
+                            </option>
+
+                            <option>
+                                Follow-up
+                            </option>
+
+                            <option>
+                                Not Interested
+                            </option>
+
+                            <option>
+                                Converted
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label
+                            class="form-label"
+                            for="manageLeadComment"
+                        >
+                            Comment
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="manageLeadComment"
+                            rows="4"
+                            placeholder="Enter lead comment"
+                        ></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="d-flex flex-wrap gap-2">
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary"
+                            >
+                                <i class="mdi mdi-calendar-clock-outline me-1"></i>
+                                Add Follow-up
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-info"
+                            >
+                                <i class="mdi mdi-flask-outline me-1"></i>
+                                Add Free Trial
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-success"
+                            >
+                                <i class="mdi mdi-file-document-outline me-1"></i>
+                                Create Sales Order
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-outline-secondary"
+                            >
+                                <i class="mdi mdi-account-plus-outline me-1"></i>
+                                Save Contact
+                            </button>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Close
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                >
+                    <i class="mdi mdi-content-save-outline me-1"></i>
+                    Save Changes
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Contact list modal -->
+<div
+    class="modal fade"
+    id="contactListModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        Contact List
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>
+                                    Rahul Sharma
+                                </td>
+
+                                <td>
+                                    9876543300
+                                </td>
+
+                                <td>
+                                    rahul@example.com
+                                </td>
+
+                                <td>
+                                    10 Jul 2026
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Follow-up list modal -->
+<div
+    class="modal fade"
+    id="followupListModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        Follow-up List
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Comment</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>
+                                    13 Jul 2026
+                                </td>
+
+                                <td>
+                                    11:30 AM
+                                </td>
+
+                                <td>
+                                    Call client regarding service.
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="badge bg-warning-subtle text-warning"
+                                    >
+                                        Pending
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Free trial list modal -->
+<div
+    class="modal fade"
+    id="freeTrialListModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        Free Trial List
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>
+                                    CRM Software
+                                </td>
+
+                                <td>
+                                    10 Jul 2026
+                                </td>
+
+                                <td>
+                                    17 Jul 2026
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="badge bg-success-subtle text-success"
+                                    >
+                                        Active
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Sales order list modal -->
+<div
+    class="modal fade"
+    id="salesOrderListModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        Sales Order List
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Product</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>
+                                    SO-1001
+                                </td>
+
+                                <td>
+                                    CRM Software
+                                </td>
+
+                                <td>
+                                    ₹25,000
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="badge bg-info-subtle text-info"
+                                    >
+                                        Created
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Lead timeline modal -->
+<div
+    class="modal fade"
+    id="timelineModal"
+    tabindex="-1"
+    aria-hidden="true"
+>
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+    >
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title">
+                        Lead Timeline
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Lead 885 • Rahul Sharma Dindore
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="d-flex gap-3 mb-4">
+                    <div>
+                        <span class="avatar-sm">
+                            <span
+                                class="avatar-title rounded-circle bg-primary-subtle text-primary"
+                            >
+                                <i class="mdi mdi-account-plus-outline"></i>
+                            </span>
+                        </span>
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold">
+                            Lead Created
+                        </div>
+
+                        <div class="text-muted">
+                            Lead was added from Fresh Lead source.
+                        </div>
+
+                        <small class="text-muted">
+                            06 Jul 2026, 10:30 AM
+                        </small>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mb-4">
+                    <div>
+                        <span class="avatar-sm">
+                            <span
+                                class="avatar-title rounded-circle bg-success-subtle text-success"
+                            >
+                                <i class="mdi mdi-phone-outline"></i>
+                            </span>
+                        </span>
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold">
+                            Call Initiated
+                        </div>
+
+                        <div class="text-muted">
+                            Outgoing call was initiated.
+                        </div>
+
+                        <small class="text-muted">
+                            12 Jul 2026, 11:15 AM
+                        </small>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3">
+                    <div>
+                        <span class="avatar-sm">
+                            <span
+                                class="avatar-title rounded-circle bg-warning-subtle text-warning"
+                            >
+                                <i class="mdi mdi-comment-outline"></i>
+                            </span>
+                        </span>
+                    </div>
+
+                    <div>
+                        <div class="fw-semibold">
+                            Comment Added
+                        </div>
+
+                        <div class="text-muted">
+                            Client requested a callback in the evening.
+                        </div>
+
+                        <small class="text-muted">
+                            12 Jul 2026, 11:30 AM
+                        </small>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div
+    class="modal fade"
+    id="assignLeadModal"
+    tabindex="-1"
+    aria-labelledby="assignLeadModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5
+                        class="modal-title"
+                        id="assignLeadModalLabel"
+                    >
+                        Assign Leads
+                    </h5>
+
+                    <p class="text-muted mb-0 mt-1">
+                        Assign selected leads to a user.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <label
+                    class="form-label"
+                    for="assignLeadOwner"
+                >
+                    Assign To
+                </label>
+
+                <select
+                    class="form-select"
+                    id="assignLeadOwner"
+                >
+                    <option value="">
+                        Select User
+                    </option>
+
+                    <option>
+                        Vijay Vaishnav
+                    </option>
+
+                    <option>
+                        Amit Sharma
+                    </option>
+
+                    <option>
+                        Rahul Verma
+                    </option>
+                </select>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                >
+                    <i class="mdi mdi-account-check-outline me-1"></i>
+                    Assign Leads
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<div
+    class="modal fade"
+    id="deleteLeadModal"
+    tabindex="-1"
+    aria-labelledby="deleteLeadModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="deleteLeadModalLabel"
+                >
+                    Delete Leads
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="text-center py-3">
+                    <div class="avatar-md mx-auto mb-3">
+                        <span
+                            class="avatar-title rounded-circle bg-danger-subtle text-danger fs-2"
+                        >
+                            <i class="mdi mdi-delete-alert-outline"></i>
+                        </span>
+                    </div>
+
+                    <h5>
+                        Delete selected leads?
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        This action cannot be undone.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-danger"
+                >
+                    <i class="mdi mdi-delete-outline me-1"></i>
+                    Delete Leads
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<div
+    class="modal fade"
+    id="createdDateModal"
+    tabindex="-1"
+    aria-labelledby="createdDateModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="createdDateModalLabel"
+                >
+                    Created Date Range
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="createdDateFrom"
+                        >
+                            From Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="createdDateFrom"
+                        >
+                    </div>
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="createdDateTo"
+                        >
+                            To Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="createdDateTo"
+                        >
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Clear
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                >
+                    Apply Filter
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div
+    class="modal fade"
+    id="modifiedDateModal"
+    tabindex="-1"
+    aria-labelledby="modifiedDateModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="modifiedDateModalLabel"
+                >
+                    Modification Date Range
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="modifiedDateFrom"
+                        >
+                            From Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="modifiedDateFrom"
+                        >
+                    </div>
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="modifiedDateTo"
+                        >
+                            To Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="modifiedDateTo"
+                        >
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Clear
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                >
+                    Apply Filter
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div
+    class="modal fade"
+    id="assignedDateModal"
+    tabindex="-1"
+    aria-labelledby="assignedDateModalLabel"
+    aria-hidden="true"
+>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5
+                    class="modal-title"
+                    id="assignedDateModalLabel"
+                >
+                    Assigned Date Range
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="assignedDateFrom"
+                        >
+                            From Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="assignedDateFrom"
+                        >
+                    </div>
+
+                    <div class="col-md-6">
+                        <label
+                            class="form-label"
+                            for="assignedDateTo"
+                        >
+                            To Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="assignedDateTo"
+                        >
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-bs-dismiss="modal"
+                >
+                    Clear
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    data-bs-dismiss="modal"
+                >
+                    Apply Filter
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+        document
+            .querySelectorAll(
+                '[data-bs-toggle="tooltip"]'
+            )
+            .forEach(
+                function (element) {
+                    new bootstrap.Tooltip(
+                        element
+                    );
+                }
+            );
+
+        document.addEventListener(
+            "click",
+            function (event) {
+                const activityButton =
+                    event.target.closest(
+                        "[data-activity-modal]"
+                    );
+
+                if (!activityButton) {
+                    return;
+                }
+
+                const modalId =
+                    activityButton.dataset
+                        .activityModal;
+
+                const modalElement =
+                    document.getElementById(
+                        modalId
+                    );
+
+                if (!modalElement) {
+                    return;
+                }
+
+                const tooltip =
+                    bootstrap.Tooltip
+                        .getInstance(
+                            activityButton
+                        );
+
+                if (tooltip) {
+                    tooltip.hide();
+                }
+
+                bootstrap.Modal
+                    .getOrCreateInstance(
+                        modalElement
+                    )
+                    .show();
+            }
+        );
+    }
+);
+</script>
+
+{% endblock %}

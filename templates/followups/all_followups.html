@@ -1,0 +1,919 @@
+{% extends 'base.html' %}
+{% from 'partials/lead_macros.html' import render_lead_status_badge, render_click_to_call_button %}
+
+{% block content %}
+
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">
+                    {{ page_title }}
+                </h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('all_leads') }}">Leads</a></li>
+                        <li class="breadcrumb-item active">{{ page_title }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Reusable Top Filter & Action Bar Partial Helper -->
+            {% include 'partials/followup_filter_bar.html' %}
+
+            <!-- Custom Date Active Badge (shown when custom date is applied) -->
+            <div id="customDateActiveBadge" class="mb-2" style="display:none;">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-12 px-3 py-2">
+                    <i class="mdi mdi-calendar-range me-1"></i>
+                    <span id="customDateBadgeText"></span>
+                    <button type="button" class="btn-close btn-close-sm ms-2" id="clearCustomDateBtn" style="font-size: 0.6rem;" title="Clear custom date"></button>
+                </span>
+            </div>
+
+            <!-- Inner Table Container -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+
+                    <!-- Loading Overlay -->
+                    <div id="tableLoadingOverlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:10; align-items:center; justify-content:center;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <div class="mt-2 text-muted fs-13">Loading...</div>
+                        </div>
+                    </div>
+
+                    <!-- Followups Table -->
+                    <div class="clientos-table-scroll single-row-filter" style="position:relative;">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="followupsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 40px;">
+                                        <input type="checkbox" id="selectAllLeads" class="form-check-input">
+                                    </th>
+                                    <th class="text-nowrap">Lead Code</th>
+                                    <th class="text-nowrap">Name</th>
+                                    <th class="text-nowrap">Mobile</th>
+                                    <th class="text-nowrap">Status</th>
+                                    <th class="text-nowrap">Follow-up Status</th>
+                                    <th class="text-nowrap">Follow-up Date</th>
+                                    <th class="text-nowrap">Source</th>
+                                    <th class="text-nowrap">Owner</th>
+                                    <th class="lead-comment-col">Recent Activity</th>
+                                    <th class="text-center text-nowrap">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="followupTableBody">
+                                <!-- Rows loaded via AJAX -->
+                                <tr id="followupsLoadingRow">
+                                    <td colspan="11" class="text-center py-4 text-muted">
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                        Loading follow-ups...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted" id="paginationInfo">Loading...</div>
+                </div>
+
+                <nav aria-label="Followups pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Single Follow-up Action Modal Form -->
+<div class="modal fade" id="followupActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <div>
+                    <h5 class="modal-title fw-bold">Follow-up Action Form</h5>
+                    <p class="text-muted mb-0 fs-13" id="followupActionSubtitle">Lead Details</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalFollowupUuid" value="">
+                <input type="hidden" id="modalLeadUuid" value="">
+
+                <!-- Follow-up Action / Status -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="modalFollowupStatus">Follow-up Status <span class="text-danger">*</span></label>
+                    <select class="form-select" id="modalFollowupStatus" required>
+                        <option value="completed" selected>Mark as Completed</option>
+                        <option value="rescheduled">Reschedule Follow-up</option>
+                        <option value="pending">Keep Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <!-- Lead Status Change Dropdown (Pre-selects current status) -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="modalLeadStatus">Change Lead Status</label>
+                    <select class="form-select" id="modalLeadStatus">
+                        <option value="">-- Keep Current Status --</option>
+                        {% if lead_statuses %}
+                            {% for s in lead_statuses %}
+                                <option value="{{ s.id }}">{{ s.status_name }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- Reschedule Date & Time -->
+                <div class="row g-2 mb-3" id="rescheduleDateGroup" style="display: none;">
+                    <div class="col-md-7">
+                        <label class="form-label fw-semibold" for="modalNextDate">Next Follow-up Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="modalNextDate">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold" for="modalNextTime">Time</label>
+                        <select class="form-select" id="modalNextTime">
+                            <option value="10:00" selected>10:00 AM</option>
+                            <option value="10:30">10:30 AM</option>
+                            <option value="11:00">11:00 AM</option>
+                            <option value="11:30">11:30 AM</option>
+                            <option value="12:00">12:00 PM</option>
+                            <option value="12:30">12:30 PM</option>
+                            <option value="14:00">02:00 PM</option>
+                            <option value="15:00">03:00 PM</option>
+                            <option value="16:00">04:00 PM</option>
+                            <option value="17:00">05:00 PM</option>
+                            <option value="18:00">06:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Remarks / Comments -->
+                <div class="mb-2">
+                    <label class="form-label fw-semibold" for="modalFollowupRemarks">Comment / Remarks</label>
+                    <textarea class="form-control" id="modalFollowupRemarks" rows="3" placeholder="Enter follow-up comment or conversation notes..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnSaveFollowupAction">
+                    <i class="mdi mdi-content-save me-1"></i> Save Action
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'leads/partials/all_leads_action_modals.html' %}
+{% include 'leads/partials/all_leads_activity_modals.html' %}
+
+<!-- Custom Date Range Modal (From + To Flatpickr) -->
+<div class="modal fade" id="customDateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <div>
+                    <h5 class="modal-title fw-bold"><i class="mdi mdi-calendar-range me-2 text-primary"></i>Custom Date Range</h5>
+                    <p class="text-muted mb-0 fs-12">Select from and to date using calendar</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" for="customFromDate">
+                        <i class="mdi mdi-calendar-arrow-right me-1 text-primary"></i>From Date
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
+                        <input type="text" class="form-control" id="customFromDate" placeholder="Select from date...">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold" for="customToDate">
+                        <i class="mdi mdi-calendar-arrow-left me-1 text-primary"></i>To Date
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="mdi mdi-calendar text-primary"></i></span>
+                        <input type="text" class="form-control" id="customToDate" placeholder="Select to date...">
+                    </div>
+                </div>
+                <div id="customDateError" class="text-danger fs-12 mt-2" style="display:none;">
+                    <i class="mdi mdi-alert-circle-outline me-1"></i>Please select both From and To dates. To date must be on or after From date.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="applyCustomDateBtn">
+                    <i class="mdi mdi-check me-1"></i>Apply Filter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ─── State ────────────────────────────────────────────────────────
+    let currentPage = 1;
+    let totalPages  = 1;
+    let pageSize    = 10;
+    let customStartDate = '';
+    let customEndDate   = '';
+    let fetchAbortCtrl  = null;
+
+    // ─── Action Modal: toggleRescheduleDateGroup ───────────────────────
+    function toggleRescheduleDateGroup() {
+        const statusSelect = document.getElementById('modalFollowupStatus');
+        const dateGroup    = document.getElementById('rescheduleDateGroup');
+        if (statusSelect && dateGroup) {
+            dateGroup.style.display = statusSelect.value === 'rescheduled' ? 'flex' : 'none';
+        }
+    }
+    const modalStatusSelect = document.getElementById('modalFollowupStatus');
+    if (modalStatusSelect) modalStatusSelect.addEventListener('change', toggleRescheduleDateGroup);
+
+    function updateTimeOptionsForDate() {
+        const dateInput = document.getElementById('modalNextDate');
+        const timeSelect = document.getElementById('modalNextTime');
+        if (!dateInput || !timeSelect) return;
+
+        const now = new Date();
+        const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        dateInput.min = todayStr;
+
+        const selectedDate = dateInput.value;
+        const isToday = (selectedDate === todayStr);
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+
+        let firstValidOption = null;
+        Array.from(timeSelect.options).forEach(opt => {
+            const [optHour, optMin] = opt.value.split(':').map(Number);
+            if (isToday && (optHour < currentHour || (optHour === currentHour && optMin <= currentMin))) {
+                opt.disabled = true;
+                opt.style.color = '#a0a0a0';
+            } else {
+                opt.disabled = false;
+                opt.style.color = '';
+                if (!firstValidOption) firstValidOption = opt.value;
+            }
+        });
+
+        if (isToday && timeSelect.selectedOptions[0]?.disabled) {
+            if (firstValidOption) {
+                timeSelect.value = firstValidOption;
+            }
+        }
+    }
+
+    const modalNextDateEl = document.getElementById('modalNextDate');
+    if (modalNextDateEl) {
+        modalNextDateEl.addEventListener('change', updateTimeOptionsForDate);
+    }
+
+    const followupActionModalEl = document.getElementById('followupActionModal');
+    if (followupActionModalEl) {
+        followupActionModalEl.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (!button) return;
+            const followupUuid  = button.getAttribute('data-followup-uuid') || '';
+            const leadUuid      = button.getAttribute('data-lead-uuid') || '';
+            const leadCode      = button.getAttribute('data-lead-code') || '';
+            const leadName      = button.getAttribute('data-lead-name') || '';
+            const leadStatusId  = button.getAttribute('data-lead-status-id') || '';
+            const notes         = button.getAttribute('data-notes') || '';
+
+            document.getElementById('modalFollowupUuid').value   = followupUuid;
+            document.getElementById('modalLeadUuid').value       = leadUuid;
+            document.getElementById('followupActionSubtitle').textContent = `Lead ${leadCode} • ${leadName}`;
+            document.getElementById('modalFollowupRemarks').value = notes;
+            document.getElementById('modalFollowupStatus').value  = 'completed';
+
+            const leadStatusSelect = document.getElementById('modalLeadStatus');
+            if (leadStatusSelect) leadStatusSelect.value = leadStatusId || '';
+
+            const now = new Date();
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' + String(tomorrow.getDate()).padStart(2, '0');
+
+            if (modalNextDateEl) {
+                modalNextDateEl.min = todayStr;
+                modalNextDateEl.value = tomorrowStr;
+            }
+            toggleRescheduleDateGroup();
+            updateTimeOptionsForDate();
+        });
+    }
+
+    const btnSaveAction = document.getElementById('btnSaveFollowupAction');
+    if (btnSaveAction) {
+        btnSaveAction.addEventListener('click', function () {
+            const followupUuid = document.getElementById('modalFollowupUuid').value;
+            const leadUuid     = document.getElementById('modalLeadUuid').value;
+            const status       = document.getElementById('modalFollowupStatus').value;
+            const leadStatus   = document.getElementById('modalLeadStatus').value;
+            const nextDate     = document.getElementById('modalNextDate').value;
+            const nextTime     = document.getElementById('modalNextTime').value;
+            const remarks      = document.getElementById('modalFollowupRemarks').value.trim();
+
+            let nextDateTime = '';
+            if (status === 'rescheduled') {
+                if (!nextDate) {
+                    showToastNotification('Please select a date for next follow-up.', 'warning');
+                    return;
+                }
+                const now = new Date();
+                const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                if (nextDate < todayStr) {
+                    showToastNotification('Backdates cannot be selected for follow-up! Please select today or a future date.', 'warning');
+                    return;
+                }
+                if (nextDate === todayStr) {
+                    const [h, m] = (nextTime || '00:00').split(':').map(Number);
+                    const selectedDateTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+                    if (selectedDateTime <= now) {
+                        showToastNotification('Selected time has already passed! Please select a future time for today.', 'warning');
+                        return;
+                    }
+                }
+                nextDateTime = `${nextDate} ${nextTime}:00`;
+            }
+
+            btnSaveAction.disabled = true;
+            btnSaveAction.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+            fetch('/api/followups/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    followup_uuid: followupUuid,
+                    lead_uuid: leadUuid,
+                    status: status,
+                    lead_status: leadStatus,
+                    next_followup_date: nextDateTime,
+                    remarks: remarks
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btnSaveAction.disabled = false;
+                btnSaveAction.innerHTML = `<i class="mdi mdi-content-save me-1"></i> Save Action`;
+                if (data.success) {
+                    showToastNotification(data.message || 'Action saved successfully!', 'success');
+                    const bsModal = bootstrap.Modal.getInstance(followupActionModalEl);
+                    if (bsModal) bsModal.hide();
+                    loadFollowups();
+                } else {
+                    showToastNotification(data.message || 'Failed to save action.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Save action error:', err);
+                btnSaveAction.disabled = false;
+                btnSaveAction.innerHTML = `<i class="mdi mdi-content-save me-1"></i> Save Action`;
+                showToastNotification('An error occurred.', 'danger');
+            });
+        });
+    }
+
+    // ─── Bulk actions JS ──────────────────────────────────────────────
+    {% include 'partials/followup_bulk_actions_js.html' %}
+
+    // ─── Row Builder ──────────────────────────────────────────────────
+    function buildFollowupStatusBadge(status) {
+        if (status === 'completed') {
+            return `<span class="badge bg-success-subtle text-success fs-12"><i class="mdi mdi-check-circle-outline me-1"></i>Completed</span>`;
+        } else if (status === 'missed') {
+            return `<span class="badge bg-danger-subtle text-danger fs-12"><i class="mdi mdi-alert-circle-outline me-1"></i>Missed</span>`;
+        } else if (status === 'rescheduled') {
+            return `<span class="badge bg-info-subtle text-info fs-12"><i class="mdi mdi-calendar-sync me-1"></i>Rescheduled</span>`;
+        } else {
+            return `<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-12"><i class="mdi mdi-clock-outline me-1"></i>Pending</span>`;
+        }
+    }
+
+    function buildLeadStatusBadge(statusName, statusTone) {
+        const tone = statusTone || 'slate';
+        return `<span class="lead-tone-chip lead-tone-${tone}">${statusName || 'No Status'}</span>`;
+    }
+
+    function buildMobileCell(f) {
+        const display = f.mobile_display || f.decrypted_mobile || f.mobile_number || 'NA';
+        if (!f.click_to_call_active) {
+            return `<span class="fw-medium">${display}</span>`;
+        }
+        const leadName = f.lead_name || 'Lead';
+        const leadCode = f.lead_id || '';
+        const mobile   = f.mobile_number || '';
+        const uuid     = f.lead_uuid || '';
+        if (f.is_last_dialed) {
+            return `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${uuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Last Dialed: ${display}"><span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width:8px;height:8px;"></span>${display}</button>`;
+        } else if (f.call_status == 1) {
+            return `<button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${uuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Called: ${display}"><i class="mdi mdi-phone-check-outline me-1"></i>${display}</button>`;
+        } else {
+            return `<button type="button" class="btn btn-outline-primary btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${uuid}" data-lead-code="${leadCode}" data-lead-name="${leadName}" onclick="makeClickToCall(this)" title="Click to Call ${leadName}"><i class="mdi mdi-phone-outline me-1"></i>${display}</button>`;
+        }
+    }
+
+    function buildFollowupRow(f) {
+        const dateOnly  = f.followup_date_fmt ? f.followup_date_fmt.split(',')[0] : 'N/A';
+        const timePart  = f.followup_time_fmt || 'N/A';
+        const notes     = (f.notes || 'No comment').replace(/"/g, '&quot;');
+        const escapedNotes = (f.notes || '').replace(/"/g, '&quot;');
+
+        return `
+        <tr class="followup-row">
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input lead-checkbox" value="${f.lead_uuid}" data-followup-uuid="${f.followup_uuid}">
+            </td>
+            <td class="text-nowrap"><span class="fw-bold text-dark">${f.client_code || f.lead_id}</span></td>
+            <td>
+                <div class="fw-medium">${f.lead_name || 'No Name'}</div>
+                ${f.email ? `<small class="text-muted fs-11">${f.email}</small>` : ''}
+            </td>
+            <td class="text-nowrap">${buildMobileCell(f)}</td>
+            <td class="text-nowrap">${buildLeadStatusBadge(f.lead_status, f.status_tone)}</td>
+            <td class="text-nowrap">${buildFollowupStatusBadge(f.followup_status)}</td>
+            <td class="text-nowrap">
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                    <div>
+                        <div class="fw-semibold text-dark fs-13">${dateOnly}</div>
+                        <small class="text-muted fs-11"><i class="mdi mdi-clock-outline me-1"></i>${timePart}</small>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary px-2 py-1 text-nowrap fs-12 fw-medium shadow-sm ms-2"
+                            onclick="openFollowupHistoryModal('${f.lead_uuid}', '${(f.lead_name || 'Lead').replace(/'/g, "\\'")}')"
+                            title="View Follow-up History">
+                        <i class="mdi mdi-history me-1"></i>History
+                    </button>
+                </div>
+            </td>
+            <td class="text-nowrap">${f.lead_source || 'No Source'}</td>
+            <td class="text-nowrap">${f.owner_name || 'Unassigned'}</td>
+            <td class="lead-comment-col align-middle">
+                ${(() => {
+                    const rawNotes = (f.notes || '').trim();
+                    const escapeStr = function(str) {
+                        return String(str)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                    };
+                    const escapedNotes = escapeStr(rawNotes);
+                    const byUser = f.creator_name || '';
+                    const datePart = f.created_at_fmt || '';
+                    let metaText = '';
+                    if (datePart && byUser) {
+                        metaText = `${datePart} • By: ${byUser}`;
+                    } else if (datePart) {
+                        metaText = datePart;
+                    } else if (byUser) {
+                        metaText = `By: ${byUser}`;
+                    }
+                    const isLong = rawNotes.length > 25;
+                    return `
+                        <div style="max-width: 235px;">
+                            ${rawNotes ? `
+                            <div class="d-flex align-items-center gap-1" style="max-width: 235px;">
+                                <span class="text-truncate fs-13 text-dark flex-grow-1" 
+                                      style="max-width: 215px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" 
+                                      data-bs-toggle="tooltip" 
+                                      data-bs-placement="top" 
+                                      data-bs-custom-class="lead-comment-tooltip"
+                                      title="${escapedNotes}">
+                                    ${escapedNotes}
+                                </span>
+                                ${isLong ? `
+                                <i class="mdi mdi-information-outline text-primary fs-14 flex-shrink-0" 
+                                   data-bs-toggle="tooltip" 
+                                   data-bs-placement="top" 
+                                   data-bs-custom-class="lead-comment-tooltip"
+                                   title="${escapedNotes}" 
+                                   style="cursor: pointer;"></i>
+                                ` : ''}
+                            </div>
+                            ` : `<span class="text-muted fs-12">No comment</span>`}
+                            ${metaText ? `<small class="text-muted d-block fs-11 mt-1">${metaText}</small>` : ''}
+                        </div>
+                    `;
+                })()}
+            </td>
+            <td class="text-nowrap text-center">
+                <button type="button"
+                        class="btn btn-primary btn-sm text-nowrap btn-open-followup-action"
+                        data-bs-toggle="modal"
+                        data-bs-target="#followupActionModal"
+                        data-followup-uuid="${f.followup_uuid}"
+                        data-lead-uuid="${f.lead_uuid}"
+                        data-lead-code="${f.lead_id}"
+                        data-lead-name="${f.lead_name || 'Lead'}"
+                        data-lead-status-id="${f.current_lead_status_id || f.lead_status_id || ''}"
+                        data-notes="${escapedNotes}"
+                        title="Reschedule / Action">
+                    <i class="mdi mdi-calendar-clock me-1"></i> Reschedule / Action
+                </button>
+            </td>
+        </tr>`;
+    }
+
+    // ─── Main AJAX Loader ─────────────────────────────────────────────
+    function getFilterParams() {
+        const datePreset = (document.getElementById('datePresetFilter') || {}).value || 'all';
+        return {
+            mode:         'today',
+            date_preset:  datePreset,
+            start_date:   datePreset === 'custom' ? customStartDate : '',
+            end_date:     datePreset === 'custom' ? customEndDate   : '',
+            status:       (document.getElementById('followupStatusFilter') || {}).value || 'all',
+            lead_status:  (document.getElementById('statusFilter')         || {}).value || 'all',
+            source:       (document.getElementById('sourceFilter')         || {}).value || 'all',
+            owner:        (document.getElementById('ownerFilter')          || {}).value || 'all',
+            search:       ((document.getElementById('followupSearch')      || {}).value || '').trim(),
+            page:         currentPage,
+            page_size:    pageSize
+        };
+    }
+
+    function showTableLoading() {
+        const tbody = document.getElementById('followupTableBody');
+        if (!tbody) return;
+        let skeletonHtml = '';
+        for (let i = 0; i < 8; i++) {
+            skeletonHtml += `
+                <tr class="crm-table-skeleton-row">
+                    <td class="text-center"><span class="skeleton-box" style="width:16px;height:16px;border-radius:4px;margin:0 auto;"></span></td>
+                    <td><span class="skeleton-box" style="width:70px;height:14px;"></span></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="skeleton-box rounded-circle" style="width:28px;height:28px;flex-shrink:0;"></span>
+                            <div style="flex:1;"><span class="skeleton-box mb-1" style="width:85%;height:13px;"></span><span class="skeleton-box" style="width:50%;height:10px;"></span></div>
+                        </div>
+                    </td>
+                    <td><span class="skeleton-box rounded-pill" style="width:95px;height:24px;"></span></td>
+                    <td><span class="skeleton-box rounded-pill" style="width:75px;height:20px;"></span></td>
+                    <td><span class="skeleton-box" style="width:80px;height:14px;"></span></td>
+                    <td><span class="skeleton-box" style="width:75px;height:14px;"></span></td>
+                    <td><span class="skeleton-box" style="width:70px;height:14px;"></span></td>
+                    <td class="text-center"><span class="skeleton-box rounded-pill" style="width:85px;height:24px;margin:0 auto;"></span></td>
+                    <td><span class="skeleton-box" style="width:75px;height:14px;"></span></td>
+                    <td><span class="skeleton-box" style="width:85%;height:13px;"></span></td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = skeletonHtml;
+    }
+
+    let fromFp = null;
+    let toFp   = null;
+
+    function initCustomDateFlatpickrs() {
+        const fromEl = document.getElementById('customFromDate');
+        const toEl   = document.getElementById('customToDate');
+        if (window.flatpickr) {
+            if (fromEl && !fromFp) {
+                fromFp = flatpickr(fromEl, {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd M Y',
+                    allowInput: false,
+                    onChange: function(selectedDates, dateStr) {
+                        if (toFp) {
+                            toFp.set('minDate', dateStr);
+                        }
+                    }
+                });
+            }
+            if (toEl && !toFp) {
+                toFp = flatpickr(toEl, {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd M Y',
+                    allowInput: false,
+                    onChange: function(selectedDates, dateStr) {
+                        if (fromFp) {
+                            fromFp.set('maxDate', dateStr);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    function loadFollowups() {
+        // Abort any in-flight request
+        if (fetchAbortCtrl) fetchAbortCtrl.abort();
+        fetchAbortCtrl = new AbortController();
+
+        showTableLoading();
+
+        const params = getFilterParams();
+
+        fetch('/api/followups/list', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(params),
+            signal: fetchAbortCtrl.signal
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    renderEmptyTable('Error loading data.');
+                    return;
+                }
+                renderTable(data.followups || [], data.total_count || 0, params.page_size);
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('Followups load error:', err);
+                renderEmptyTable('Failed to load data. Please try again.');
+            });
+    }
+
+    function renderTable(rows, total, ps) {
+        const tbody = document.getElementById('followupTableBody');
+        if (!tbody) return;
+
+        pageSize   = parseInt(ps) || 10;
+        totalPages = Math.ceil(total / pageSize) || 1;
+
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-muted">No follow-ups found matching active filters.</td></tr>`;
+        } else {
+            tbody.innerHTML = rows.map(buildFollowupRow).join('');
+        }
+
+        // Pagination info
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const start = ((currentPage - 1) * pageSize) + 1;
+                const end   = Math.min(currentPage * pageSize, total);
+                infoEl.textContent = `Showing ${start} to ${end} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        renderPaginationNav(totalPages, total);
+
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            document.querySelectorAll('#followupsTable [data-bs-toggle="tooltip"]').forEach(function (el) {
+                if (!bootstrap.Tooltip.getInstance(el)) {
+                    new bootstrap.Tooltip(el);
+                }
+            });
+        }
+    }
+
+    function renderEmptyTable(msg) {
+        const tbody = document.getElementById('followupTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-danger">${msg}</td></tr>`;
+        }
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) infoEl.textContent = 'Showing 0 to 0 of 0 records';
+        const navEl = document.getElementById('paginationNav');
+        if (navEl) navEl.innerHTML = '';
+    }
+
+    function renderPaginationNav(tp, total) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+        if (total <= 0 || tp <= 1) { navEl.innerHTML = ''; return; }
+
+        let html = '';
+        const prevDis = currentPage <= 1 ? 'disabled' : '';
+        html += `<li class="page-item ${prevDis}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage - 1}">Previous</button></li>`;
+        const startP = Math.max(1, currentPage - 2);
+        const endP   = Math.min(tp, currentPage + 2);
+        for (let i = startP; i <= endP; i++) {
+            const act = i === currentPage ? 'active' : '';
+            html += `<li class="page-item ${act}"><button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button></li>`;
+        }
+        const nextDis = currentPage >= tp ? 'disabled' : '';
+        html += `<li class="page-item ${nextDis}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage + 1}">Next</button></li>`;
+        navEl.innerHTML = html;
+
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const p = parseInt(this.getAttribute('data-page'));
+                if (!isNaN(p) && p >= 1 && p <= tp && p !== currentPage) {
+                    currentPage = p;
+                    loadFollowups();
+                }
+            });
+        });
+    }
+
+    // ─── Filter Event Listeners ───────────────────────────────────────
+    ['followupStatusFilter', 'statusFilter', 'sourceFilter', 'ownerFilter'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                currentPage = 1;
+                loadFollowups();
+            });
+        }
+    });
+
+    // Page size
+    const pageSizeEl = document.getElementById('pageSize');
+    if (pageSizeEl) {
+        pageSizeEl.addEventListener('change', function () {
+            pageSize    = parseInt(this.value) || 10;
+            currentPage = 1;
+            loadFollowups();
+        });
+    }
+
+    // Search (debounced)
+    const searchEl = document.getElementById('followupSearch');
+    if (searchEl) {
+        let searchTimer;
+        searchEl.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                currentPage = 1;
+                loadFollowups();
+            }, 300);
+        });
+    }
+
+    // Date Preset
+    const datePresetFilter = document.getElementById('datePresetFilter');
+    if (datePresetFilter) {
+        datePresetFilter.addEventListener('change', function () {
+            if (this.value === 'custom') {
+                // Open custom date modal
+                openCustomDateModal();
+            } else {
+                customStartDate = '';
+                customEndDate   = '';
+                if (fromFp) { fromFp.clear(); fromFp.set('maxDate', null); }
+                if (toFp)   { toFp.clear(); toFp.set('minDate', null); }
+                updateCustomDateBadge();
+                currentPage = 1;
+                loadFollowups();
+            }
+        });
+    }
+
+    // ─── Custom Date Modal ────────────────────────────────────────────
+    function openCustomDateModal() {
+        initCustomDateFlatpickrs();
+        const today = new Date().toISOString().split('T')[0];
+        if (fromFp) fromFp.setDate(customStartDate || today, true);
+        if (toFp)   toFp.setDate(customEndDate || today, true);
+        document.getElementById('customDateError').style.display = 'none';
+
+        const modalEl = document.getElementById('customDateModal');
+        const modal   = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    const applyBtn = document.getElementById('applyCustomDateBtn');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function () {
+            const fromVal = fromFp ? fromFp.input.value : (document.getElementById('customFromDate') || {}).value;
+            const toVal   = toFp   ? toFp.input.value   : (document.getElementById('customToDate') || {}).value;
+            const errEl   = document.getElementById('customDateError');
+
+            if (!fromVal || !toVal || fromVal > toVal) {
+                errEl.style.display = 'block';
+                return;
+            }
+            errEl.style.display = 'none';
+
+            customStartDate = fromVal;
+            customEndDate   = toVal;
+
+            updateCustomDateBadge();
+
+            const modalEl = document.getElementById('customDateModal');
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+
+            currentPage = 1;
+            loadFollowups();
+        });
+    }
+
+    // Clear custom date when modal is dismissed without applying
+    const customDateModalEl = document.getElementById('customDateModal');
+    if (customDateModalEl) {
+        customDateModalEl.addEventListener('hidden.bs.modal', function () {
+            // If user cancelled without applying, revert datePreset to 'all'
+            if (!customStartDate || !customEndDate) {
+                const dp = document.getElementById('datePresetFilter');
+                if (dp && dp.value === 'custom') {
+                    dp.value = 'all';
+                    currentPage = 1;
+                    loadFollowups();
+                }
+            }
+        });
+    }
+
+    function updateCustomDateBadge() {
+        const badgeDiv  = document.getElementById('customDateActiveBadge');
+        const badgeText = document.getElementById('customDateBadgeText');
+        if (customStartDate && customEndDate) {
+            const from = new Date(customStartDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const to   = new Date(customEndDate   + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            badgeText.textContent = `${from} — ${to}`;
+            badgeDiv.style.display = 'block';
+        } else {
+            badgeDiv.style.display = 'none';
+        }
+    }
+
+    const clearCustomDateBtn = document.getElementById('clearCustomDateBtn');
+    if (clearCustomDateBtn) {
+        clearCustomDateBtn.addEventListener('click', function () {
+            customStartDate = '';
+            customEndDate   = '';
+            if (fromFp) { fromFp.clear(); fromFp.set('maxDate', null); }
+            if (toFp)   { toFp.clear(); toFp.set('minDate', null); }
+            updateCustomDateBadge();
+            const dp = document.getElementById('datePresetFilter');
+            if (dp) dp.value = 'all';
+            currentPage = 1;
+            loadFollowups();
+        });
+    }
+
+    // ─── Reset Button ─────────────────────────────────────────────────
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            ['followupStatusFilter', 'statusFilter', 'sourceFilter', 'ownerFilter'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.value = 'all';
+            });
+            const searchEl = document.getElementById('followupSearch');
+            if (searchEl) searchEl.value = '';
+            const dp = document.getElementById('datePresetFilter');
+            if (dp) dp.value = 'today';
+            customStartDate = '';
+            customEndDate   = '';
+            if (fromFp) { fromFp.clear(); fromFp.set('maxDate', null); }
+            if (toFp)   { toFp.clear(); toFp.set('minDate', null); }
+            updateCustomDateBadge();
+            currentPage = 1;
+            loadFollowups();
+        });
+    }
+
+    // ─── Select All Checkbox ──────────────────────────────────────────
+    const selectAllChk = document.getElementById('selectAllLeads');
+    if (selectAllChk) {
+        selectAllChk.addEventListener('change', function () {
+            document.querySelectorAll('#followupTableBody .lead-checkbox').forEach(function (chk) {
+                chk.checked = selectAllChk.checked;
+            });
+        });
+    }
+
+    // ─── Initial Load ─────────────────────────────────────────────────
+    loadFollowups();
+});
+</script>
+
+{% include 'partials/followup_history_modal.html' %}
+
+{% endblock %}

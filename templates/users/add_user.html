@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ page_title|default('Add User') }}</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                    <li class="breadcrumb-item">Users</li>
+                    <li class="breadcrumb-item active">{{ page_title|default('Add User') }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Section -->
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0">User Information</h5>
+        <a href="{{ url_for('all_users') }}" class="btn btn-sm btn-outline-primary">
+            <i class="mdi mdi-account-group-outline me-1"></i> View All Users
+        </a>
+    </div>
+    <div class="card-body">
+       <form method="POST" action="{{ form_action }}">
+            <div class="row g-4">
+                <div class="col-md-6"><label class="form-label">Full Name</label><input  type="text" value="{{ user.full_name if user else '' }}" class="form-control"
+                        name="full_name" required minlength="2" maxlength="80" placeholder="Enter full name"></div>
+
+                <div class="col-md-6">
+                    <label class="form-label">User Name <span class="text-danger">*</span></label>
+                    <div class="position-relative">
+                        <input type="text" value="{{ user.username if user else '' }}" class="form-control"
+                            name="username" id="usernameInput" required minlength="2" maxlength="80" placeholder="Enter user name" autocomplete="off">
+                        <span id="usernameCheckSpinner" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 translate-middle-y me-3 d-none" style="width: 14px; height: 14px;" role="status"></span>
+                    </div>
+                    <div id="usernameFeedback" class="mt-1 fs-12"></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Phone <span class="text-muted fw-normal fs-12">(Optional)</span></label>
+                    <input type="tel" value="{{ user.mobile if user else '' }}" class="form-control"
+                        name="mobile" maxlength="15" placeholder="Enter phone number (optional)">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control"
+                        name="password" {{ 'required' if not user else '' }} minlength="6" maxlength="120" placeholder="{{ 'Leave blank to keep current password' if user else 'Enter password' }}">
+                </div>
+
+ <div class="col-md-6"><label class="form-label">Extension Number</label>
+                    
+                    <select class="form-select clientos-select2" name="extension_uuid" >
+                        <option value="">Select Extension</option>
+                        {% for extension in form_options.extensions %}
+                        <option value="{{ extension.extension_uuid }}"
+                                {{ 'selected' if user and user.extension_uuid|string == extension.extension_uuid|string else '' }}
+                                {{ 'disabled' if extension.is_assigned_to_other else '' }}>
+                            {{ extension.extension_number }}{% if extension.api_name %} ({{ extension.api_name }}){% endif %}{% if extension.assigned_user_name %} - {{ extension.assigned_user_name }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                
+                </div>
+
+
+                <div class="col-md-6"><label class="form-label">Designation</label><select class="form-select clientos-select2" name="designation_uuid"
+                        required>
+                        <option value="">Select Designation</option>
+                        {% for designation in form_options.designations %}
+                        <option value="{{ designation.designation_uuid }}" {{ 'selected' if user and user.designation_uuid|string == designation.designation_uuid|string else '' }}>{{ designation.designation_name }}</option>
+                        {% endfor %}
+                    </select></div>
+
+
+
+                <div class="col-md-6"><label class="form-label">User Role</label>
+                    
+                    <select class="form-select clientos-select2"
+                        name="role_uuid" required>
+                        <option value="">Select Role</option>
+                        {% for role in form_options.roles %}
+                        <option value="{{ role.role_uuid }}" {{ 'selected' if user and user.role_uuid|string == role.role_uuid|string else '' }}>{{ role.role_name }}</option>
+                        {% endfor %}
+                    </select>
+                
+                </div>
+
+
+                <div class="col-md-6">
+                    <label class="form-label">Date Of Birth</label>
+                    {% set dob_val = user.date_of_birth_display if (user and user.date_of_birth_display) else (user.date_of_birth if user else '') %}
+                    {% if dob_val and dob_val|string|length == 10 and dob_val[4] == '-' and dob_val[7] == '-' %}
+                        {% set dob_val = dob_val[8:10] ~ '/' ~ dob_val[5:7] ~ '/' ~ dob_val[0:4] %}
+                    {% endif %}
+                    <div class="input-group">
+                        <input type="text" value="{{ dob_val }}" class="form-control bs-datepicker" name="date_of_birth" id="dobInput" placeholder="DD/MM/YYYY" autocomplete="off">
+                        <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#dobInput').datepicker('show');"><i class="mdi mdi-calendar"></i></span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Date of Joining</label>
+                    {% set doj_val = user.date_of_joining_display if (user and user.date_of_joining_display) else (user.date_of_joining if user else '') %}
+                    {% if doj_val and doj_val|string|length == 10 and doj_val[4] == '-' and doj_val[7] == '-' %}
+                        {% set doj_val = doj_val[8:10] ~ '/' ~ doj_val[5:7] ~ '/' ~ doj_val[0:4] %}
+                    {% endif %}
+                    <div class="input-group">
+                        <input type="text" value="{{ doj_val }}" class="form-control bs-datepicker" name="date_of_joining" id="dojInput" placeholder="DD/MM/YYYY" autocomplete="off">
+                        <span class="input-group-text bg-light text-muted" style="cursor: pointer;" onclick="$('#dojInput').datepicker('show');"><i class="mdi mdi-calendar"></i></span>
+                    </div>
+                </div>
+                
+
+                 <div class="col-md-6"><label class="form-label">Biometric ID</label><input type="number" value="{{ user.biometric_id if user else '' }}" class="form-control"
+                        name="biometric_id" required minlength="10" maxlength="15" placeholder="Enter biometric ID"></div>
+
+                      
+                <div class="col-md-6"><label class="form-label">Reporting to</label>
+                    
+                    <select class="form-select clientos-select2"
+                        name="reporting_to_uuid" required>
+                        <option value="">Select Reporting Manager</option>
+                        {% for reporting_user in form_options.reporting_users %}
+                        <option value="{{ reporting_user.user_uuid }}"
+                                {{ 'selected' if (user and user.reporting_to_uuid|string == reporting_user.user_uuid|string) or (not user and reporting_user.is_default_admin) else '' }}>
+                            {{ reporting_user.full_name }}{% if reporting_user.is_default_admin %} - Admin{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                
+                </div>
+
+
+      <div class="col-md-6"><label class="form-label">Target (in Numbers)</label><input type="number" value="{{ user.target if user else '' }}" class="form-control"
+                        name="target" min="0" max="9999999999" placeholder="Enter target"></div>
+
+
+   <div class="col-md-6"><label class="form-label">Click to Call</label><select class="form-select" name="click_to_call"
+                        required>
+                        <option value="1" {{ 'selected' if not user or user.click_to_call|string == '1' else '' }}>Active</option>
+                        <option value="0" {{ 'selected' if user and user.click_to_call|string == '0' else '' }}>Inactive</option>
+                    </select></div>
+
+
+                       <div class="col-md-6"><label class="form-label">Number Show/hide</label><select class="form-select" name="number_show_hide"
+                        required>
+                        <option value="1" {{ 'selected' if not user or user.number_show_hide|string == '1' else '' }}>Hide</option>
+                        <option value="0" {{ 'selected' if user and user.number_show_hide|string == '0' else '' }}>Show</option>
+                    </select></div>
+
+                <div class="col-md-6"><label class="form-label">Status</label><select class="form-select" name="status"
+                        required>
+                        <option value="1" {{ 'selected' if not user or user.status|string == '1' else '' }}>Active</option>
+                        <option value="0" {{ 'selected' if user and user.status|string == '0' else '' }}>Inactive</option>
+                    </select></div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Require OTP for Login</label>
+                    <select class="form-select" name="require_otp_for_login" required>
+                        <option value="0" {{ 'selected' if not user or user.require_otp_for_login|string == '0' else '' }}>Disabled (Standard Login)</option>
+                        <option value="1" {{ 'selected' if user and user.require_otp_for_login|string == '1' else '' }}>Enabled (Require OTP)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Outside Office Login</label>
+                    <select class="form-select" name="outside_login" required>
+                        <option value="0" {{ 'selected' if not user or user.outside_login|string == '0' else '' }}>Disabled (Office IP Only)</option>
+                        <option value="1" {{ 'selected' if user and user.outside_login|string == '1' else '' }}>Enabled (Allow Outside Login with OTP)</option>
+                    </select>
+                </div>
+
+<div class="col-12">
+    <button type="submit" class="btn btn-primary">
+    {{ button_text }}
+</button>
+</div>
+               
+
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (window.jQuery && jQuery.fn.select2) {
+        jQuery(".clientos-select2").select2({
+            width: "100%",
+            dropdownAutoWidth: false,
+            templateSelection: function (data) {
+                return data.text ? data.text.trim() : data.text;
+            },
+            templateResult: function (data) {
+                return data.text ? data.text.trim() : data.text;
+            }
+        });
+    }
+
+    // Bootstrap Datepicker for Date of Birth and Date of Joining
+    if (window.jQuery && $.fn.datepicker) {
+        $('#dobInput, #dojInput').datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true,
+            todayHighlight: true,
+            orientation: 'bottom auto'
+        });
+    }
+
+    // Live Username Duplicate Check with 250ms Debounce
+    const usernameInput = document.getElementById("usernameInput");
+    const usernameFeedback = document.getElementById("usernameFeedback");
+    const usernameSpinner = document.getElementById("usernameCheckSpinner");
+    const submitBtn = document.querySelector("button[type='submit']");
+    const currentUserUuid = "{{ user.user_uuid if user else '' }}";
+
+    let debounceTimer = null;
+    let isUsernameAvailable = true;
+
+    if (usernameInput) {
+        usernameInput.addEventListener("input", function () {
+            const username = this.value.trim();
+            clearTimeout(debounceTimer);
+
+            if (!username) {
+                usernameFeedback.innerHTML = "";
+                usernameInput.classList.remove("is-valid", "is-invalid");
+                isUsernameAvailable = true;
+                if (submitBtn) submitBtn.disabled = false;
+                return;
+            }
+
+            if (usernameSpinner) usernameSpinner.classList.remove("d-none");
+
+            debounceTimer = setTimeout(() => {
+                fetch('/api/users/check-username', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        current_uuid: currentUserUuid
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (usernameSpinner) usernameSpinner.classList.add("d-none");
+                        if (data.available) {
+                            usernameInput.classList.remove("is-invalid");
+                            usernameInput.classList.add("is-valid");
+                            usernameFeedback.innerHTML = `<span class="text-success fw-semibold"><i class="mdi mdi-check-circle-outline me-1"></i>${data.message}</span>`;
+                            isUsernameAvailable = true;
+                            if (submitBtn) submitBtn.disabled = false;
+                        } else {
+                            usernameInput.classList.remove("is-valid");
+                            usernameInput.classList.add("is-invalid");
+                            usernameFeedback.innerHTML = `<span class="text-danger fw-semibold"><i class="mdi mdi-close-circle-outline me-1"></i>${data.message}</span>`;
+                            isUsernameAvailable = false;
+                            if (submitBtn) submitBtn.disabled = true;
+                        }
+                    })
+                    .catch(err => {
+                        if (usernameSpinner) usernameSpinner.classList.add("d-none");
+                        console.error("Error checking username:", err);
+                    });
+            }, 250);
+        });
+
+        // Form submit guard
+        const userForm = document.querySelector("form");
+        if (userForm) {
+            userForm.addEventListener("submit", function (e) {
+                if (!isUsernameAvailable) {
+                    e.preventDefault();
+                    usernameInput.focus();
+                    alert("Please choose a different username. The entered username is already in use.");
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

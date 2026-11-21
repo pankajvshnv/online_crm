@@ -1,0 +1,147 @@
+<!-- Reusable Top Filter & Action Bar — single row, auto-fit -->
+<div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+
+    <!-- Action filter -->
+    {% if has_permission('followups', 'transfer') or has_permission('followups', 'delete') %}
+    <div>
+        <label class="form-label">
+            Action
+        </label>
+        <div class="dropdown">
+            <button
+                type="button"
+                class="btn btn-outline-primary dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+            >
+                Select Action
+            </button>
+            <ul class="dropdown-menu">
+                {% if has_permission('followups', 'transfer') %}
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#assignLeadModal"
+                    >
+                        <i class="mdi mdi-account-plus-outline me-2"></i>
+                        Assign Follow-ups
+                    </button>
+                </li>
+                {% endif %}
+                {% if has_permission('followups', 'delete') %}
+                <li>
+                    <button
+                        type="button"
+                        class="dropdown-item text-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteLeadModal"
+                    >
+                        <i class="mdi mdi-delete-outline me-2"></i>
+                        Delete Follow-ups
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+    <!-- 2. Lead Status -->
+    <div>
+        <label class="form-label" for="statusFilter">Status</label>
+        <select class="form-select lead-filter-input" id="statusFilter" name="status" style="min-width: 130px;">
+            <option value="all" selected>All Statuses</option>
+            {% if lead_statuses %}
+                {% for s in lead_statuses %}
+                    <option value="{{ s.status_name | lower }}">{{ s.status_name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- 3. Follow-up Status -->
+    <div>
+        <label class="form-label" for="followupStatusFilter">Follow-up Status</label>
+        <select class="form-select lead-filter-input" id="followupStatusFilter" name="followup_status" style="min-width: 155px;">
+            <option value="all" selected>All</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="missed">Missed</option>
+            <option value="rescheduled">Rescheduled</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+
+    
+
+    <!-- 4. Source -->
+    <div>
+        <label class="form-label" for="sourceFilter">Source</label>
+        <select class="form-select lead-filter-input" id="sourceFilter" name="source" style="min-width: 130px;">
+            <option value="all" selected>All Sources</option>
+            {% if lead_sources %}
+                {% for src in lead_sources %}
+                    <option value="{{ src.source_name | lower }}">{{ src.source_name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- 5. Owner -->
+    <div>
+        <label class="form-label" for="ownerFilter">Owner</label>
+        <select class="form-select lead-filter-input" id="ownerFilter" name="owner" style="min-width: 130px;">
+            <option value="all" {% if selected_owner == 'all' %}selected{% endif %}>All Owners</option>
+            <option value="unassigned" {% if selected_owner == 'unassigned' %}selected{% endif %}>Unassigned</option>
+            {% if owners %}
+                {% for o in owners %}
+                    <option value="{{ o.user_uuid }}" {% if selected_owner == o.user_uuid or (selected_owner is none and o.user_uuid == logged_user_uuid) %}selected{% endif %}>{{ o.full_name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="d-flex align-items-end gap-2">
+        <div>
+            <label class="form-label" for="datePresetFilter">Date</label>
+            <select class="form-select lead-filter-input" id="datePresetFilter" style="min-width: 130px;">
+                <option value="today" {% if mode == 'today' or not mode or (mode != 'all_time' and mode != 'upcoming' and mode != 'missed') %}selected{% endif %}>Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">Custom Range</option>
+                <option value="all" {% if mode == 'all_time' %}selected{% endif %}>All Time</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 6. Search + Reset — pushed to RIGHT with ms-auto -->
+    <div class="d-flex align-items-end gap-2 ms-auto">
+        <div style="min-width: 200px; max-width: 280px;">
+            <label class="form-label" for="followupSearch">Search</label>
+            <div class="position-relative">
+                <input
+                    type="search"
+                    class="form-control lead-filter-input"
+                    id="followupSearch"
+                    name="search"
+                    value=""
+                    placeholder="Search name, mobile..."
+                    autocomplete="off"
+                >
+                <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+            </div>
+        </div>
+
+        <div>
+            <label class="form-label d-block">&nbsp;</label>
+            <button type="button" class="btn btn-light" id="btnResetFilters">
+                <i class="mdi mdi-refresh me-1"></i>
+                Reset
+            </button>
+        </div>
+    </div>
+
+</div>

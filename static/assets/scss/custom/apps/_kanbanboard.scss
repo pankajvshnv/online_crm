@@ -1,0 +1,53 @@
+
+// Task.scss
+
+.tasks-board {
+  display: flex;
+  overflow-x: auto;
+  align-items: stretch;
+
+  .tasks-list {
+      min-width: 299px;
+      padding-right: 1rem;
+      &:last-child {
+          padding-right: 0;
+      }
+  }
+
+  &::-webkit-scrollbar {
+      -webkit-appearance: none;
+  }
+
+  &::-webkit-scrollbar:vertical {
+      width: 10px;
+  }
+
+  &::-webkit-scrollbar:horizontal {
+      height: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+      background-color: rgba(var(--#{$prefix}dark-rgb), .075);
+      border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+      border-radius: 8px;
+  }
+}
+
+.tasks-box {
+  &:last-child {
+      margin-bottom: 0px;
+  }
+}
+
+.tasks {
+  min-height: 180px;
+  position: relative;
+}
+
+.kanban-group-chat{
+    max-height: 600px;
+    min-height: 600px;
+}

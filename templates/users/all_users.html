@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">
+                    {{ page_title|default('All Users') }}
+                </h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item">Users</li>
+                        <li class="breadcrumb-item active">{{ page_title|default('All Users') }}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Filter & Action Bar -->
+            <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+
+                <!-- 1. Role Filter -->
+                <div>
+                    <label class="form-label" for="userRoleFilter">Role</label>
+                    <select class="form-select lead-filter-input" id="userRoleFilter">
+                        <option value="all" {{ 'selected' if not saved_filters or saved_filters.role == 'all' else '' }}>All Roles</option>
+                        {% if roles %}
+                            {% for r in roles %}
+                                <option value="{{ r.label | lower }}" {{ 'selected' if saved_filters and saved_filters.role == (r.label | lower) else '' }}>{{ r.label }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 2. Designation Filter -->
+                <div>
+                    <label class="form-label" for="userDesignationFilter">Designation</label>
+                    <select class="form-select lead-filter-input" id="userDesignationFilter">
+                        <option value="all" {{ 'selected' if not saved_filters or saved_filters.designation == 'all' else '' }}>All Designations</option>
+                        {% if designations %}
+                            {% for d in designations %}
+                                <option value="{{ d.label | lower }}" {{ 'selected' if saved_filters and saved_filters.designation == (d.label | lower) else '' }}>{{ d.label }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- 3. Status Filter -->
+                <div>
+                    <label class="form-label" for="userStatusFilter">Status</label>
+                    <select class="form-select lead-filter-input" id="userStatusFilter">
+                        <option value="all" {{ 'selected' if not saved_filters or saved_filters.status == 'all' else '' }}>All Status</option>
+                        <option value="1" {{ 'selected' if saved_filters and saved_filters.status == '1' else '' }}>Active</option>
+                        <option value="0" {{ 'selected' if saved_filters and saved_filters.status == '0' else '' }}>Inactive</option>
+                    </select>
+                </div>
+
+                <!-- 4. Action Buttons -->
+                <div>
+                    <label class="form-label d-block">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+                            <i class="mdi mdi-account-plus me-1"></i> Add User
+                        </a>
+                        <a href="{{ url_for('user_groups') }}" class="btn btn-outline-secondary">
+                            <i class="mdi mdi-sitemap me-1"></i> Reporting Chart
+                        </a>
+                        <button type="button" id="btnBulkDelete" class="btn btn-outline-danger d-none" title="Delete Selected">
+                            <i class="mdi mdi-trash-can-outline me-1"></i> Delete (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. Search + Reset — pushed to RIGHT with ms-auto -->
+                <div class="d-flex align-items-end gap-2 ms-auto">
+                    <div>
+                        <label class="form-label" for="userSearch">Search</label>
+                        <div class="position-relative">
+                            <input
+                                type="search"
+                                class="form-control lead-filter-input"
+                                id="userSearch"
+                                value="{{ saved_filters.search if saved_filters and saved_filters.search else '' }}"
+                                placeholder="Search user..."
+                                autocomplete="off"
+                            >
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="button" class="btn btn-light" id="btnResetFilters">
+                            <i class="mdi mdi-refresh me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Inner Table Container -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+
+                    <!-- Users Table (Clean, Auto-Adjusting Layout) -->
+                    <div class="clientos-table-scroll single-row-filter" style="position:relative;">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="usersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 40px;">
+                                        <input type="checkbox" id="selectAllUsers" class="form-check-input">
+                                    </th>
+                                    <th>User Details</th>
+                                    <th>Designation</th>
+                                    <th>Role</th>
+                                    <th>Reporting & Target</th>
+                                    <th>Permissions</th>
+                                    <th>Dates (DOB & Joining)</th>
+                                    <th class="text-center" style="width: 90px;">Status</th>
+                                    <th class="text-center" style="width: 100px;">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="usersTableBody">
+                                {% for u in users %}
+                                <tr class="user-data-row"
+                                    data-name="{{ (u.full_name or '') | lower }}"
+                                    data-username="{{ (u.username or '') | lower }}"
+                                    data-mobile="{{ (u.mobile or '') | lower }}"
+                                    data-extension="{{ (u.extension_name or '') | lower }}"
+                                    data-role="{{ (u.role_name or '') | lower }}"
+                                    data-designation="{{ (u.designation_name or '') | lower }}"
+                                    data-reporting="{{ (u.reporting_to_name or '') | lower }}"
+                                    data-biometric="{{ (u.biometric_id or '') | lower }}"
+                                    data-status="{{ u.status }}"
+                                    data-user-uuid="{{ u.user_uuid }}">
+
+                                    <!-- 1. Checkbox -->
+                                    <td class="text-center">
+                                        <input type="checkbox" class="form-check-input user-checkbox" value="{{ u.user_uuid }}">
+                                    </td>
+
+                                    <!-- 2. User Details (Full Name, Username, Password, Extension) -->
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ u.full_name or 'Unnamed User' }}</div>
+                                        <div class="text-muted mt-1">Username: <span class="text-dark">{{ u.username or '-' }}</span></div>
+                                        <div class="text-muted mt-1">Password: <span class="text-dark font-monospace">{{ u.password or '-' }}</span></div>
+                                        <div class="text-muted mt-1">Ext: <span class="text-dark">{{ u.extension_name or 'Not Assigned' }}</span></div>
+                                    </td>
+
+                                    <!-- 3. Designation -->
+                                    <td>
+                                        <div class="text-dark">{{ u.designation_name or 'Not Assigned' }}</div>
+                                        {% if u.biometric_id %}
+                                            <div class="text-muted mt-1">Bio ID: {{ u.biometric_id }}</div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- 4. Role -->
+                                    <td>
+                                        <div class="text-dark">{{ u.role_name or 'No Role' }}</div>
+                                    </td>
+
+                                    <!-- 5. Reporting & Target -->
+                                    <td>
+                                        <div class="text-dark">{{ u.reporting_to_name or 'Self / Direct' }}</div>
+                                        <div class="text-muted mt-1">Target: <span class="text-dark">{{ u.target if u.target is not none else '0' }}</span></div>
+                                    </td>
+
+                                    <!-- 6. Permissions -->
+                                    <td>
+                                        <div>Call: <span class="text-dark">{{ 'Yes' if u.click_to_call == 1 else 'No' }}</span></div>
+                                        <div class="mt-1">Number: <span class="text-dark">{{ 'Show' if u.number_show_hide == 1 else 'Mask' }}</span></div>
+                                    </td>
+
+                                    <!-- 7. Dates (Birthday & Joining Date) -->
+                                    <td>
+                                        <div>DOB: <span class="text-dark">{{ u.date_of_birth_display or u.date_of_birth or '-' }}</span></div>
+                                        <div class="mt-1">Joining: <span class="text-dark">{{ u.date_of_joining_display or u.date_of_joining or '-' }}</span></div>
+                                    </td>
+
+                                    <!-- 8. Status -->
+                                    <td class="text-center">
+                                        {% if u.status == 1 %}
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- 9. Action -->
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <a href="/settings/user/edit/{{ u.user_uuid }}" class="btn btn-outline-primary btn-sm" title="Edit User">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-user" data-user-uuid="{{ u.user_uuid }}" data-user-name="{{ u.full_name }}" title="Delete User">
+                                                <i class="mdi mdi-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr id="noUsersFoundRow" class="d-none">
+                                    <td colspan="9" class="text-center py-4 text-muted">
+                                        No users match the search criteria.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" {{ 'selected' if not saved_filters or saved_filters.page_size == 10 else '' }}>10</option>
+                            <option value="25" {{ 'selected' if saved_filters and saved_filters.page_size == 25 else '' }}>25</option>
+                            <option value="50" {{ 'selected' if saved_filters and saved_filters.page_size == 50 else '' }}>50</option>
+                            <option value="100" {{ 'selected' if saved_filters and saved_filters.page_size == 100 else '' }}>100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted" id="paginationInfo">Loading...</div>
+                </div>
+
+                <nav aria-label="Users pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Single Delete User Confirmation Modal -->
+<div class="modal fade" id="deleteUserConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="mdi mdi-alert-circle-outline text-danger fs-1"></i>
+                </div>
+                <h5 class="text-dark fw-bold mb-2">Delete User?</h5>
+                <p class="text-muted fs-13 mb-4">Are you sure you want to delete <strong id="deleteTargetUserName" class="text-dark"></strong>?</p>
+                
+                <form id="deleteUserForm" method="POST" action="">
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-3">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="mdi mdi-trash-can-outline text-danger fs-1"></i>
+                </div>
+                <h5 class="text-dark fw-bold mb-2">Delete Selected Users?</h5>
+                <p class="text-muted fs-13 mb-4">Are you sure you want to delete <strong id="bulkDeleteTargetCount" class="text-danger">0</strong> selected users?</p>
+                
+                <form id="bulkDeleteForm" method="POST" action="/settings/user/delete-selected">
+                    <input type="hidden" name="selected_ids" id="bulkDeleteSelectedIds" value="">
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-3">Delete All</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const allRows = Array.from(document.querySelectorAll('.user-data-row'));
+    const searchInput = document.getElementById('userSearch');
+    const roleFilter = document.getElementById('userRoleFilter');
+    const designationFilter = document.getElementById('userDesignationFilter');
+    const statusFilter = document.getElementById('userStatusFilter');
+    const pageSizeSelect = document.getElementById('pageSize');
+    const resetBtn = document.getElementById('btnResetFilters');
+    const selectAllCheckbox = document.getElementById('selectAllUsers');
+    const bulkDeleteBtn = document.getElementById('btnBulkDelete');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const noUsersFoundRow = document.getElementById('noUsersFoundRow');
+    const paginationContainer = document.getElementById('paginationNav');
+    const paginationInfo = document.getElementById('paginationInfo');
+
+    let currentPage = parseInt("{{ saved_filters.page if saved_filters else 1 }}") || 1;
+    let pageSize = parseInt(pageSizeSelect.value) || 10;
+    let saveFilterDebounce = null;
+
+    // Save All Users Filter State to Flask Server Session
+    function saveFiltersToSession() {
+        clearTimeout(saveFilterDebounce);
+        saveFilterDebounce = setTimeout(() => {
+            fetch('/api/users/save-filters', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    role: roleFilter.value || 'all',
+                    designation: designationFilter.value || 'all',
+                    status: statusFilter.value || 'all',
+                    search: searchInput.value || '',
+                    page_size: parseInt(pageSizeSelect.value) || 10,
+                    page: currentPage
+                })
+            }).catch(err => console.error("Error saving filters to session:", err));
+        }, 250);
+    }
+
+    function getFilteredRows() {
+        const query = (searchInput.value || '').trim().toLowerCase();
+        const role = (roleFilter.value || 'all').toLowerCase();
+        const designation = (designationFilter.value || 'all').toLowerCase();
+        const status = statusFilter.value || 'all';
+
+        return allRows.filter(row => {
+            const name = row.getAttribute('data-name') || '';
+            const username = row.getAttribute('data-username') || '';
+            const mobile = row.getAttribute('data-mobile') || '';
+            const extension = row.getAttribute('data-extension') || '';
+            const rName = row.getAttribute('data-role') || '';
+            const dName = row.getAttribute('data-designation') || '';
+            const reporting = row.getAttribute('data-reporting') || '';
+            const bio = row.getAttribute('data-biometric') || '';
+            const rStatus = row.getAttribute('data-status') || '';
+
+            const matchesSearch = !query || 
+                name.includes(query) || 
+                username.includes(query) || 
+                mobile.includes(query) || 
+                extension.includes(query) ||
+                rName.includes(query) ||
+                dName.includes(query) ||
+                reporting.includes(query) ||
+                bio.includes(query);
+
+            const matchesRole = (role === 'all') || (rName === role);
+            const matchesDesignation = (designation === 'all') || (dName === designation);
+            const matchesStatus = (status === 'all') || (rStatus === status);
+
+            return matchesSearch && matchesRole && matchesDesignation && matchesStatus;
+        });
+    }
+
+    function renderTable() {
+        const filtered = getFilteredRows();
+        const total = filtered.length;
+
+        const pSizeVal = pageSizeSelect.value;
+        pageSize = parseInt(pSizeVal) || 10;
+
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        allRows.forEach(row => row.style.display = 'none');
+
+        if (total === 0) {
+            noUsersFoundRow.classList.remove('d-none');
+            paginationInfo.textContent = 'Showing 0 to 0 of 0 entries';
+        } else {
+            noUsersFoundRow.classList.add('d-none');
+            const pageRows = filtered.slice(startIndex, endIndex);
+            pageRows.forEach(row => row.style.display = '');
+
+            const showingStart = startIndex + 1;
+            const showingEnd = Math.min(endIndex, total);
+            paginationInfo.textContent = `Showing ${showingStart} to ${showingEnd} of ${total} entries`;
+        }
+
+        renderPaginationControls(totalPages);
+        updateSelectionState();
+        saveFiltersToSession();
+    }
+
+    function renderPaginationControls(totalPages) {
+        paginationContainer.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        // Prev Button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#"><i class="mdi mdi-chevron-left"></i></a>`;
+        prevLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+        paginationContainer.appendChild(prevLi);
+
+        // Page Numbers
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            const targetPage = i;
+            pageLi.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = targetPage;
+                renderTable();
+            });
+            paginationContainer.appendChild(pageLi);
+        }
+
+        // Next Button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#"><i class="mdi mdi-chevron-right"></i></a>`;
+        nextLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+        paginationContainer.appendChild(nextLi);
+    }
+
+    function updateSelectionState() {
+        const visibleCheckboxes = Array.from(document.querySelectorAll('.user-data-row:not([style*="display: none"]) .user-checkbox'));
+        const checkedBoxes = visibleCheckboxes.filter(cb => cb.checked);
+
+        if (selectedCountSpan) selectedCountSpan.textContent = checkedBoxes.length;
+
+        if (checkedBoxes.length > 0) {
+            bulkDeleteBtn.classList.remove('d-none');
+        } else {
+            bulkDeleteBtn.classList.add('d-none');
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = visibleCheckboxes.length > 0 && checkedBoxes.length === visibleCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < visibleCheckboxes.length;
+        }
+    }
+
+    // Select All
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+            const visibleCheckboxes = document.querySelectorAll('.user-data-row:not([style*="display: none"]) .user-checkbox');
+            visibleCheckboxes.forEach(cb => cb.checked = isChecked);
+            updateSelectionState();
+        });
+    }
+
+    // Individual Checkbox
+    document.addEventListener('change', function (e) {
+        if (e.target.classList.contains('user-checkbox')) {
+            updateSelectionState();
+        }
+    });
+
+    // Delete Modal Handler
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const userUuid = this.getAttribute('data-user-uuid');
+            const userName = this.getAttribute('data-user-name') || 'this user';
+            
+            document.getElementById('deleteTargetUserName').textContent = userName;
+            document.getElementById('deleteUserForm').action = `/settings/user/delete/${userUuid}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('deleteUserConfirmModal'));
+            modal.show();
+        });
+    });
+
+    // Bulk Delete
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function () {
+            const checkedBoxes = Array.from(document.querySelectorAll('.user-checkbox:checked'));
+            const selectedUuids = checkedBoxes.map(cb => cb.value);
+            
+            if (selectedUuids.length === 0) return;
+
+            document.getElementById('bulkDeleteTargetCount').textContent = selectedUuids.length;
+            document.getElementById('bulkDeleteSelectedIds').value = JSON.stringify(selectedUuids);
+
+            const modal = new bootstrap.Modal(document.getElementById('bulkDeleteConfirmModal'));
+            modal.show();
+        });
+    }
+
+    // Filters
+    searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
+    roleFilter.addEventListener('change', () => { currentPage = 1; renderTable(); });
+    designationFilter.addEventListener('change', () => { currentPage = 1; renderTable(); });
+    statusFilter.addEventListener('change', () => { currentPage = 1; renderTable(); });
+    pageSizeSelect.addEventListener('change', () => { currentPage = 1; renderTable(); });
+
+    // Reset
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            roleFilter.value = 'all';
+            designationFilter.value = 'all';
+            statusFilter.value = 'all';
+            pageSizeSelect.value = '10';
+            currentPage = 1;
+            renderTable();
+            saveFiltersToSession();
+        });
+    }
+
+    // Initial render
+    renderTable();
+});
+</script>
+{% endblock %}

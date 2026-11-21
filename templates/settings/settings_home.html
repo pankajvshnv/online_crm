@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="mb-sm-0">Settings Hub</h4>
+            </div>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Section -->
+<div class="row">
+    {% if has_permission('settings', 'user_management') %}
+<div class="col-xl-6">
+        <div class="card settings-section-card">
+            <div class="card-header">
+                <h5 class="card-title">User Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="settings-tile-grid">
+                    <a href="{{ url_for('all_users') }}" class="settings-mini-tile"><i class="mdi mdi-account-group-outline"></i><span>All Users</span></a>
+                    <a href="{{ url_for('add_user') }}" class="settings-mini-tile"><i class="mdi mdi-account-plus-outline"></i><span>Add User</span></a>
+                    <a href="{{ url_for('setting_designations') }}" class="settings-mini-tile"><i class="mdi mdi-badge-account-outline"></i><span>Designations</span></a>
+                    <a href="{{ url_for('setting_roles') }}" class="settings-mini-tile"><i class="mdi mdi-shield-account-outline"></i><span>Roles & Permissions</span></a>
+                    <a href="{{ url_for('user_groups') }}" class="settings-mini-tile"><i class="mdi mdi-account-network-outline"></i><span>Reporting Chart</span></a>
+                   </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
+
+    {% if has_permission('settings', 'lead_management') %}
+<div class="col-xl-6" id="lead-management">
+        <div class="card settings-section-card">
+            <div class="card-header">
+                <h5 class="card-title">Lead Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="settings-tile-grid">
+                    <a href="{{ url_for('setting_lead_sources') }}" class="settings-mini-tile"><i class="mdi mdi-source-branch"></i><span>Lead Sources</span></a>
+                    <a href="{{ url_for('setting_lead_statuses') }}" class="settings-mini-tile"><i class="mdi mdi-list-status"></i><span>Lead Status</span></a>
+                    <a href="{{ url_for('lead_source_limits') }}" class="settings-mini-tile"><i class="mdi mdi-account-cog-outline"></i><span> Lead Source Limits</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
+    {% if has_permission('settings', 'calling_management') %}
+<div class="col-xl-6">
+        <div class="card settings-section-card">
+            <div class="card-header">
+                <h5 class="card-title">Calling Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="settings-tile-grid">
+                    <a href="{{ url_for('setting_extensions') }}" class="settings-mini-tile"><i class="mdi mdi-phone-classic"></i><span>Extensions</span></a>
+                    <a href="{{ url_for('calling_apis') }}" class="settings-mini-tile"><i class="mdi mdi-server-network"></i><span>Calling API Setup</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
+
+    {% if has_permission('settings', 'system_controls') %}
+<div class="col-xl-6">
+        <div class="card settings-section-card">
+            <div class="card-header">
+                <h5 class="card-title">System Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="settings-tile-grid">
+                    <a href="{{ url_for('company_settings') }}" class="settings-mini-tile"><i class="mdi mdi-domain"></i><span>Company Profile</span></a>
+                    <a href="{{ url_for('product_settings') }}" class="settings-mini-tile"><i class="mdi mdi-package-variant-closed"></i><span>Products & Pricing</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+</div>
+{% endblock %}

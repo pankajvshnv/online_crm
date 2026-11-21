@@ -1,0 +1,37 @@
+<!-- Pagination -->
+<div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+
+        <div class="d-flex align-items-center gap-2">
+            <label class="mb-0 text-muted" for="pageSize">
+                Rows
+            </label>
+
+            <select class="form-select form-select-sm" id="pageSize" style="width: 100px;">
+                <option value="10" {% if not table_data or table_data.page_size == 10 %}selected{% endif %}>10</option>
+                <option value="25" {% if table_data and table_data.page_size == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if table_data and table_data.page_size == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if table_data and table_data.page_size == 100 %}selected{% endif %}>100</option>
+                <option value="500" {% if table_data and table_data.page_size == 500 %}selected{% endif %}>500</option>
+                <option value="1000" {% if table_data and table_data.page_size == 1000 %}selected{% endif %}>1000</option>
+            </select>
+        </div>
+
+        <div class="text-muted" id="paginationInfo">
+            {% if table_data and table_data.total > 0 %}
+                {% set start_index = (table_data.page - 1) * table_data.page_size + 1 %}
+                {% set end_index = [table_data.page * table_data.page_size, table_data.total]|min %}
+                Showing {{ start_index }} to {{ end_index }} of {{ table_data.total }} records
+            {% else %}
+                Showing 0 to 0 of 0 records
+            {% endif %}
+        </div>
+
+    </div>
+
+    <nav aria-label="Lead pagination">
+        <ul class="pagination pagination-sm mb-0" id="paginationNav">
+            <!-- Rendered dynamically by JavaScript -->
+        </ul>
+    </nav>
+</div>

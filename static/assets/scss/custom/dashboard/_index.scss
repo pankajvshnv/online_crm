@@ -1,0 +1,10 @@
+// index.scss
+
+.welcome-vector {
+    bottom: -60px;
+    right: 0;
+    width: 60%;
+    @include media-breakpoint-between(md, xxl){
+        width: 45%;
+    }
+}

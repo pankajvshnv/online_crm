@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+
+<!-- Recursive Jinja Macro to Render Org Tree Node -->
+{% macro render_tree_node(user) %}
+<li class="org-tree-node-item" data-node-id="{{ user.user_uuid }}">
+    
+    <!-- User Card: Name + Designation + Target -->
+    <div class="org-user-card shadow-sm"
+         data-name="{{ (user.full_name or '') | lower }}"
+         data-username="{{ (user.username or '') | lower }}"
+         data-designation="{{ (user.designation_name or user.role_name or '') | lower }}"
+         data-user-uuid="{{ user.user_uuid }}">
+
+        <!-- 1. Full Name -->
+        <div class="org-card-name text-truncate" title="{{ user.full_name or user.username }}">
+            {{ user.full_name or user.username or 'Unnamed' }}
+        </div>
+
+        <!-- 2. Designation -->
+        <div class="org-card-designation text-truncate" title="{{ user.designation_name or user.role_name or 'Team Member' }}">
+            {{ user.designation_name or user.role_name or 'Team Member' }}
+        </div>
+
+        <!-- 3. Target Box -->
+        <div class="org-card-target-box">
+            <div class="target-label">Target</div>
+            <div class="target-value">{{ user.total_target_display }}</div>
+            
+            {% if user.children %}
+                <div class="target-subtext">
+                    <span>Self: <strong>{{ user.self_target_display }}</strong></span>
+                    <span class="divider">|</span>
+                    <span>Team: <strong>{{ user.team_target_display }}</strong></span>
+                </div>
+            {% else %}
+                <div class="target-subtext">
+                    <span>Self: <strong>{{ user.self_target_display }}</strong></span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Team Expand/Collapse Toggle Button -->
+        {% if user.children %}
+            <button type="button" class="btn-branch-toggle btn-toggle-branch" title="Expand/Collapse Team">
+                <i class="mdi mdi-minus"></i>
+                <span>{{ user.children|length }} Reports</span>
+            </button>
+        {% endif %}
+
+    </div>
+
+    <!-- Children Recursive Branch -->
+    {% if user.children %}
+        <ul class="org-tree-children">
+            {% for child in user.children %}
+                {{ render_tree_node(child) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+</li>
+{% endmacro %}
+
+{% block content %}
+
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <div>
+                    <h4 class="mb-1 text-dark fw-bold">Company Reporting Chart</h4>
+                    <p class="text-muted mb-0 fs-13">Visual organization hierarchy with Self and Team Target rollups.</p>
+                </div>
+
+                <div class="page-title-right d-flex align-items-center gap-2">
+                    <a href="{{ url_for('all_users') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="mdi mdi-account-group me-1"></i> View All Users
+                    </a>
+                    <a href="{{ url_for('add_user') }}" class="btn btn-primary btn-sm">
+                        <i class="mdi mdi-account-plus me-1"></i> Add User
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Org Tree Canvas Container Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <!-- Canvas Toolbar -->
+        <div class="card-header bg-white border-bottom py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            
+            <!-- Left: Search & Filter -->
+            <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width: 260px; max-width: 380px;">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light text-muted border-end-0"><i class="mdi mdi-magnify"></i></span>
+                    <input type="search" id="orgTreeSearchInput" class="form-control border-start-0" placeholder="Find user or designation...">
+                </div>
+                <span id="searchMatchCount" class="badge bg-light text-muted border fs-11 d-none">0 matches</span>
+            </div>
+
+            <!-- Right: Canvas Controls (Zoom, Expand/Collapse, Reset) -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="btn-group btn-group-sm border rounded" role="group">
+                    <button type="button" class="btn btn-light" id="btnZoomOut" title="Zoom Out ( - )">
+                        <i class="mdi mdi-minus"></i>
+                    </button>
+                    <button type="button" class="btn btn-light px-2 fw-semibold" id="btnZoomReset" title="Reset Zoom">
+                        <span id="zoomLevelDisplay">85%</span>
+                    </button>
+                    <button type="button" class="btn btn-light" id="btnZoomIn" title="Zoom In ( + )">
+                        <i class="mdi mdi-plus"></i>
+                    </button>
+                </div>
+
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btnExpandAll" title="Expand all branches">
+                        <i class="mdi mdi-arrow-expand-all me-1"></i> Expand All
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnCollapseAll" title="Collapse branches">
+                        <i class="mdi mdi-arrow-collapse-all me-1"></i> Collapse All
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnCenterCanvas" title="Center Leader">
+                        <i class="mdi mdi-crosshairs-gps me-1"></i> Center
+                    </button>
+                </div>
+
+                <div class="text-muted fs-12 ms-1 d-none d-lg-inline-block">
+                    <i class="mdi mdi-cursor-move me-1"></i> Click &amp; drag canvas to pan (Scroll Left/Right/Top/Bottom)
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 2D Pannable & Scrollable Tree Viewport -->
+        <div class="card-body p-0 position-relative">
+            
+            <div id="orgTreeViewport" class="org-tree-viewport">
+                <div id="orgTreeCanvas" class="org-tree-canvas">
+                    
+                    {% if hierarchy_roots %}
+                        <div class="org-tree-root-container">
+                            {% for root in hierarchy_roots %}
+                                <ul class="org-tree-branch">
+                                    {{ render_tree_node(root) }}
+                                </ul>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="mdi mdi-account-off-outline fs-1 d-block mb-2"></i>
+                            <h5>No Active Users in Hierarchy</h5>
+                            <p class="fs-13">Create users and assign reporting managers to populate the chart.</p>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* ========================================================= */
+/* Clean 3-Item Org Card & 2D Pannable Canvas Styles         */
+/* ========================================================= */
+.org-tree-viewport {
+    width: 100%;
+    height: calc(100vh - 220px);
+    min-height: 520px;
+    overflow: auto;
+    background-color: #f8fafc;
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 24px 24px;
+    cursor: grab;
+    user-select: none;
+    position: relative;
+    padding: 50px 40px;
+}
+
+.org-tree-viewport.is-dragging {
+    cursor: grabbing;
+    cursor: -webkit-grabbing;
+}
+
+.org-tree-canvas {
+    display: inline-block;
+    min-width: 100%;
+    min-height: 100%;
+    transform-origin: top center;
+    transition: transform 0.15s ease-out;
+    padding-bottom: 80px;
+}
+
+.org-tree-root-container {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin: 0 auto;
+    width: max-content;
+}
+
+/* Tree Structure (Connecting Lines) */
+.org-tree-branch,
+.org-tree-children {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    position: relative;
+}
+
+.org-tree-children {
+    padding-top: 36px;
+}
+
+.org-tree-node-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 0 16px;
+    margin: 0;
+}
+
+/* Connecting lines above and below nodes */
+.org-tree-children::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    border-left: 2px solid #94a3b8;
+    width: 0;
+    height: 36px;
+    transform: translateX(-50%);
+}
+
+.org-tree-children > .org-tree-node-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 0;
+    border-top: 2px solid #94a3b8;
+}
+
+.org-tree-children > .org-tree-node-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 0;
+    border-top: 2px solid #94a3b8;
+}
+
+.org-tree-children > .org-tree-node-item:first-child::before {
+    display: none;
+}
+
+.org-tree-children > .org-tree-node-item:last-child::after {
+    display: none;
+}
+
+.org-tree-children > .org-tree-node-item:only-child::before,
+.org-tree-children > .org-tree-node-item:only-child::after {
+    display: none;
+}
+
+.org-tree-node-item > .org-user-card::after {
+    content: '';
+    position: absolute;
+    bottom: -36px;
+    left: 50%;
+    border-left: 2px solid #94a3b8;
+    width: 0;
+    height: 36px;
+    transform: translateX(-50%);
+    display: none;
+}
+
+.org-tree-node-item:has(> .org-tree-children:not(.d-none)) > .org-user-card::after {
+    display: block;
+}
+
+/* Focused 3-Item Org User Card */
+.org-user-card {
+    width: 210px;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 12px 10px;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.org-user-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.18);
+    transform: translateY(-3px);
+}
+
+/* 1. Name */
+.org-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+/* 2. Designation */
+.org-card-designation {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 3px;
+    margin-bottom: 10px;
+}
+
+/* 3. Target Box */
+.org-card-target-box {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 6px;
+}
+
+.target-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #475569;
+}
+
+.target-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2563eb;
+    margin: 2px 0;
+}
+
+.target-subtext {
+    font-size: 11px;
+    color: #334155;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 4px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.target-subtext strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.target-subtext .divider {
+    color: #94a3b8;
+}
+
+/* Expand / Collapse Button */
+.btn-branch-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-branch-toggle:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+/* Search Highlights */
+.org-user-card.is-search-match {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 8px 20px rgba(37, 99, 235, 0.2) !important;
+    animation: pulseSearch 1.5s infinite;
+}
+
+.org-user-card.is-search-dimmed {
+    opacity: 0.25;
+}
+
+@keyframes pulseSearch {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+/* Dark Mode support */
+[data-bs-theme="dark"] .org-tree-viewport {
+    background-color: #0f172a;
+    background-image: radial-gradient(#334155 1px, transparent 1px);
+}
+
+[data-bs-theme="dark"] .org-user-card {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .org-card-name {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .org-card-designation {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .org-card-target-box {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+[data-bs-theme="dark"] .target-value {
+    color: #60a5fa;
+}
+
+[data-bs-theme="dark"] .target-subtext {
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .target-subtext strong {
+    color: #f8fafc;
+}
+
+[data-bs-theme="dark"] .org-tree-children::before,
+[data-bs-theme="dark"] .org-tree-children > .org-tree-node-item::before,
+[data-bs-theme="dark"] .org-tree-children > .org-tree-node-item::after,
+[data-bs-theme="dark"] .org-tree-node-item > .org-user-card::after {
+    border-color: #475569;
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const viewport = document.getElementById("orgTreeViewport");
+    const canvas = document.getElementById("orgTreeCanvas");
+    const searchInput = document.getElementById("orgTreeSearchInput");
+    const searchMatchCount = document.getElementById("searchMatchCount");
+    const btnZoomIn = document.getElementById("btnZoomIn");
+    const btnZoomOut = document.getElementById("btnZoomOut");
+    const btnZoomReset = document.getElementById("btnZoomReset");
+    const zoomLevelDisplay = document.getElementById("zoomLevelDisplay");
+    const btnExpandAll = document.getElementById("btnExpandAll");
+    const btnCollapseAll = document.getElementById("btnCollapseAll");
+    const btnCenterCanvas = document.getElementById("btnCenterCanvas");
+
+    let currentZoom = 0.85;
+    const minZoom = 0.35;
+    const maxZoom = 1.6;
+
+    // Apply Zoom Transform
+    function setZoom(newZoom) {
+        currentZoom = Math.min(maxZoom, Math.max(minZoom, newZoom));
+        canvas.style.transform = `scale(${currentZoom})`;
+        if (zoomLevelDisplay) {
+            zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+    }
+
+    if (btnZoomIn) {
+        btnZoomIn.addEventListener("click", () => setZoom(currentZoom + 0.15));
+    }
+    if (btnZoomOut) {
+        btnZoomOut.addEventListener("click", () => setZoom(currentZoom - 0.15));
+    }
+    if (btnZoomReset) {
+        btnZoomReset.addEventListener("click", () => {
+            setZoom(0.85);
+            centerTree();
+        });
+    }
+
+    // Mouse Wheel Zoom (Ctrl + Wheel or Alt + Wheel)
+    viewport.addEventListener("wheel", function (e) {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.1 : -0.1;
+            setZoom(currentZoom + delta);
+        }
+    }, { passive: false });
+
+    // 2D Drag to Pan Mechanics
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+    let scrollLeftStart = 0;
+    let scrollTopStart = 0;
+
+    viewport.addEventListener("mousedown", function (e) {
+        if (e.target.closest("button, a, input, select")) return;
+
+        isPanning = true;
+        viewport.classList.add("is-dragging");
+        startX = e.pageX - viewport.offsetLeft;
+        startY = e.pageY - viewport.offsetTop;
+        scrollLeftStart = viewport.scrollLeft;
+        scrollTopStart = viewport.scrollTop;
+    });
+
+    window.addEventListener("mousemove", function (e) {
+        if (!isPanning) return;
+        e.preventDefault();
+        const x = e.pageX - viewport.offsetLeft;
+        const y = e.pageY - viewport.offsetTop;
+        const walkX = (x - startX) * 1.2;
+        const walkY = (y - startY) * 1.2;
+        viewport.scrollLeft = scrollLeftStart - walkX;
+        viewport.scrollTop = scrollTopStart - walkY;
+    });
+
+    window.addEventListener("mouseup", function () {
+        if (isPanning) {
+            isPanning = false;
+            viewport.classList.remove("is-dragging");
+        }
+    });
+
+    // Center on Root/Tree
+    function centerTree() {
+        if (!viewport || !canvas) return;
+        const scrollW = viewport.scrollWidth;
+        const clientW = viewport.clientWidth;
+        viewport.scrollLeft = Math.max(0, (scrollW - clientW) / 2);
+        viewport.scrollTop = 20;
+    }
+
+    if (btnCenterCanvas) {
+        btnCenterCanvas.addEventListener("click", centerTree);
+    }
+
+    // Toggle Single Branch (Expand/Collapse)
+    document.querySelectorAll(".btn-toggle-branch").forEach(btn => {
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            const nodeItem = this.closest(".org-tree-node-item");
+            const childrenUl = nodeItem.querySelector(".org-tree-children");
+            const icon = this.querySelector("i");
+
+            if (!childrenUl) return;
+
+            if (childrenUl.classList.contains("d-none")) {
+                childrenUl.classList.remove("d-none");
+                if (icon) icon.className = "mdi mdi-minus";
+            } else {
+                childrenUl.classList.add("d-none");
+                if (icon) icon.className = "mdi mdi-plus";
+            }
+        });
+    });
+
+    // Expand All Branches
+    if (btnExpandAll) {
+        btnExpandAll.addEventListener("click", function () {
+            document.querySelectorAll(".org-tree-children").forEach(ul => ul.classList.remove("d-none"));
+            document.querySelectorAll(".btn-toggle-branch i").forEach(i => i.className = "mdi mdi-minus");
+        });
+    }
+
+    // Collapse All Branches except Level 1
+    if (btnCollapseAll) {
+        btnCollapseAll.addEventListener("click", function () {
+            document.querySelectorAll(".org-tree-children .org-tree-children").forEach(ul => ul.classList.add("d-none"));
+            document.querySelectorAll(".org-tree-children .btn-toggle-branch i").forEach(i => i.className = "mdi mdi-plus");
+        });
+    }
+
+    // Live Search in Org Tree with Auto-Scroll
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            const query = this.value.trim().toLowerCase();
+            const allCards = document.querySelectorAll(".org-user-card");
+
+            allCards.forEach(card => {
+                card.classList.remove("is-search-match", "is-search-dimmed");
+            });
+
+            if (!query) {
+                searchMatchCount.classList.add("d-none");
+                return;
+            }
+
+            let matches = 0;
+            let firstMatchCard = null;
+
+            allCards.forEach(card => {
+                const name = card.getAttribute("data-name") || "";
+                const username = card.getAttribute("data-username") || "";
+                const designation = card.getAttribute("data-designation") || "";
+
+                if (name.includes(query) || username.includes(query) || designation.includes(query)) {
+                    matches++;
+                    card.classList.add("is-search-match");
+                    if (!firstMatchCard) firstMatchCard = card;
+
+                    // Ensure all parent branches of this match are expanded
+                    let parentUl = card.closest(".org-tree-children");
+                    while (parentUl) {
+                        parentUl.classList.remove("d-none");
+                        const toggleBtn = parentUl.closest(".org-tree-node-item")?.querySelector(".btn-toggle-branch i");
+                        if (toggleBtn) toggleBtn.className = "mdi mdi-minus";
+                        parentUl = parentUl.parentElement.closest(".org-tree-children");
+                    }
+                } else {
+                    card.classList.add("is-search-dimmed");
+                }
+            });
+
+            searchMatchCount.textContent = `${matches} match${matches === 1 ? '' : 'es'}`;
+            searchMatchCount.classList.remove("d-none");
+
+            // Scroll viewport to first match
+            if (firstMatchCard) {
+                firstMatchCard.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        });
+    }
+
+    // Initial zoom and center on load
+    setZoom(0.85);
+    setTimeout(centerTree, 200);
+});
+</script>
+{% endblock %}

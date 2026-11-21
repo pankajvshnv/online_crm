@@ -1,0 +1,617 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ page_heading }}</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                    <li class="breadcrumb-item active">{{ page_heading }}</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partials/aggrid.html' %}
+
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog {{ modal_size|default('') }} modal-dialog-centered">
+        <div class="modal-content">
+            <form data-master-form>
+                <div class="modal-header">
+                    <h5 class="modal-title" data-master-modal-title>{{ modal_title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="record_uuid">
+
+                    {% if form_type == 'designation' %}
+                    <div class="mb-3">
+                        <label class="form-label">Designation Name</label>
+                        <input type="text" class="form-control" name="designation_name" required maxlength="100">
+                    </div>
+                    {% elif form_type == 'role' %}
+                    <div class="mb-3">
+                        <label class="form-label">Role Name</label>
+                        <input type="text" class="form-control" name="role_name" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Permissions</label>
+                        <div class="role-permission-grid">
+                            <div class="role-permission-head">Module</div>
+                            {% for action in permission_actions %}
+                            <div class="role-permission-head text-center">{{ action|title }}</div>
+                            {% endfor %}
+                            {% for module in permission_modules %}
+                            <div class="role-permission-module">{{ module }}</div>
+                            {% for action in permission_actions %}
+                            <label class="role-permission-cell">
+                                <input class="form-check-input" type="checkbox" value="{{ action }}" data-module="{{ module }}" data-permission-check>
+                            </label>
+                            {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% elif form_type == 'extension' %}
+                    <div data-extension-create-fields>
+                        <div class="mb-3">
+                            <label class="form-label">Starting Range</label>
+                            <input type="number" class="form-control" name="start_number" min="1" placeholder="101">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Step Count</label>
+                            <input type="number" class="form-control" name="count" min="1" max="50" placeholder="5">
+                            <div class="form-text">Maximum 50 extensions can be created at one time.</div>
+                        </div>
+                    </div>
+                    <div class="mb-3 d-none" data-extension-edit-fields>
+                        <label class="form-label">Extension Number</label>
+                        <input type="number" class="form-control" name="extension_number" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Calling API</label>
+                        <select class="form-select" name="calling_server_uuid">
+                            <option value="">No API</option>
+                            {% for server in calling_servers|default([]) %}
+                            <option value="{{ server.server_uuid }}">{{ server.server_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% elif form_type == 'lead_source' %}
+                    <div class="mb-3">
+                        <label class="form-label">Lead Source Name</label>
+                        <input type="text" class="form-control" name="source_name" required maxlength="100">
+                    </div>
+                    {% elif form_type == 'lead_status' %}
+                    <div class="mb-3">
+                        <label class="form-label">Lead Status Name</label>
+                        <input type="text" class="form-control" name="status_name" required maxlength="100">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color Tone</label>
+                        <select class="form-select" name="status_tone" data-lead-tone-select>
+                            {% for tone in lead_status_tones|default([]) %}
+                            <option value="{{ tone.value }}">{{ tone.label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="lead-tone-preview mt-2" data-lead-tone-preview></div>
+                        <div class="lead-tone-option-grid mt-2">
+                            {% for tone in lead_status_tones|default([]) %}
+                            <span class="lead-tone-chip lead-tone-{{ tone.value }}">{{ tone.label }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% elif form_type == 'lead_role_limit' %}
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <input type="text" class="form-control" name="role_name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lead Source</label>
+                        <input type="text" class="form-control" name="source_name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lead Limit Per User</label>
+                        <input type="number" class="form-control" name="lead_limit_per_user" min="0" max="100000" required>
+                        <div class="form-text">Default is 10. Use 0 if this role should not receive auto-assigned leads.</div>
+                    </div>
+                    {% elif form_type == 'calling_server' %}
+                    <div class="mb-3">
+                        <label class="form-label">API Name</label>
+                        <input type="text" class="form-control" name="server_name" required maxlength="120" placeholder="Office Asterisk">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Full Link</label>
+                        <input type="url" class="form-control" name="api_url" required maxlength="500" placeholder="https://192.168.1.211/api/index.php">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Source Variable</label>
+                            <input type="text" class="form-control" name="source_param" required maxlength="60" value="from">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Destination Variable</label>
+                            <input type="text" class="form-control" name="destination_param" required maxlength="60" value="to">
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if form_type != 'lead_role_limit' %}
+                    <div class="mb-0">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if form_type in ['designation', 'role'] %}
+{% include 'settings/master_users_modal.html' %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+
+    function escapeHtml(value) {
+        return String(value === null || value === undefined ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function applyGridTheme(gridDiv) {
+        var isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+        gridDiv.classList.toggle("ag-theme-quartz", !isDark);
+        gridDiv.classList.toggle("ag-theme-quartz-dark", isDark);
+    }
+
+    function statusBadge(params) {
+        var isActive = params.value === 1 || params.value === "1" || params.value === true;
+        var label = isActive ? "Active" : "Inactive";
+        var className = isActive ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning";
+        return '<span class="badge ' + className + '">' + label + '</span>';
+    }
+
+    function getDisplayName(type, row) {
+        if (type === "designations") {
+            return row.designation_name;
+        }
+        if (type === "roles") {
+            return row.role_name;
+        }
+        if (type === "lead_sources") {
+            return row.source_name;
+        }
+        if (type === "lead_statuses") {
+            return row.status_name;
+        }
+        if (type === "lead_role_limits") {
+            return (row.role_name || "") + " - " + (row.source_name || "");
+        }
+        if (type === "calling_servers") {
+            return row.server_name;
+        }
+        return row.extension_number;
+    }
+
+    function getAssignedUserColumns(editUrlTemplate) {
+        return [
+            {
+                headerName: "User Name",
+                field: "full_name",
+                minWidth: 260,
+                flex: 1,
+                cellRenderer: function (params) {
+                    var user = params.data || {};
+                    var userMeta = [
+                        user.username,
+                        user.extension_name ? "Ext " + user.extension_name : "",
+                        user.role_name,
+                        user.designation_name
+                    ].filter(Boolean).join(" | ");
+
+                    return '<div class="settings-assigned-user-cell">' +
+                        '<strong>' + escapeHtml(user.full_name) + '</strong>' +
+                        '<span>' + escapeHtml(userMeta) + '</span>' +
+                        '</div>';
+                }
+            },
+            { headerName: "Status", field: "status", minWidth: 120, flex: 0.35, cellRenderer: statusBadge },
+            {
+                headerName: "Action",
+                field: "action",
+                minWidth: 110,
+                sortable: false,
+                cellRenderer: function (params) {
+                    var editKey = params.data.user_uuid;
+                    var editUrl = editUrlTemplate.replace("__key__", encodeURIComponent(editKey));
+                    return '<div class="clientos-grid-actions">' +
+                        '<a href="' + editUrl + '" class="btn btn-sm btn-primary" title="Edit">' +
+                        '<i class="mdi mdi-pencil-outline"></i>' +
+                        '</a>' +
+                        '</div>';
+                }
+            }
+        ];
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var wrapper = document.querySelector(".settings-master-wrap");
+        if (!wrapper) {
+            return;
+        }
+
+        var type = wrapper.dataset.masterType;
+        var form = document.querySelector("[data-master-form]");
+        var modalElement = form ? form.closest(".modal") : null;
+        var modal = modalElement ? new bootstrap.Modal(modalElement) : null;
+        var titleElement = document.querySelector("[data-master-modal-title]");
+        var usersModalElement = document.getElementById("assignedUsersModal");
+        var usersModal = usersModalElement ? new bootstrap.Modal(usersModalElement) : null;
+        var usersGridDiv = document.querySelector("[data-assigned-users-grid]");
+        var usersLoader = document.querySelector("[data-assigned-users-loader]");
+        var usersTitle = document.querySelector("[data-users-modal-title]");
+        var editUrlTemplate = wrapper.dataset.editUrlTemplate || "";
+        var rowIdField = {{ row_id_field|default('id')|tojson }};
+        var usersGridApi = null;
+
+        function getRows() {
+            return wrapper.clientosGrid ? wrapper.clientosGrid.getRows() : [];
+        }
+
+        function setExtensionMode(isEdit) {
+            if (type !== "extensions" || !form) {
+                return;
+            }
+
+            var createFields = form.querySelector("[data-extension-create-fields]");
+            var editFields = form.querySelector("[data-extension-edit-fields]");
+            var startInput = form.elements.start_number;
+            var countInput = form.elements.count;
+            var numberInput = form.elements.extension_number;
+
+            if (createFields) {
+                createFields.classList.toggle("d-none", isEdit);
+            }
+            if (editFields) {
+                editFields.classList.toggle("d-none", !isEdit);
+            }
+            if (startInput) {
+                startInput.required = !isEdit;
+            }
+            if (countInput) {
+                countInput.required = !isEdit;
+            }
+            if (numberInput) {
+                numberInput.required = isEdit;
+            }
+        }
+
+        function clearPermissionChecks() {
+            if (!form) {
+                return;
+            }
+
+            form.querySelectorAll("[data-permission-check]").forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+        }
+
+        function fillPermissionChecks(rawPermissions) {
+            if (!form) {
+                return;
+            }
+
+            var permissions = {};
+            if (typeof rawPermissions === "string" && rawPermissions) {
+                try {
+                    permissions = JSON.parse(rawPermissions);
+                } catch (error) {
+                    permissions = {};
+                }
+            } else if (rawPermissions && typeof rawPermissions === "object") {
+                permissions = rawPermissions;
+            }
+
+            Object.keys(permissions).forEach(function (moduleName) {
+                (permissions[moduleName] || []).forEach(function (action) {
+                    form.querySelectorAll("[data-permission-check]").forEach(function (checkbox) {
+                        if (checkbox.dataset.module === moduleName && checkbox.value === action) {
+                            checkbox.checked = true;
+                        }
+                    });
+                });
+            });
+        }
+
+        function collectPermissionChecks() {
+            var permissions = {};
+            if (!form || type !== "roles") {
+                return permissions;
+            }
+
+            form.querySelectorAll("[data-permission-check]:checked").forEach(function (checkbox) {
+                var moduleName = checkbox.dataset.module;
+                if (!permissions[moduleName]) {
+                    permissions[moduleName] = [];
+                }
+                permissions[moduleName].push(checkbox.value);
+            });
+
+            return permissions;
+        }
+
+        function openAddModal() {
+            if (!form || !modal) {
+                return;
+            }
+
+            form.reset();
+            form.elements.record_uuid.value = "";
+            clearPermissionChecks();
+            setExtensionMode(false);
+            updateLeadTonePreview();
+            if (titleElement) {
+                titleElement.textContent = {{ add_title|tojson }};
+            }
+            modal.show();
+        }
+
+        function openEditModal(recordUuid) {
+            if (!form || !modal) {
+                return;
+            }
+
+            var row = getRows().find(function (item) {
+                return String(item[rowIdField]) === String(recordUuid);
+            });
+
+            if (!row) {
+                return;
+            }
+
+            form.reset();
+            form.elements.record_uuid.value = row[rowIdField] || "";
+            if (form.elements.status) {
+                form.elements.status.value = row.status;
+            }
+            clearPermissionChecks();
+            setExtensionMode(true);
+
+            if (type === "designations") {
+                form.elements.designation_name.value = row.designation_name || "";
+            } else if (type === "roles") {
+                form.elements.role_name.value = row.role_name || "";
+                fillPermissionChecks(row.permissions);
+            } else if (type === "lead_sources") {
+                form.elements.source_name.value = row.source_name || "";
+            } else if (type === "lead_statuses") {
+                form.elements.status_name.value = row.status_name || "";
+                form.elements.status_tone.value = row.status_tone || "slate";
+                updateLeadTonePreview();
+            } else if (type === "lead_role_limits") {
+                form.elements.role_name.value = row.role_name || "";
+                form.elements.source_name.value = row.source_name || "";
+                form.elements.lead_limit_per_user.value = row.lead_limit_per_user || 0;
+            } else if (type === "calling_servers") {
+                form.elements.server_name.value = row.server_name || "";
+                form.elements.api_url.value = row.api_url || "";
+                form.elements.source_param.value = row.source_param || "from";
+                form.elements.destination_param.value = row.destination_param || "to";
+            } else {
+                form.elements.extension_number.value = row.extension_number || "";
+                if (form.elements.calling_server_uuid) {
+                    form.elements.calling_server_uuid.value = row.calling_server_uuid || "";
+                }
+            }
+
+            if (titleElement) {
+                titleElement.textContent = "Edit " + getDisplayName(type, row);
+            }
+            modal.show();
+        }
+
+        function validateExtensionCreate(payload) {
+            if (type !== "extensions" || payload.record_uuid) {
+                return;
+            }
+
+            var startNumber = Number(payload.start_number);
+            var count = Number(payload.count);
+            if (!Number.isInteger(startNumber) || startNumber < 1) {
+                throw new Error("Starting range must be a positive number.");
+            }
+            if (!Number.isInteger(count) || count < 1 || count > 50) {
+                throw new Error("Step count must be between 1 and 50.");
+            }
+        }
+
+        function updateLeadTonePreview() {
+            if (!form || type !== "lead_statuses") {
+                return;
+            }
+
+            var select = form.elements.status_tone;
+            var preview = form.querySelector("[data-lead-tone-preview]");
+            if (!select || !preview) {
+                return;
+            }
+
+            var label = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : select.value;
+            preview.innerHTML = '<span class="lead-tone-chip lead-tone-' + escapeHtml(select.value) + '">' + escapeHtml(label) + '</span>';
+        }
+
+        function saveForm(event) {
+            event.preventDefault();
+            var payload = Object.fromEntries(new FormData(form).entries());
+            if (type === "roles") {
+                payload.permissions = collectPermissionChecks();
+            }
+
+            try {
+                validateExtensionCreate(payload);
+            } catch (error) {
+                window.alert(error.message);
+                return;
+            }
+
+            fetch(wrapper.dataset.saveUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+                .then(function (response) {
+                    return response.json().then(function (payloadResponse) {
+                        return { ok: response.ok, payload: payloadResponse };
+                    });
+                })
+                .then(function (result) {
+                    if (!result.ok || !result.payload.success) {
+                        throw new Error(result.payload.message || "Record could not be saved.");
+                    }
+                    window.location.reload();
+                })
+                .catch(function (error) {
+                    window.alert(error.message);
+                });
+        }
+
+        function setUsersLoading(isLoading) {
+            if (usersLoader) {
+                usersLoader.classList.toggle("d-none", !isLoading);
+            }
+            if (usersGridDiv) {
+                usersGridDiv.classList.toggle("is-loading", isLoading);
+            }
+        }
+
+        function ensureUsersGrid() {
+            if (usersGridApi || !usersGridDiv || !window.agGrid) {
+                return usersGridApi;
+            }
+
+            applyGridTheme(usersGridDiv);
+            usersGridApi = agGrid.createGrid(usersGridDiv, {
+                rowData: [],
+                columnDefs: getAssignedUserColumns(editUrlTemplate),
+                getRowId: function (params) {
+                    return String(params.data.user_uuid || "");
+                },
+                defaultColDef: {
+                    sortable: true,
+                    resizable: true,
+                    filter: false,
+                    suppressHeaderMenuButton: true
+                },
+                overlayNoRowsTemplate: '<span class="ag-overlay-no-rows-center">No users assigned.</span>',
+                pagination: true,
+                paginationPageSize: 10,
+                paginationPageSizeSelector: [10, 20, 50],
+                rowHeight: 62,
+                headerHeight: 54,
+                animateRows: true
+            });
+
+            return usersGridApi;
+        }
+
+        function openUsersModal(id, label) {
+            var assignedGrid = ensureUsersGrid();
+            if (!usersModal || !assignedGrid) {
+                return;
+            }
+
+            var url = wrapper.dataset.usersUrlTemplate.replace("__id__", encodeURIComponent(id));
+            if (usersTitle) {
+                usersTitle.textContent = "Assigned Users - " + label;
+            }
+            assignedGrid.setGridOption("rowData", []);
+            assignedGrid.hideOverlay();
+            setUsersLoading(true);
+            usersModal.show();
+
+            fetch(url)
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload.success) {
+                        throw new Error(payload.message || "Users could not be loaded.");
+                    }
+
+                    assignedGrid.setGridOption("rowData", payload.data || []);
+                    if (!payload.data || !payload.data.length) {
+                        assignedGrid.showNoRowsOverlay();
+                    } else {
+                        assignedGrid.hideOverlay();
+                    }
+                })
+                .catch(function (error) {
+                    assignedGrid.setGridOption("rowData", []);
+                    assignedGrid.showNoRowsOverlay();
+                    window.alert(error.message);
+                })
+                .finally(function () {
+                    setUsersLoading(false);
+                });
+        }
+
+        wrapper.addEventListener("click", function (event) {
+            var editButton = event.target.closest("[data-edit-master]");
+            if (editButton) {
+                openEditModal(editButton.dataset.editMaster);
+                return;
+            }
+
+            var usersButton = event.target.closest("[data-users-for]");
+            if (usersButton) {
+                openUsersModal(usersButton.dataset.usersFor, usersButton.dataset.usersLabel || "Record");
+            }
+        });
+
+        var addButton = wrapper.querySelector("[data-master-add]");
+        if (addButton) {
+            addButton.addEventListener("click", openAddModal);
+        }
+
+        if (form) {
+            form.addEventListener("submit", saveForm);
+            if (form.elements.status_tone) {
+                form.elements.status_tone.addEventListener("change", updateLeadTonePreview);
+                updateLeadTonePreview();
+            }
+        }
+
+        if (usersGridDiv) {
+            applyGridTheme(usersGridDiv);
+            var themeObserver = new MutationObserver(function () {
+                applyGridTheme(usersGridDiv);
+            });
+
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ["data-bs-theme"]
+            });
+        }
+    });
+})();
+</script>
+{% endblock %}

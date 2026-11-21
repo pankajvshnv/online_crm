@@ -1,0 +1,351 @@
+// menu.scss
+
+.main-content {
+    margin-left: var(--#{$prefix}sidebar-width);
+
+    .content {
+        padding: 0 15px 10px 15px;
+        margin-top: var(--#{$prefix}app-header-height);
+    }
+    @include media-breakpoint-down(lg) {
+        margin-left: 0 !important;
+    }
+}
+
+.sidebar-left {
+    width: var(--#{$prefix}sidebar-width);
+    z-index: 1001;
+    background: var(--#{$prefix}secondary-bg);
+    position: fixed;
+    top: var(--#{$prefix}app-header-height);
+    bottom: 0;
+    margin-top: 0;
+
+    @include media-breakpoint-down(lg) {
+        display: none;
+
+        body.sidebar-enable & {
+            display: block;
+        }
+    }
+
+    #sidebar-menu {
+        .menu-title {
+            padding: 12px 20px !important;
+            letter-spacing: 0.05em;
+            pointer-events: none;
+            cursor: default;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: $header-item-color;
+            font-weight: $font-weight-semibold;
+            font-family: $font-family-secondary;
+            opacity: 0.5;
+        }
+
+        .mm-active {
+            > .has-arrow {
+                &:after {
+                    content: "\F0374";
+                }
+            }
+            > a {
+                color: var(--#{$prefix}primary) !important;
+                &.mm-active,
+                &.active {
+                    &::before {
+                        background-color: var(--#{$prefix}light);
+                        border-color: var(--#{$prefix}light);
+                    }
+                }
+            }
+        }
+
+        .has-arrow {
+            &:after {
+                content: "\F0415";
+                font-family: "Material Design Icons";
+                display: block;
+                float: right;
+                transition: transform 0.2s;
+                font-size: 0.875rem;
+                color: var(--#{$prefix}primary);
+            }
+        }
+
+        ul {
+            &.left-menu {
+                padding: 0.75rem 0;
+                margin: 0;
+                li {
+                    display: block;
+                    width: 100%;
+                    position: relative;
+                }
+                > li {
+                    > a:nth-of-type(1) {
+                        position: relative;
+
+                        &::before {
+                            display: block;
+                            content: "";
+                            position: absolute;
+                            top: 50%;
+                            right: -16px;
+                            width: 4px;
+                            height: 30px;
+                            transform: translateY(-50%);
+                            border-radius: var(--#{$prefix}border-radius-xxl) 0 0 var(--#{$prefix}border-radius-xxl);
+                            background-color: var(--#{$prefix}primary);
+                            transition: all 0.4s;
+                            opacity: 0;
+                            visibility: hidden;
+                        }
+                        &:hover::before {
+                            opacity: 1;
+                            visibility: visible;
+                        }
+                    }
+                    &.mm-active {
+                        > a {
+                            background-color: rgba(var(--#{$prefix}primary-rgb), 0.07);
+                            &::before {
+                                opacity: 1;
+                                visibility: visible;
+                            }
+                        }
+                    }
+                }
+
+                .mm-collapse {
+                    display: none;
+
+                    &:not(.mm-show) {
+                        display: none;
+                    }
+
+                    &.mm-show {
+                        display: block;
+                    }
+                }
+
+                .mm-collapsing {
+                    position: relative;
+                    height: 0;
+                    overflow: hidden;
+                    transition-timing-function: ease;
+                    transition-duration: 0.35s;
+                    transition-property: height, visibility;
+                }
+            }
+
+            > li {
+                > a {
+                    display: block;
+                    padding: 0.5625rem 0.75rem;
+                    color: var(--#{$prefix}sidebar-menu-item-color);
+                    position: relative;
+                    font-size: 13.3px;
+                    transition: all 0.4s;
+                    font-family: $font-family-secondary;
+                    border-radius: var(--#{$prefix}border-radius);
+                    font-weight: 400;
+                    margin-bottom: 0.3125rem;
+                    margin-inline: 1rem;
+                    white-space: nowrap;
+
+                    svg {
+                        height: 17px;
+                        width: 17px;
+                    }
+                    span {
+                        padding-left: 5px;
+                        letter-spacing: 0.0125rem;
+                    }
+
+                    &:hover {
+                        background-color: rgba(var(--#{$prefix}primary-rgb), 0.1);
+                        color: var(--#{$prefix}primary);
+                        i {
+                            color: var(--#{$prefix}primary);
+                        }
+                    }
+                }
+
+                .badge {
+                    margin-top: 4px;
+                }
+
+                ul.sub-menu {
+                    padding: 0;
+                    position: relative;
+                    margin-left: 1.4375rem;
+
+                    &::before {
+                        content: "";
+                        position: absolute;
+                        top: 50%;
+                        left: 17px;
+                        width: 1px;
+                        transform: translateY(-50%);
+                        height: calc(100% - 27px);
+                        background-color: rgba(var(--#{$prefix}body-color-rgb), 0.3);
+                        opacity: 0.3;
+                    }
+
+                    li {
+                        a {
+                            letter-spacing: 0.0125rem;
+                            padding: 9px 12px;
+                            font-size: 13px;
+                            border-radius: var(--#{$prefix}border-radius);
+                            position: relative;
+                            margin-left: 25px;
+                            display: block;
+
+                            &::before {
+                                content: "";
+                                height: 9px;
+                                width: 9px;
+                                position: absolute;
+                                top: 50%;
+                                transform: translateY(-50%);
+                                left: -12px;
+                                transition: $transition-base;
+                                background-color: var(--#{$prefix}secondary-bg);
+                                border: 2px solid var(--#{$prefix}light);
+                                border-radius: var(--#{$prefix}border-radius-xxl);
+                                outline: 2px solid var(--#{$prefix}secondary-bg);
+                            }
+
+                            &:hover {
+                                background-color: transparent !important;
+                                color: var(--#{$prefix}primary);
+
+                                &::before {
+                                    background-color: var(--#{$prefix}light);
+                                    border-color: var(--#{$prefix}light);
+                                }
+                            }
+
+                            .badge {
+                                display: none;
+                            }
+                        }
+
+                        ul.sub-menu {
+                            padding: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@include media-breakpoint-down(lg) {
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 10;
+        background-color: #22222266;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+            opacity 0.3s ease,
+            visibility 0.3s ease;
+    }
+    .sidebar-enable {
+        .sidebar-backdrop {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}
+
+// Dark
+[data-sidebar-color="dark"][data-layout="vertical"] {
+    &[data-bs-theme="light"] {
+        @include media-breakpoint-down(lg){
+            .logo-dark {
+                display: block;
+            }
+            .logo-light{
+                display: none;
+            }
+        }
+    }
+    @include media-breakpoint-up(lg) {
+        #page-topbar .navbar-header .navbar-logo-box {
+            background: $body-secondary-bg-dark !important;
+        }
+        .logo-light {
+            display: block !important;
+        }
+    }
+}
+[data-layout="semibox"] {
+    &[data-sidebar-color="dark"] {
+        .navbar-logo-box {
+            background: var(--#{$prefix}secondary-bg) !important;
+            .logo-dark {
+                display: block !important;
+            }
+        }
+    }
+    &[data-topbar-color="dark"] {
+        .navbar-logo-box {
+            background: $body-secondary-bg-dark !important;
+            .logo-dark {
+                display: none !important;
+            }
+        }
+    }
+}
+[data-sidebar-color="dark"] {
+    .logo-dark {
+        display: none;
+    }
+    .sidebar-left {
+        background: $body-secondary-bg-dark;
+    }
+    .sidebar-left {
+        #sidebar-menu {
+            ul {
+                > li {
+                    ul.sub-menu {
+                        &::before {
+                            background-color: tint-color($body-bg-dark, 40%);
+                        }
+                        li {
+                            a {
+                                &::before {
+                                    background-color: $body-secondary-bg-dark;
+                                    border-color: $light-dark;
+                                    outline-color: $body-secondary-bg-dark;
+                                }
+                                &:hover,
+                                &.active {
+                                    &::before {
+                                        background-color: $light-dark;
+                                        border-color: $light-dark;
+                                        outline-color: $body-secondary-bg-dark;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+[data-layout="vertical"][data-sidebar="default"] {
+    .sidebar-left #sidebar-menu ul > li ul.sub-menu li a .badge {
+        display: inline-block;
+    }
+}

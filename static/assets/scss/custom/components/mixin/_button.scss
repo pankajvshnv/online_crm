@@ -1,0 +1,82 @@
+// // Loop through theme colors to generate button classes
+@each $name, $color in $theme-colors {
+    // Validate color value
+    @if type-of($color) != "color" {
+        @error "Invalid color value for `#{$name}`: `#{$color}`. Expected a valid color.";
+    }
+
+    // Button with solid background
+    .btn-#{$name} {
+        --#{$prefix}btn-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-color: var(--#{$prefix}white);
+        --#{$prefix}btn-border-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.9);
+        --#{$prefix}btn-hover-color: var(--#{$prefix}white);
+        --#{$prefix}btn-hover-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.9);
+        --#{$prefix}btn-active-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-border-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-color: var(--#{$prefix}white);
+        --#{$prefix}btn-disabled-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.85);
+        --#{$prefix}btn-disabled-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.1);
+        --#{$prefix}btn-disabled-color: var(--#{$prefix}white);
+    }
+    
+    // Outline button
+    .btn-outline-#{$name} {
+        --#{$prefix}btn-bg: transparent;
+        --#{$prefix}btn-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-border-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-border-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-border-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-color: var(--#{$prefix}white);
+        --#{$prefix}btn-active-color: var(--#{$prefix}white);
+    }
+
+    // Label button
+    .btn-label-#{$name} {
+        --#{$prefix}btn-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-border-color: transparent;
+        --#{$prefix}btn-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-color: var(--#{$prefix}white);
+        --#{$prefix}btn-hover-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-color: var(--#{$prefix}white);
+        --#{$prefix}btn-active-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-focus-color: var(--#{$prefix}white);
+        --#{$prefix}btn-focus-bg: var(--#{$prefix}#{$name});
+    }
+
+    // Flat button
+    .btn-flat-#{$name} {
+        --#{$prefix}btn-bg: var(--#{$prefix}light);
+        --#{$prefix}btn-color: var(--#{$prefix}body-color);
+        --#{$prefix}btn-border-color: transparent;
+        --#{$prefix}btn-hover-color: var(--#{$prefix}white);
+        --#{$prefix}btn-hover-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-border-color: transparent;
+        --#{$prefix}btn-active-color: var(--#{$prefix}white);
+        --#{$prefix}btn-active-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-border-color: transparent;
+        --#{$prefix}btn-focus-color: var(--#{$prefix}white);
+        --#{$prefix}btn-focus-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-focus-border-color: transparent;
+    }
+
+    // Text button
+    .btn-text-#{$name} {
+        --#{$prefix}btn-bg: transparent;
+        --#{$prefix}btn-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-hover-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-active-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-focus-bg: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-hover-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-active-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-focus-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+        --#{$prefix}btn-hover-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-focus-color: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-bg: var(--#{$prefix}#{$name});
+        --#{$prefix}btn-active-color: var(--#{$prefix}white);
+    }
+}

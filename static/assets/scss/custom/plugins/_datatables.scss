@@ -1,0 +1,6 @@
+// datatables.scss
+
+#datatables_buttons_info{
+    box-shadow: var(--#{$prefix}box-shadow) !important;
+    background-color: var(--#{$prefix}secondary-bg) !important;
+}

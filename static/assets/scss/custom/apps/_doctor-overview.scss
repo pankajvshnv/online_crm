@@ -1,0 +1,25 @@
+
+// doctor-overview.scss
+
+.schedule-list{
+    li{
+        border: 1px solid var(--#{$prefix}border-color);
+        border-radius: var(--#{$prefix}border-radius);
+        padding: 8px 4px;
+        transition: $transition-base;
+        min-width: 55px;
+        text-align: center;
+        span{
+            color: $text-muted;
+        }
+        &.active,
+        &:hover {
+            background-color: var(--#{$prefix}primary);
+            border-color: var(--#{$prefix}primary);
+            h5,
+            span{
+                color: $white;
+            }
+        }
+    }
+}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">Assign Leads</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item">Leads</li>
+                    <li class="breadcrumb-item active">Assign Leads</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card">
+    <div class="card-header"><h5 class="card-title">Find Unassigned Leads</h5></div>
+    <div class="card-body">
+        <form>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Search Lead</label>
+                    <input type="text" class="form-control" name="search" placeholder="Lead name or company" maxlength="80">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lead Source</label>
+                    <select class="form-select" name="lead_source">
+                        <option value="">All Sources</option>
+                        <option value="website">Website</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="referral">Referral</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Assign To</label>
+                    <select class="form-select" name="assigned_to" required>
+                        <option value="">Select User</option>
+                        <option value="priya">Priya Sharma</option>
+                        <option value="rohan">Rohan Iyer</option>
+                        <option value="neha">Neha Joshi</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary w-100">Assign Selected</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Section -->
+<div class="card">
+    <div class="card-header"><h5 class="card-title">Unassigned Leads</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th><input type="checkbox" class="form-check-input"></th>
+                        <th>S.No</th>
+                        <th>Lead Name</th>
+                        <th>Company</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input"></td>
+                        <td>1</td>
+                        <td>Meera Kapoor</td>
+                        <td>Green Grid</td>
+                        <td>Website</td>
+                        <td><span class="badge bg-info-subtle text-info">New</span></td>
+                        <td>2026-06-10</td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input"></td>
+                        <td>2</td>
+                        <td>Dev Malhotra</td>
+                        <td>Pixel Commerce</td>
+                        <td>Facebook</td>
+                        <td><span class="badge bg-info-subtle text-info">New</span></td>
+                        <td>2026-06-09</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">{% if is_edit %}Edit Handbook{% else %}Add Handbook{% endif %}</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0 fs-12">
+                        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ url_for('handbook_home') }}">Handbook</a></li>
+                        <li class="breadcrumb-item active">{% if is_edit %}Edit Handbook{% else %}Add Handbook{% endif %}</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL PAGE FORM CONTAINER -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent border-bottom py-3 d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0 fw-semibold">
+                <i class="mdi mdi-file-document-edit-outline text-primary me-1"></i> Handbook Details & Content
+            </h5>
+            <a href="{{ url_for('handbook_home') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="mdi mdi-arrow-left me-1"></i> Back to Handbooks
+            </a>
+        </div>
+        <div class="card-body p-4">
+            <form id="handbookFullForm">
+                <input type="hidden" id="hbUuid" value="{{ handbook.handbook_uuid if is_edit else '' }}">
+
+                <!-- Title Field -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark fs-13" for="hbTitleInput">
+                        Handbook Title <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control fs-13 fw-medium" id="hbTitleInput" placeholder="Enter handbook title (e.g. Sales Script & Pitching Guidelines)" value="{{ handbook.title if is_edit else '' }}" required>
+                </div>
+
+                <!-- Rich Text Editor Field -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark fs-13">
+                        Handbook Description & Content <span class="text-danger">*</span>
+                    </label>
+                    <p class="text-muted fs-12 mb-2">Format text, add headings, bullet lists, bold text, links, blockquotes, and tables using the toolbar below.</p>
+                    <textarea id="hbDescriptionEditor" style="height: 480px;">{{ handbook.description if is_edit else '' }}</textarea>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="pt-3 border-top d-flex align-items-center justify-content-end gap-2">
+                    <a href="{{ url_for('handbook_home') }}" class="btn btn-light px-4">Cancel</a>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="saveHandbookBtn" onclick="submitHandbookForm()">
+                        <i class="mdi mdi-check-circle me-1"></i> Save Handbook
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Include Local TinyMCE JS -->
+<script src="{{ url_for('static', filename='assets/libs/tinymce/tinymce.min.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initHbTinyMCE();
+});
+
+function initHbTinyMCE() {
+    if (typeof tinymce === 'undefined') return;
+    if (tinymce.get('hbDescriptionEditor')) {
+        tinymce.get('hbDescriptionEditor').remove();
+    }
+
+    tinymce.init({
+        selector: '#hbDescriptionEditor',
+        height: 480,
+        menubar: false,
+        base_url: '/static/assets/libs/tinymce',
+        suffix: '.min',
+        plugins: ['advlist', 'autolink', 'lists', 'link', 'charmap', 'preview', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'table', 'code', 'wordcount'],
+        toolbar: 'undo redo | fontselect fontsizeselect formatselect | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link code removeformat fullscreen',
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; line-height: 1.65; color: #495057; padding: 14px; } h1 { font-size: 15px; font-weight: 700; color: #212529; } h2 { font-size: 14px; font-weight: 700; color: #212529; } h3 { font-size: 13.5px; font-weight: 600; color: #212529; }',
+        branding: false,
+        promotion: false,
+        license_key: 'gpl'
+    });
+}
+
+function submitHandbookForm() {
+    const hbUuid = document.getElementById('hbUuid').value.trim();
+    const title = document.getElementById('hbTitleInput').value.trim();
+
+    let description = '';
+    if (window.tinymce && tinymce.get('hbDescriptionEditor')) {
+        description = tinymce.get('hbDescriptionEditor').getContent().trim();
+    } else {
+        description = document.getElementById('hbDescriptionEditor').value.trim();
+    }
+
+    if (!title) {
+        showToastNotification('Please enter a Handbook Title.', 'warning');
+        document.getElementById('hbTitleInput').focus();
+        return;
+    }
+
+    if (!description || description === '<p></p>') {
+        showToastNotification('Please enter Handbook Description content.', 'warning');
+        return;
+    }
+
+    const isEdit = !!hbUuid;
+    const url = isEdit ? '/api/handbook/update' : '/api/handbook/add';
+    const payload = {
+        handbook_uuid: hbUuid,
+        title: title,
+        description: description
+    };
+
+    const saveBtn = document.getElementById('saveHandbookBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="mdi mdi-check-circle me-1"></i> Save Handbook';
+
+        if (data.success) {
+            showToastNotification(data.message, 'success');
+            const targetUuid = data.handbook_uuid || hbUuid;
+            setTimeout(() => {
+                if (targetUuid) {
+                    window.location.href = `/handbook/view/${targetUuid}`;
+                } else {
+                    window.location.href = '/handbook';
+                }
+            }, 500);
+        } else {
+            showToastNotification(data.message || 'Failed to save handbook', 'danger');
+        }
+    })
+    .catch(err => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="mdi mdi-check-circle me-1"></i> Save Handbook';
+        console.error('Error saving handbook:', err);
+        showToastNotification('An error occurred while saving the handbook.', 'danger');
+    });
+}
+</script>
+{% endblock %}

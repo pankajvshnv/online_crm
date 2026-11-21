@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row"><div class="col-12"><div class="page-title-box d-sm-flex align-items-center justify-content-between"><h4 class="mb-sm-0">Lead Sources</h4><div class="page-title-right"><ol class="breadcrumb m-0"><li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li><li class="breadcrumb-item">Leads</li><li class="breadcrumb-item active">Lead Sources</li></ol></div></div></div></div>
+
+<!-- Form Section -->
+<div class="card">
+    <div class="card-header"><h5 class="card-title">Add Source</h5></div>
+    <div class="card-body"><form><div class="row g-3"><div class="col-md-5"><label class="form-label">Source Name</label><input type="text" class="form-control" name="source_name" required minlength="2" maxlength="60" placeholder="Website"></div><div class="col-md-5"><label class="form-label">Status</label><select class="form-select" name="status" required><option value="">Select Status</option><option>Active</option><option>Inactive</option></select></div><div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit">Save</button></div></div></form></div>
+</div>
+
+<!-- Table Section -->
+<div class="card"><div class="card-header"><h5 class="card-title">Source Performance</h5></div><div class="card-body"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>S.No</th><th>Source</th><th>Total Leads</th><th>Qualified</th><th>Conversion</th><th>Action</th></tr></thead><tbody><tr><td>1</td><td>Website</td><td>92</td><td>41</td><td>44.5%</td><td><!-- Action Buttons --><button class="btn btn-sm btn-primary">Edit</button></td></tr><tr><td>2</td><td>Referral</td><td>66</td><td>38</td><td>57.6%</td><td><!-- Action Buttons --><button class="btn btn-sm btn-primary">Edit</button></td></tr></tbody></table></div></div>
+{% endblock %}

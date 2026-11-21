@@ -1,0 +1,92 @@
+// rich-list.scss
+
+.rich-list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.rich-list-item {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: 0 0;
+    padding: 0.75rem;
+    gap: 0.75rem;
+    margin: 0;
+    cursor: default;
+    text-decoration: none !important;
+}
+
+.rich-list-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.rich-list-title {
+    margin-bottom: 0.125rem;
+    padding: 0;
+}
+
+.rich-list-paragraph{
+    color: $text-muted;
+}
+
+.rich-list-subtitle {
+    color: $text-muted;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.rich-list-bordered {
+    .rich-list-item {
+        border: 1px solid var(--#{$prefix}border-color);
+        border-radius: $border-radius;
+        margin-bottom: 0.75rem;
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+.rich-list-append,
+.rich-list-prepend {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-text-level-1);
+}s
+.rich-list-append {
+    margin-left: 0.625rem;
+}
+
+.rich-list-action {
+    .rich-list-item {
+        cursor: pointer;
+        transition: $transition-base;
+        &:hover,
+        &.active,
+        &:active {
+            background: rgba(var(--#{$prefix}light-rgb), 0.3);
+        }
+        &.disabled,
+        &:disabled {
+            background: var(--#{$prefix}tertiary-bg);
+            opacity: 0.65;
+            pointer-events: none;
+            cursor: default;
+        }
+    }
+}
+.rich-list-flush {
+    .rich-list-item {
+        border-bottom: 1px solid var(--#{$prefix}border-color);
+    }
+}

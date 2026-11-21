@@ -1,0 +1,23 @@
+
+// product-overview.scss
+.color-picker{
+    a{
+        position: relative;
+        &.active::after{
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px; 
+            height: 8px;
+            background: $white;
+            box-shadow: var(--#{$prefix}box-shadow-lg);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+}
+.pr-quantity{
+    background-color: transparent;
+    border: 1px solid var(--#{$prefix}border-color);
+}

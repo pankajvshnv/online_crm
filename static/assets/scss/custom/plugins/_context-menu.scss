@@ -1,0 +1,39 @@
+// contextMenu.scss
+
+.context-menu-icon {
+    &::before {
+        color: var(--#{$prefix}body-color) !important;
+    }
+    &.context-menu-icon-mdi {
+        &::before {
+            font-family: "Material Design Icons" !important;
+            font-size: 16px !important;
+        }
+    }
+}
+
+.context-menu-item {
+    padding: 0.375rem 1rem !important;
+    background-color: var(--#{$prefix}secondary-bg) !important;
+    color: var(--#{$prefix}body-color) !important;
+    >span{
+        margin-left: 1rem !important;
+    }
+    &.context-menu-hover {
+        background-color: var(--#{$prefix}tertiary-bg) !important;
+        color: $primary !important;
+        &::before {
+            color: $primary !important;
+        }
+    }
+    &.context-menu-separator{
+        padding: 0 !important;
+        border-bottom-color: var(--#{$prefix}border-color) !important;
+    }
+}
+.context-menu-list{
+    background: var(--#{$prefix}secondary-bg) !important;
+    border-color: var(--#{$prefix}border-color) !important;
+    box-shadow: var(--#{$prefix}box-shadow) !important;
+    border-radius: var(--#{$prefix}border-radius) !important;
+}

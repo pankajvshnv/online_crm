@@ -1,0 +1,1111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+/* Skeleton Shimmer Animation */
+.skeleton-box {
+    display: inline-block;
+    height: 1.1em;
+    position: relative;
+    overflow: hidden;
+    background-color: #f1f3f6;
+    border-radius: 4px;
+}
+.skeleton-box::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.5) 30%,
+        rgba(255, 255, 255, 0.8) 50%,
+        rgba(255, 255, 255, 0.5) 70%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: skeleton-shimmer 1.5s infinite;
+    content: '';
+}
+@keyframes skeleton-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Month buttons inside Login column */
+.btn-emp-month {
+    font-size: 10.5px !important;
+    padding: 2px 6px !important;
+    line-height: 1.2 !important;
+    border-radius: 4px !important;
+    transition: all 0.15s ease !important;
+    white-space: nowrap !important;
+}
+.btn-emp-month:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Calendar Modal Grid (Mon to Sun - 7 Columns Compact Boxes) */
+.cal-grid-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+}
+.cal-grid-inner {
+    width: 100%;
+}
+.cal-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    text-align: center;
+}
+.cal-grid-header .col-day {
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 6px;
+    padding: 6px 0;
+    border: 1px solid #e2e8f0;
+}
+.cal-grid-header .col-sun {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fca5a5;
+}
+.cal-grid-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+.cal-day-cell {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 6px;
+    height: 64px;
+    min-height: 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 8px 4px;
+    gap: 4px;
+    box-sizing: border-box;
+    cursor: default;
+    user-select: none;
+    transition: all 0.15s ease;
+    background: #ffffff;
+}
+.cal-day-cell.is-empty {
+    background: #f8fafc;
+    border-color: transparent;
+    cursor: default;
+    pointer-events: none;
+}
+.cal-day-cell.is-today {
+    box-shadow: 0 0 0 2px #2563eb;
+    border-color: #2563eb !important;
+}
+.cal-day-cell.is-present {
+    background: #f0fdf4;
+    border-color: #86efac;
+}
+.cal-day-cell.is-absent {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+.cal-day-cell.is-sunday-off {
+    background: #fef2f2;
+    border-color: #fecdd3;
+}
+.cal-day-cell.is-future {
+    background: #fafafa;
+    border-color: #e5e7eb;
+    opacity: 0.65;
+}
+.cal-day-number {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+    margin: 0;
+}
+.cal-day-time {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.2px;
+    margin: 0;
+}
+</style>
+
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">
+                    Employee Report
+                </h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item">
+                            <a href="/dashboard">
+                                Dashboard
+                            </a>
+                        </li>
+
+                        <li class="breadcrumb-item active">
+                            Employee Report
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Filter Row: Status / Designation (LEFT) + Search, Reset (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Left Side Filters -->
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="form-label" for="statusFilter">
+                            Status
+                        </label>
+                        <select class="form-select lead-filter-input" id="statusFilter" style="min-width: 160px;">
+                            <option value="all" selected>All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Designation Filter -->
+                    <div>
+                        <label class="form-label" for="designationFilter">
+                            Designation
+                        </label>
+                        <select class="form-select lead-filter-input" id="designationFilter" style="min-width: 180px;">
+                            <option value="all" selected>All Designations</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Right Side Search & Reset -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 600px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="employeeSearch">
+                            Search
+                        </label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="employeeSearch" name="search" value="" placeholder="Search employee name, username, designation..." autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-light" id="btnResetFilters">
+                        <i class="mdi mdi-refresh me-1"></i>
+                        Reset
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Inner All Leads Card with Table -->
+            <div class="card all-leads-card">
+                <div class="card-body">
+
+                    <!-- Employees Table with Columns: Name, Designation, Login, Activity -->
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="employeesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap" style="min-width: 190px;">
+                                        Name
+                                    </th>
+
+                                    <th class="text-nowrap" style="min-width: 160px;">
+                                        Designation
+                                    </th>
+
+                                    <th class="text-nowrap" style="min-width: 280px;">
+                                        Login
+                                    </th>
+
+                                    <th class="text-center text-nowrap" style="width: 180px;">
+                                        Activity
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="employeeTableBody">
+                                <!-- Initial Skeleton Loading Rows rendered immediately on page load -->
+                                {% for i in range(10) %}
+                                <tr class="skeleton-placeholder-row">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="skeleton-box rounded-circle me-2 flex-shrink-0" style="width: 34px; height: 34px;"></span>
+                                            <div style="width: 140px;">
+                                                <span class="skeleton-box w-100" style="height: 15px;"></span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="skeleton-box" style="width: 130px; height: 15px;"></span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <span class="skeleton-box" style="width: 60px; height: 20px; border-radius: 4px;"></span>
+                                            <span class="skeleton-box" style="width: 70px; height: 24px; border-radius: 4px;"></span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer (Identical to View Contacts / Products Page) -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">
+                            Rows
+                        </label>
+
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <div class="text-muted" id="paginationInfo">Loading records...</div>
+
+                </div>
+
+                <nav aria-label="Employee pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= MONTHLY ATTENDANCE MODAL (MON TO SUN) ================= -->
+<div class="modal fade" id="monthAttendanceModal" tabindex="-1" aria-labelledby="monthAttendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <span class="rounded-circle bg-primary-subtle text-primary border border-primary-subtle fw-bold fs-12 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;" id="monthModalAvatar">
+                        EM
+                    </span>
+                    <div class="overflow-hidden">
+                        <h6 class="modal-title fs-13 fw-bold text-dark text-truncate" id="monthModalTitle">Employee Monthly Attendance</h6>
+                        <span class="fs-10 text-muted text-truncate d-block" id="monthModalSubtitle">Monthly Office 1st Login Time</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close fs-11" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-3 pt-3 pb-4">
+                <!-- 4 KPI Summary Cards (Full width matching calendar) -->
+                <div class="row g-2 mb-3 text-center" id="monthModalKpis">
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-light border">
+                            <span class="fs-10 text-muted d-block fw-medium mb-0.5">Total Days</span>
+                            <b class="fs-13 text-dark d-block" id="mmWorkDays">-</b>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-success-subtle border border-success-subtle">
+                            <span class="fs-10 text-success d-block fw-medium mb-0.5">Present / Logged In</span>
+                            <b class="fs-13 text-success d-block" id="mmPresentDays">-</b>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-danger-subtle border border-danger-subtle">
+                            <span class="fs-10 text-danger d-block fw-medium mb-0.5">Absent / No Login</span>
+                            <b class="fs-13 text-danger d-block" id="mmAbsentDays">-</b>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="p-2 rounded bg-info-subtle border border-info-subtle">
+                            <span class="fs-10 text-info d-block fw-medium mb-0.5">Avg 1st Login</span>
+                            <b class="fs-13 text-info d-block" id="mmAvgInTime">-</b>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Calendar Grid (Exact same width and side space as top cards) -->
+                <div class="cal-grid-wrapper">
+                    <div class="cal-grid-inner" id="monthCalendarContainer" style="min-height: 200px;">
+                        <!-- Rendered dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= FULL DAY ACTIVITY LOG MODAL ================= -->
+<div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2.5 px-3 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <span class="btn btn-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; pointer-events: none;">
+                        <i class="mdi mdi-account-outline"></i>
+                    </span>
+                    <div class="overflow-hidden">
+                        <h6 class="modal-title fs-13 fw-bold text-dark text-truncate" id="activityModalTitle">Employee Activity Logs</h6>
+                        <span class="fs-11 text-muted text-truncate d-block" id="activityModalSubtitle">View all activities performed throughout the day</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close fs-11" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-3">
+                <!-- Filters Bar inside Modal -->
+                <div class="p-2.5 mb-3 rounded bg-light border d-flex align-items-center gap-2 flex-wrap">
+                    <div style="min-width: 140px;">
+                        <label class="fs-10 fw-bold text-muted text-uppercase mb-0.5 d-block">Target Date</label>
+                        <input type="date" class="form-control form-control-sm fs-11 py-1" id="actFilterDate">
+                    </div>
+
+                    <div style="min-width: 170px;">
+                        <label class="fs-10 fw-bold text-muted text-uppercase mb-0.5 d-block">Action Type</label>
+                        <select class="form-select form-select-sm fs-11 py-1" id="actFilterType">
+                            <option value="">All Actions</option>
+                        </select>
+                    </div>
+
+                    <div class="flex-grow-1" style="min-width: 170px;">
+                        <label class="fs-10 fw-bold text-muted text-uppercase mb-0.5 d-block">Search Details</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control fs-11 py-1" id="actFilterSearch" placeholder="Filter descriptions...">
+                            <button class="btn btn-outline-secondary py-1" type="button" id="actFilterSearchBtn">
+                                <i class="mdi mdi-magnify"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Activity Content -->
+                <div id="activityTimelineList" style="min-height: 180px;">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <div class="modal-footer py-2 px-3 bg-light border-top d-flex align-items-center justify-content-between">
+                <span class="fs-11 text-muted" id="actModalCountSummary">Showing activities</span>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let allRows = [];
+    let currentPage = 1;
+    let pageSize = 10;
+    let activeModalUserId = null;
+    let actionTypes = [];
+    let isLoading = true;
+
+    // Format Date YYYY-MM-DD
+    function formatDateYMD(d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    const todayYMD = formatDateYMD(new Date());
+    const actFilterDateEl = document.getElementById("actFilterDate");
+    if (actFilterDateEl) {
+        actFilterDateEl.value = todayYMD;
+    }
+
+    // Render 10 Skeleton rows inside table
+    function showSkeleton() {
+        isLoading = true;
+        const tbody = document.getElementById('employeeTableBody');
+        if (!tbody) return;
+        let html = '';
+        for (let i = 0; i < 10; i++) {
+            html += `
+                <tr class="skeleton-placeholder-row">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="skeleton-box rounded-circle me-2 flex-shrink-0" style="width: 34px; height: 34px;"></span>
+                            <div style="width: 140px;">
+                                <span class="skeleton-box w-100" style="height: 15px;"></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="skeleton-box" style="width: 130px; height: 15px;"></span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                            <span class="skeleton-box" style="width: 50px; height: 20px; border-radius: 4px;"></span>
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <span class="skeleton-box" style="width: 60px; height: 20px; border-radius: 4px;"></span>
+                            <span class="skeleton-box" style="width: 70px; height: 24px; border-radius: 4px;"></span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = html;
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) infoEl.textContent = 'Loading records...';
+        const navEl = document.getElementById('paginationNav');
+        if (navEl) navEl.innerHTML = '';
+    }
+
+    // 1. Fetch Employees Data Asynchronously after Page Load
+    function loadEmployees() {
+        showSkeleton();
+
+        fetch('/api/reports/employee-report/users')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    const tbody = document.getElementById('employeeTableBody');
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">${data.message || 'Failed to load employees'}</td></tr>`;
+                    return;
+                }
+
+                // Update Status filter options with counts
+                const statusSelect = document.getElementById('statusFilter');
+                if (statusSelect && data.summary) {
+                    statusSelect.innerHTML = `
+                        <option value="all" selected>All Status</option>
+                        <option value="active">Active (${data.summary.total_active || 0})</option>
+                        <option value="inactive">Inactive (${data.summary.total_inactive || 0})</option>
+                    `;
+                }
+
+                // Update Designation filter options
+                const desigSelect = document.getElementById('designationFilter');
+                if (desigSelect && data.designations) {
+                    let dHtml = '<option value="all" selected>All Designations</option>';
+                    data.designations.forEach(d => {
+                        dHtml += `<option value="${d.toLowerCase()}">${d}</option>`;
+                    });
+                    desigSelect.innerHTML = dHtml;
+                }
+
+                // Build Table Rows from fetched data
+                buildTableRows(data.users || []);
+            })
+            .catch(err => {
+                console.error("Error fetching employees:", err);
+                const tbody = document.getElementById('employeeTableBody');
+                if (tbody) tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">Failed to load data. Please click Reset to try again.</td></tr>`;
+            });
+    }
+
+    // Build actual table rows in DOM
+    function buildTableRows(users) {
+        const tbody = document.getElementById('employeeTableBody');
+        if (!tbody) return;
+
+        allRows = [];
+
+        if (users.length === 0) {
+            tbody.innerHTML = `<tr id="noEmployeesRow"><td colspan="4" class="text-center py-4 text-muted">No employees found.</td></tr>`;
+            const infoEl = document.getElementById('paginationInfo');
+            if (infoEl) infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            return;
+        }
+
+        let html = '';
+        users.forEach((u, index) => {
+            const initials = u.initials || (u.full_name || u.username || "EM").split(" ").filter(Boolean).map(n => n[0]).join("").substring(0, 2).toUpperCase() || "EM";
+
+            // Month Buttons for Login column (From 1st entry month to last entry month)
+            let loginHtml = '';
+            if (u.months && u.months.length > 0) {
+                let btnsHtml = '<div class="d-flex flex-wrap gap-1 align-items-center" style="max-width: 320px;">';
+                u.months.forEach(m => {
+                    const btnClass = m.is_current 
+                        ? 'btn-primary text-white' 
+                        : (m.has_activity ? 'btn-outline-primary' : 'btn-light border text-muted');
+                    
+                    btnsHtml += `
+                        <button type="button" 
+                                class="btn btn-xs ${btnClass} btn-emp-month" 
+                                data-user-id="${u.user_id}"
+                                data-user-name="${u.full_name || 'Employee'}"
+                                data-year="${m.year}"
+                                data-month="${m.month}"
+                                data-label="${m.label}"
+                                title="${m.full_label} Attendance">
+                            ${m.label}
+                        </button>
+                    `;
+                });
+                btnsHtml += '</div>';
+                loginHtml = btnsHtml;
+            } else {
+                loginHtml = `<span class="badge bg-secondary-subtle text-muted fs-11 px-2 py-0.5">No login records</span>`;
+            }
+
+            // Activity count badge
+            const actCount = u.today_activity_count || 0;
+            const actCountBadge = actCount > 0 
+                ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fs-12">${actCount} action${actCount > 1 ? 's' : ''}</span>`
+                : `<span class="badge bg-light text-muted border px-2 py-1 fs-12">0 actions</span>`;
+
+            // Name avatar and red text if inactive
+            const avatarCircle = (u.status === 1)
+                ? `<span class="rounded-circle bg-primary-subtle text-primary border border-primary-subtle fw-bold fs-11 d-inline-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width: 34px; height: 34px;">${initials}</span>`
+                : `<span class="rounded-circle bg-danger-subtle text-danger border border-danger-subtle fw-bold fs-11 d-inline-flex align-items-center justify-content-center me-2 flex-shrink-0" style="width: 34px; height: 34px;">${initials}</span>`;
+
+            const nameText = (u.status === 1)
+                ? `<span class="fw-medium text-dark">${u.full_name || 'NA'}</span>`
+                : `<span class="fw-medium text-danger" title="Inactive">${u.full_name || 'NA'}</span>`;
+
+            const searchStr = `${u.full_name || ''} ${u.username || ''} ${u.user_id || ''} ${u.designation || ''} ${u.role_name || ''} ${u.mobile || ''}`.toLowerCase();
+            const statusStr = (u.status === 1) ? 'active' : 'inactive';
+            const desigStr = (u.designation || u.role_name || '').toLowerCase();
+
+            html += `
+                <tr class="employee-row"
+                    data-id="${u.user_id}"
+                    data-name="${(u.full_name || '').toLowerCase()}"
+                    data-username="${(u.username || '').toLowerCase()}"
+                    data-role="${(u.role_name || '').toLowerCase()}"
+                    data-designation="${desigStr}"
+                    data-search="${searchStr}"
+                    data-status="${statusStr}">
+
+                    <td>
+                        <div class="d-flex align-items-center">
+                            ${avatarCircle}
+                            <div>
+                                ${nameText}
+                            </div>
+                        </div>
+                    </td>
+
+                    <td class="text-nowrap">
+                        <span class="text-dark">${u.designation || u.role_name || 'Staff'}</span>
+                    </td>
+
+                    <td>
+                        ${loginHtml}
+                    </td>
+
+                    <td class="text-center text-nowrap">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            ${actCountBadge}
+                            <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-view-user-act" data-user-id="${u.user_id}" data-user-name="${u.full_name || 'Employee'}">
+                                <i class="mdi mdi-history me-1"></i>View Logs
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+
+        // Populate allRows reference list
+        tbody.querySelectorAll('.employee-row').forEach((tr, index) => {
+            allRows.push({
+                element: tr,
+                originalIndex: index + 1,
+                searchStr: tr.getAttribute('data-search') || '',
+                role: tr.getAttribute('data-role') || '',
+                designation: tr.getAttribute('data-designation') || '',
+                status: tr.getAttribute('data-status') || ''
+            });
+        });
+
+        // Attach View Logs click handlers
+        tbody.querySelectorAll('.btn-view-user-act').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const uid = parseInt(this.dataset.userId);
+                const uname = this.dataset.userName || `Employee #${uid}`;
+                openActivityModal(uid, uname);
+            });
+        });
+
+        // Attach Month button click handlers in Login column
+        tbody.querySelectorAll('.btn-emp-month').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const uid = parseInt(this.dataset.userId);
+                const uname = this.dataset.userName || 'Employee';
+                const year = parseInt(this.dataset.year);
+                const month = parseInt(this.dataset.month);
+                const label = this.dataset.label;
+                openMonthAttendanceModal(uid, uname, year, month, label);
+            });
+        });
+
+        isLoading = false;
+        currentPage = 1;
+        renderEmployeesTable();
+    }
+
+    // Filtering and Pagination handler (Identical to view_contacts)
+    function renderEmployeesTable() {
+        if (isLoading) return;
+
+        const searchInput = document.getElementById('employeeSearch');
+        const statusFilter = document.getElementById('statusFilter');
+        const designationFilter = document.getElementById('designationFilter');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusVal = statusFilter ? statusFilter.value : 'all';
+        const designationVal = designationFilter ? designationFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        // Filter rows
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || item.searchStr.includes(searchVal);
+            const matchesStatus = statusVal === 'all' || item.status === statusVal;
+            const matchesDesignation = designationVal === 'all' || item.designation === designationVal;
+            return matchesSearch && matchesStatus && matchesDesignation;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        // Hide all rows first
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        let noRow = document.getElementById('noEmployeesRow');
+
+        if (total === 0) {
+            if (noRow) {
+                noRow.style.display = '';
+            } else {
+                const tbody = document.getElementById('employeeTableBody');
+                if (tbody) {
+                    const emptyTr = document.createElement('tr');
+                    emptyTr.id = 'noEmployeesRow';
+                    emptyTr.innerHTML = '<td colspan="4" class="text-center py-4 text-muted">No employees found matching active filters.</td>';
+                    tbody.appendChild(emptyTr);
+                }
+            }
+        } else {
+            if (noRow) noRow.style.display = 'none';
+
+            // Display visible page slice
+            filtered.forEach(function (item, idx) {
+                if (idx >= startIndex && idx < endIndex) {
+                    item.element.style.display = '';
+                }
+            });
+        }
+
+        // Update Pagination Info
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showingStart = startIndex + 1;
+                const showingEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showingStart} to ${showingEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        // Render Pagination Nav Controls
+        renderPaginationNav(totalPages, total);
+    }
+
+    function renderPaginationNav(totalPages, total) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+
+        if (total <= 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage - 1}">Previous</button></li>`;
+
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button></li>`;
+        }
+
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage + 1}">Next</button></li>`;
+
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    renderEmployeesTable();
+                }
+            });
+        });
+    }
+
+    // Attach Event Listeners to Inputs (with Debounce on Search like view_contacts)
+    const searchInput = document.getElementById('employeeSearch');
+    if (searchInput) {
+        let timer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                currentPage = 1;
+                renderEmployeesTable();
+            }, 250);
+        });
+    }
+
+    ['statusFilter', 'designationFilter', 'pageSize'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                currentPage = 1;
+                renderEmployeesTable();
+            });
+        }
+    });
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            const statusEl = document.getElementById('statusFilter');
+            if (statusEl) statusEl.value = 'all';
+            const desigEl = document.getElementById('designationFilter');
+            if (desigEl) desigEl.value = 'all';
+            const pageEl = document.getElementById('pageSize');
+            if (pageEl) pageEl.value = '10';
+            currentPage = 1;
+            renderEmployeesTable();
+        });
+    }
+
+    // ================= MONTHLY ATTENDANCE MODAL HANDLER (MON TO SUN SQUARE BOXES) =================
+    function openMonthAttendanceModal(userId, userName, year, month, label) {
+        document.getElementById("monthModalTitle").textContent = `${userName} - ${label} Attendance`;
+        document.getElementById("monthModalSubtitle").textContent = `Monthly Office 1st Login Time`;
+        
+        const initials = (userName || "EM").split(" ").filter(Boolean).map(n => n[0]).join("").substring(0, 2).toUpperCase() || "EM";
+        document.getElementById("monthModalAvatar").textContent = initials;
+
+        const calContainer = document.getElementById("monthCalendarContainer");
+        if (calContainer) {
+            calContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <span class="spinner-border spinner-border-sm text-primary mb-2"></span>
+                    <div class="fs-12 text-muted">Loading attendance for ${label}...</div>
+                </div>
+            `;
+        }
+
+        const modalEl = document.getElementById("monthAttendanceModal");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        // Fetch monthly attendance data
+        fetch(`/api/reports/employee-report/monthly-attendance?user_id=${userId}&year=${year}&month=${month}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    if (calContainer) calContainer.innerHTML = `<div class="text-center text-danger py-4">${data.message || 'Failed to load attendance'}</div>`;
+                    return;
+                }
+
+                // Populate 4 KPI Stats (Total Days, Present, Absent, Avg Login)
+                const stats = data.summary || data.stats || {};
+                const allDays = data.days || data.calendar || [];
+
+                const totalDays = stats.total_days || allDays.length;
+                const presentDays = stats.present_days || 0;
+                const absentDays = stats.absent_days || 0;
+                const avgInTime = stats.avg_in_time || 'N/A';
+
+                const workDaysEl = document.getElementById("mmWorkDays");
+                if (workDaysEl) workDaysEl.textContent = `${totalDays} Days`;
+
+                const presDaysEl = document.getElementById("mmPresentDays");
+                if (presDaysEl) presDaysEl.textContent = `${presentDays} Days`;
+
+                const absDaysEl = document.getElementById("mmAbsentDays");
+                if (absDaysEl) absDaysEl.textContent = `${absentDays} Days`;
+
+                const avgTimeEl = document.getElementById("mmAvgInTime");
+                if (avgTimeEl) avgTimeEl.textContent = avgInTime;
+
+                renderMonthCalendarGrid(userId, userName, allDays, (data.period ? data.period.month_name : '') || label, year);
+            })
+            .catch(err => {
+                console.error("Error loading monthly attendance:", err);
+                if (calContainer) calContainer.innerHTML = `<div class="text-center text-danger py-4">Failed to load attendance data.</div>`;
+            });
+    }
+
+    function renderMonthCalendarGrid(userId, userName, allDays, monthName, year) {
+        const container = document.getElementById("monthCalendarContainer");
+        if (!container) return;
+
+        if (!allDays || allDays.length === 0) {
+            container.innerHTML = `<div class="text-center py-5 text-muted">No attendance records found for this month.</div>`;
+            return;
+        }
+
+        // 7 Columns Grid Header (Mon to Sun)
+        let html = `
+            <div class="cal-grid-header">
+                <div class="col-day">Mon</div>
+                <div class="col-day">Tue</div>
+                <div class="col-day">Wed</div>
+                <div class="col-day">Thu</div>
+                <div class="col-day">Fri</div>
+                <div class="col-day">Sat</div>
+                <div class="col-day col-sun">Sun</div>
+            </div>
+            <div class="cal-grid-days">
+        `;
+
+        // Calculate leading blank days for the first day in Mon-Sun grid
+        const weekdayMap = { "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6 };
+        const firstDayWeekday = allDays[0].weekday || "Mon";
+        const leadBlanks = weekdayMap[firstDayWeekday] !== undefined ? weekdayMap[firstDayWeekday] : 0;
+
+        for (let b = 0; b < leadBlanks; b++) {
+            html += `<div class="cal-day-cell is-empty"></div>`;
+        }
+
+        // Render each day as a square box with high visibility date & time
+        allDays.forEach(d => {
+            const isToday = d.is_today;
+            const isSunday = d.is_sunday;
+            let cellClass = '';
+            let timeHtml = '';
+
+            if (d.is_future) {
+                cellClass = 'is-future';
+                timeHtml = `<div class="cal-day-time text-muted">-</div>`;
+            } else if (d.in_time) {
+                cellClass = 'is-present';
+                timeHtml = `<div class="cal-day-time text-success">${d.in_time}</div>`;
+            } else if (isSunday) {
+                cellClass = 'is-sunday-off';
+                timeHtml = `<div class="cal-day-time text-danger">Sunday</div>`;
+            } else {
+                cellClass = 'is-absent';
+                timeHtml = `<div class="cal-day-time text-danger">Absent</div>`;
+            }
+
+            html += `
+                <div class="cal-day-cell ${cellClass} ${isToday ? 'is-today' : ''}" 
+                     data-date="${d.date}">
+                    <div class="cal-day-number">${d.day}</div>
+                    ${timeHtml}
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
+        // Date cells are non-clickable as requested
+    }
+
+    // Modal Activity Logs Handler
+    function openActivityModal(userId, userName, targetDate) {
+        activeModalUserId = userId;
+        document.getElementById("activityModalTitle").textContent = `${userName} - Activity Logs`;
+
+        if (targetDate && actFilterDateEl) {
+            actFilterDateEl.value = targetDate;
+        }
+
+        if (actionTypes.length === 0) {
+            fetch("/api/reports/employee-report/action-types")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.types) {
+                        actionTypes = data.types;
+                        const sel = document.getElementById("actFilterType");
+                        sel.innerHTML = '<option value="">All Actions</option>';
+                        actionTypes.forEach(t => {
+                            const opt = document.createElement("option");
+                            opt.value = t;
+                            opt.textContent = t;
+                            sel.appendChild(opt);
+                        });
+                    }
+                })
+                .catch(err => console.error("Error loading action types:", err));
+        }
+
+        fetchUserActivities(userId);
+
+        const modalEl = document.getElementById("activityModal");
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    function fetchUserActivities(userId) {
+        const targetDate = document.getElementById("actFilterDate").value || "";
+        const actionType = document.getElementById("actFilterType").value || "";
+        const search = document.getElementById("actFilterSearch").value || "";
+
+        const container = document.getElementById("activityTimelineList");
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <span class="spinner-border spinner-border-sm text-primary mb-2"></span>
+                    <div class="fs-12 text-muted">Loading activities...</div>
+                </div>
+            `;
+        }
+
+        let url = `/api/reports/employee-report/activities?user_id=${userId}`;
+        if (targetDate) url += `&date=${encodeURIComponent(targetDate)}`;
+        if (actionType) url += `&action_type=${encodeURIComponent(actionType)}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    container.innerHTML = `<div class="text-danger text-center py-4 fs-12">${data.message || 'Failed to load logs'}</div>`;
+                    return;
+                }
+                renderActivityTimeline(data.activities || [], targetDate);
+            })
+            .catch(err => {
+                console.error("Error fetching activities:", err);
+                container.innerHTML = `<div class="text-danger text-center py-4 fs-12">Failed to load activities.</div>`;
+            });
+    }
+
+    function renderActivityTimeline(activities, targetDate) {
+        const container = document.getElementById("activityTimelineList");
+        const summaryEl = document.getElementById("actModalCountSummary");
+        if (!container) return;
+
+        document.getElementById("activityModalSubtitle").textContent = `Viewing logs for ${targetDate || 'all dates'}`;
+
+        if (activities.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="mdi mdi-clipboard-text-outline fs-32 text-secondary opacity-50 mb-1"></i>
+                    <div class="fs-13 fw-semibold">No activity logs recorded.</div>
+                    <div class="fs-11">Try changing the date or clearing filters.</div>
+                </div>
+            `;
+            if (summaryEl) summaryEl.textContent = "0 activities found";
+            return;
+        }
+
+        if (summaryEl) summaryEl.textContent = `Showing ${activities.length} activities recorded`;
+
+        let html = '<div class="timeline ps-2 pe-1" style="border-left: 2px solid #e2e8f0; margin-left: 10px;">';
+        activities.forEach(act => {
+            const clientCodeBadge = act.client_code ? `<span class="badge bg-light text-dark border px-1.5 ms-1">${act.client_code}</span>` : "";
+
+            html += `
+                <div class="mb-3 ps-3 position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11 px-2 py-0.5">${act.action_type || 'Activity'}</span>
+                            ${clientCodeBadge}
+                        </div>
+                        <span class="fs-11 text-muted fw-semibold">${act.time_fmt || ''}</span>
+                    </div>
+                    <div class="fs-12 text-dark mb-1">${act.description || 'No details recorded.'}</div>
+                    <div class="fs-10 text-muted d-flex align-items-center gap-2">
+                        <span><i class="mdi mdi-calendar-blank me-0.5"></i>${act.date_fmt || ''}</span>
+                        ${act.ip_address && act.ip_address !== 'N/A' ? `<span><i class="mdi mdi-ip-network me-0.5"></i>${act.ip_address}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
+    }
+
+    // Modal filters event listeners
+    document.getElementById("actFilterDate").addEventListener("change", function () {
+        if (activeModalUserId) fetchUserActivities(activeModalUserId);
+    });
+    document.getElementById("actFilterType").addEventListener("change", function () {
+        if (activeModalUserId) fetchUserActivities(activeModalUserId);
+    });
+    document.getElementById("actFilterSearchBtn").addEventListener("click", function () {
+        if (activeModalUserId) fetchUserActivities(activeModalUserId);
+    });
+    document.getElementById("actFilterSearch").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+            if (activeModalUserId) fetchUserActivities(activeModalUserId);
+        }
+    });
+
+    // Start loading data after page renders
+    loadEmployees();
+});
+</script>
+
+{% endblock %}

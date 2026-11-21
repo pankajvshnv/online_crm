@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ page_heading }}</h4>
+
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('settings_home') }}">Settings</a>
+                    </li>
+
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('lead_source_limits') }}">Lead Source Limits</a>
+                    </li>
+
+                    <li class="breadcrumb-item active">
+                        {{ 'Add' if form_mode == 'add' else 'Edit' }}
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0">{{ page_heading }}</h5>
+
+        <a href="{{ url_for('lead_source_limits') }}" class="btn btn-sm btn-outline-primary">
+            <i class="mdi mdi-format-list-bulleted me-1"></i>
+            View Lead Source Limits
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form method="POST">
+
+            <div class="row g-3">
+
+                <div class="col-md-12">
+                    <label class="form-label">Lead Source</label>
+
+                    <select class="form-select" name="source_id" required>
+                        <option value="">Select Lead Source</option>
+
+                        {% for source in lead_sources %}
+                        <option
+                            value="{{ source.id }}"
+                            {% if record and record.source_id == source.id %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ source.source_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Role</label>
+
+                    <select class="form-select" name="role_id" required>
+                        <option value="">Select Role</option>
+
+                        {% for role in roles %}
+                        <option
+                            value="{{ role.id }}"
+                            {% if record and record.role_id == role.id %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ role.role_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Pending Lead Limit</label>
+
+                    <input
+                        type="number"
+                        class="form-control"
+                        name="pending_lead_limit"
+                        min="1"
+                        max="10000"
+                        value="{{ record.pending_lead_limit if record else '' }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Daily Lead Limit</label>
+
+                    <input
+                        type="number"
+                        class="form-control"
+                        name="daily_lead_limit"
+                        min="1"
+                        max="10000"
+                        value="{{ record.daily_lead_limit if record else '' }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Fetch Lead Limit</label>
+
+                    <input
+                        type="number"
+                        class="form-control"
+                        name="fetch_lead_limit"
+                        min="1"
+                        max="1000"
+                        value="{{ record.fetch_lead_limit if record else '' }}"
+                        required
+                    >
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="mdi mdi-content-save-outline me-1"></i>
+
+                    {% if form_mode == 'add' %}
+                    Save Lead Source Limit
+                    {% else %}
+                    Update Lead Source Limit
+                    {% endif %}
+                </button>
+
+                <a href="{{ url_for('lead_source_limits') }}" class="btn btn-light">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+// Mixin for Generating Alert Classes Based on Theme Colors
+@mixin generate-alert-classes($colors: $theme-colors, $prefix: "") {
+  @each $name, $color in $colors {
+    // Error handling: Ensure color exists
+    @if not map-has-key($colors, $name) {
+      @error "Color '#{$name}' is missing in the '$colors' map. Please define it in the theme colors.";
+    }
+
+    // Warning for empty color
+    @if not $color {
+      @warn "Color for '#{$name}' is empty. Using a fallback might cause issues.";
+    }
+
+    // Solid Badge Class
+    .badge-#{$name} {
+      color: $white;
+      background-color: var(--#{$prefix}#{$name});
+
+      // Conditionally set text color
+      @if $name == "light" {
+        color: var(--#{$prefix}body-color);
+        background-color: var(--#{$prefix}light);
+      }
+    }
+
+    // Label Badge Class
+    .badge-label-#{$name} {
+      color: var(--#{$prefix}#{$name});
+      background-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.15);
+    }
+
+    // Outline Badge Class
+    .badge-outline-#{$name} {
+      color: var(--#{$prefix}#{$name});
+      border: 1px solid var(--#{$prefix}#{$name});
+      background-color: transparent;
+
+      // Conditionally set text color
+      @if $name == "light" {
+        color: var(--#{$prefix}body-color);
+        border-color: var(--#{$prefix}body-bg);
+      }
+    }
+  }
+}
+
+// Example Usage of the Mixin with a theme prefix
+@include generate-alert-classes($theme-colors, $prefix);

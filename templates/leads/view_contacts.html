@@ -1,0 +1,880 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="all-leads-page single-filter-page">
+
+    <!-- Page Title & Breadcrumb Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">
+                    View Contacts
+                </h4>
+
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item">
+                            <a href="/leads">
+                                Leads
+                            </a>
+                        </li>
+
+                        <li class="breadcrumb-item active">
+                            View Contacts
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outer Card Container -->
+    <div class="card">
+        <div class="card-body">
+
+            <!-- Top Filter Row: Products, Plan, Owner (LEFT) + Search, Reset, Back to Leads (RIGHT) -->
+            <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-end gap-3 mb-3">
+                
+                <!-- Left Side Filters -->
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    
+                    <!-- Action filter -->
+                    {% if has_permission('contacts', 'transfer') or has_permission('contacts', 'delete') %}
+                    <div>
+                        <label class="form-label">
+                            Action
+                        </label>
+                        <div class="dropdown">
+                            <button
+                                type="button"
+                                class="btn btn-outline-primary dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                Select Action
+                            </button>
+                            <ul class="dropdown-menu">
+                                {% if has_permission('contacts', 'transfer') %}
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="dropdown-item"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#assignLeadModal"
+                                    >
+                                        <i class="mdi mdi-account-plus-outline me-2"></i>
+                                        Assign Contacts
+                                    </button>
+                                </li>
+                                {% endif %}
+                                {% if has_permission('contacts', 'delete') %}
+                                <li>
+                                    <button
+                                        type="button"
+                                        class="dropdown-item text-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteLeadModal"
+                                    >
+                                        <i class="mdi mdi-delete-outline me-2"></i>
+                                        Delete Contacts
+                                    </button>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Product / Service Filter -->
+                    <div>
+                        <label class="form-label" for="productFilter">
+                            Product / Service
+                        </label>
+                        <select class="form-select lead-filter-input" id="productFilter" name="product_id" style="min-width: 160px;">
+                            <option value="all" selected>All Products</option>
+                            {% if products %}
+                                {% for p in products %}
+                                    <option value="{{ p.id }}">{{ p.product_name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Plan Type Filter -->
+                    <div>
+                        <label class="form-label" for="planFilter">
+                            Plan Type
+                        </label>
+                        <select class="form-select lead-filter-input" id="planFilter" name="plan_type" style="min-width: 150px;">
+                            <option value="all" selected>All Plans</option>
+                            {% if plan_types %}
+                                {% for plan in plan_types %}
+                                    <option value="{{ plan }}">{{ plan }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Owner Filter -->
+                    <div>
+                        <label class="form-label" for="ownerFilter">
+                            Owner / User
+                        </label>
+                        <select class="form-select lead-filter-input" id="ownerFilter" name="owner" style="min-width: 150px;">
+                            <option value="all" {% if selected_owner == 'all' %}selected{% endif %}>All Owners</option>
+                            <option value="unassigned" {% if selected_owner == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                            {% if owners %}
+                                {% for o in owners %}
+                                    <option value="{{ o.user_uuid }}" {% if selected_owner == o.user_uuid or (selected_owner is none and o.user_uuid == logged_user_uuid) %}selected{% endif %}>{{ o.full_name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Right Side Search, Reset & Navigation Button -->
+                <div class="d-flex align-items-end gap-2 ms-xl-auto" style="width: min(100%, 600px);">
+                    <div class="flex-grow-1">
+                        <label class="form-label" for="contactSearch">
+                            Search
+                        </label>
+                        <div class="position-relative">
+                            <input type="search" class="form-control lead-filter-input" id="contactSearch" name="search" value="" placeholder="Search contact name, mobile, email..." autocomplete="off">
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-light" id="btnResetFilters">
+                        <i class="mdi mdi-refresh me-1"></i>
+                        Reset
+                    </button>
+                    
+                    <a href="/leads" class="btn btn-outline-primary text-nowrap">
+                        <i class="mdi mdi-arrow-left me-1"></i>
+                        Back to Leads
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- Inner All Leads Card with Table -->
+            <div class="card all-leads-card">
+                <div class="card-body">
+
+                    <!-- Contacts Table -->
+                    <div class="clientos-table-scroll single-row-filter">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="contactsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center" style="width: 40px;">
+                                        <input type="checkbox" id="selectAllContacts" class="form-check-input">
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Lead Code
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Contact Name
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Mobile Number
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Owner
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Product / Service
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Plan Type
+                                    </th>
+
+                                    <th class="text-nowrap">
+                                        Full Address
+                                    </th>
+
+                                    <th class="lead-comment-col">
+                                        Recent Activity
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="contactTableBody">
+                                {% if not contacts %}
+                                    <tr id="noContactsRow">
+                                        <td colspan="9" class="text-center py-4 text-muted">
+                                            No saved contacts found.
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    {% for c in contacts %}
+                                    <tr class="contact-row" 
+                                        data-name="{{ (c.contact_name or '') | lower }}" 
+                                        data-search="{{ (c.contact_name ~ ' ' ~ c.client_code ~ ' ' ~ c.mobile_number ~ ' ' ~ c.decrypted_mobile ~ ' ' ~ c.email ~ ' ' ~ c.address ~ ' ' ~ c.product_name ~ ' ' ~ c.plan_type ~ ' ' ~ c.notes ~ ' ' ~ c.owner_name) | lower }}"
+                                        data-product="{{ c.product_id or '' }}"
+                                        data-plan="{{ c.plan_type or '' }}"
+                                        data-owner="{{ c.owner_uuid or '' }}">
+
+                                        <td class="text-center" style="width: 40px;">
+                                            <input type="checkbox" class="form-check-input contact-checkbox" value="{{ c.lead_uuid }}" data-contact-uuid="{{ c.contact_uuid }}" data-lead-id="{{ c.lead_id }}">
+                                        </td>
+
+                                        <td>
+                                            <span class="fw-bold">{{ c.lead_id or c.client_code }}</span>
+                                        </td>
+
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="btn btn-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center me-2" style="width: 34px; height: 34px; pointer-events: none;">
+                                                    <i class="mdi mdi-account-outline"></i>
+                                                </span>
+                                                <div>
+                                                    <div class="fw-medium text-dark">{{ c.contact_name or 'NA' }}</div>
+                                                    <small class="text-muted">{{ c.email or '' }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td class="text-nowrap">
+                                            {% if c.click_to_call_active %}
+                                                {% set display_num = c.mobile_display if c.mobile_display else (c.decrypted_mobile or c.mobile_number or 'NA') %}
+                                                {% if c.is_last_dialed %}
+                                                    <button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ c.lead_uuid }}" data-lead-name="{{ c.contact_name or 'Contact' }}" onclick="makeClickToCall(this)" title="Last Dialed Call: {{ display_num }}">
+                                                        <span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span>
+                                                        {{ display_num }}
+                                                    </button>
+                                                {% elif c.call_status == 1 %}
+                                                    <button type="button" class="btn btn-outline-success btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ c.lead_uuid }}" data-lead-name="{{ c.contact_name or 'Contact' }}" onclick="makeClickToCall(this)" title="Called: {{ display_num }}">
+                                                        <i class="mdi mdi-phone-check-outline me-1"></i>
+                                                        {{ display_num }}
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-outline-primary btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="{{ c.lead_uuid }}" data-lead-name="{{ c.contact_name or 'Contact' }}" onclick="makeClickToCall(this)" title="Click to Call {{ c.contact_name or '' }}">
+                                                        <i class="mdi mdi-phone-outline me-1"></i>
+                                                        {{ display_num }}
+                                                    </button>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="fw-medium text-dark">
+                                                    {{ c.mobile_display if c.mobile_display else (c.decrypted_mobile or c.mobile_number or 'NA') }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <td class="text-nowrap">
+                                            {{ c.owner_name or 'Unassigned' }}
+                                        </td>
+
+                                        <td>
+                                            {{ c.product_name if c.product_name and c.product_name != 'None' else 'None' }}
+                                        </td>
+
+                                        <td>
+                                            {{ get_plan_label(c.plan_type) if c.plan_type and c.plan_type != 'None' else 'None' }}
+                                        </td>
+
+                                        <td>
+                                            {{ c.address or 'NA' }}
+                                        </td>
+
+                                        <td class="lead-comment-col align-middle">
+                                            {% set note_val = c.notes %}
+                                            <div style="max-width: 235px;">
+                                                {% if note_val and note_val.strip() and note_val.strip().lower() not in ['no notes', 'no note', 'none', 'null', 'na'] %}
+                                                    <div class="d-flex align-items-center gap-1" style="max-width: 235px;">
+                                                        <span class="text-truncate fs-13 text-dark flex-grow-1" 
+                                                              style="max-width: 215px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" 
+                                                              data-bs-toggle="tooltip" 
+                                                              data-bs-placement="top" 
+                                                              data-bs-custom-class="lead-comment-tooltip"
+                                                              title="{{ note_val }}">
+                                                            {{ note_val }}
+                                                        </span>
+                                                        {% if note_val | length > 25 %}
+                                                        <i class="mdi mdi-information-outline text-primary fs-14 flex-shrink-0" 
+                                                           data-bs-toggle="tooltip" 
+                                                           data-bs-placement="top" 
+                                                           data-bs-custom-class="lead-comment-tooltip"
+                                                           title="{{ note_val }}" 
+                                                           style="cursor: pointer;"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted fs-12">No notes</span>
+                                                {% endif %}
+                                                {% if c.created_at_fmt or c.created_by_name %}
+                                                <small class="text-muted d-block fs-11 mt-1">
+                                                    {% if c.created_at_fmt %}{{ c.created_at_fmt }}{% endif %}{% if c.created_at_fmt and c.created_by_name %} • {% endif %}{% if c.created_by_name %}By: {{ c.created_by_name }}{% endif %}
+                                                </small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Pagination Footer (Matching Products Page) -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">
+                            Rows
+                        </label>
+
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <div class="text-muted" id="paginationInfo">Showing 1 to {{ contacts | length }} of {{ contacts | length }} records</div>
+
+                </div>
+
+                <nav aria-label="Contact pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% include 'leads/partials/all_leads_activity_modals.html' %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let currentPage = 1;
+    let pageSize = 10;
+    let currentTimelineLeadUuid = null;
+    let currentTimelinePage = 1;
+
+    // Toast Notification helper
+    function showToastNotification(message, category) {
+        if (!message) return;
+        let toastEl = document.getElementById('liveToast');
+        if (!toastEl) {
+            const toastContainer = document.createElement('div');
+            toastContainer.innerHTML = `
+                <div id="liveToast" class="toast position-fixed top-0 end-0 m-3 border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000" style="z-index:9999; min-width:350px;">
+                    <div class="toast-header">
+                        <i class="mdi mdi-information text-info me-2 fs-4" id="toastIcon"></i>
+                        <strong class="me-auto" id="toastTitle">Notification</strong>
+                        <small>Now</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" id="toastBody"></div>
+                </div>
+            `;
+            document.body.appendChild(toastContainer);
+            toastEl = document.getElementById('liveToast');
+        }
+        const iconEl = toastEl.querySelector('#toastIcon');
+        const titleEl = toastEl.querySelector('#toastTitle');
+        const bodyEl = toastEl.querySelector('#toastBody');
+        if (category === 'success') {
+            if (iconEl) iconEl.className = 'mdi mdi-check-circle text-success me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Success';
+        } else if (category === 'danger' || category === 'error') {
+            if (iconEl) iconEl.className = 'mdi mdi-close-circle text-danger me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Error';
+        } else {
+            if (iconEl) iconEl.className = 'mdi mdi-alert-circle text-warning me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Warning';
+        }
+        if (bodyEl) bodyEl.textContent = message;
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000, autohide: true });
+        toast.show();
+    }
+
+    // Timeline Modal Handling
+    const timelineModal = document.getElementById('timelineModal');
+    if (timelineModal) {
+        timelineModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            if (button && button.hasAttribute('data-lead-uuid')) {
+                currentTimelineLeadUuid = button.getAttribute('data-lead-uuid');
+                currentTimelinePage = 1;
+                fetchTimelineData(currentTimelineLeadUuid, 1);
+            }
+        });
+    }
+
+    const btnLoadMoreTimeline = document.getElementById('btnFetchMoreTimeline');
+    if (btnLoadMoreTimeline) {
+        btnLoadMoreTimeline.addEventListener('click', function () {
+            if (currentTimelineLeadUuid) {
+                currentTimelinePage++;
+                fetchTimelineData(currentTimelineLeadUuid, currentTimelinePage);
+            }
+        });
+    }
+
+    function fetchTimelineData(leadUuid, page) {
+        const subtitleEl = document.getElementById('timelineModalSubtitle');
+        const loadMoreContainer = document.getElementById('timelineLoadMoreContainer');
+        const btnLoadMore = document.getElementById('btnFetchMoreTimeline');
+
+        if (page === 1) {
+            const container = document.getElementById('timelineItemsContainer');
+            if (container) {
+                container.innerHTML = `<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading activity timeline...</div>`;
+            }
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        } else if (btnLoadMore) {
+            btnLoadMore.disabled = true;
+            btnLoadMore.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Fetching...`;
+        }
+
+        fetch('/api/leads/timeline', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead_uuid: leadUuid, page: page, limit: 15 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (btnLoadMore) {
+                btnLoadMore.disabled = false;
+                btnLoadMore.innerHTML = `<i class="mdi mdi-download-outline me-1"></i> Fetch More Activities`;
+            }
+            if (data.success) {
+                if (subtitleEl && data.lead) {
+                    const rawCode = data.lead.client_code ? String(data.lead.client_code).replace(/^LEAD[-_\s]*/i, '') : '';
+                    subtitleEl.textContent = rawCode ? `Lead Code - ${rawCode}` : (data.lead.client_code || '');
+                }
+                renderTimelineItems(data.activities, page > 1);
+                if (loadMoreContainer) {
+                    loadMoreContainer.style.display = (data.pagination && data.pagination.has_more) ? 'block' : 'none';
+                }
+            } else {
+                showToastNotification(data.message || 'Unable to load activity timeline.', 'warning');
+            }
+        })
+        .catch(err => {
+            console.error('Timeline error:', err);
+            if (btnLoadMore) btnLoadMore.disabled = false;
+        });
+    }
+
+    function renderTimelineItems(activities, isAppend) {
+        const container = document.getElementById('timelineItemsContainer');
+        if (!container) return;
+
+        if (!activities || activities.length === 0) {
+            if (!isAppend) {
+                container.innerHTML = `<div class="text-center py-4 text-muted"><i class="mdi mdi-timeline-text-outline fs-1 d-block mb-2 text-muted"></i>No activity timeline recorded for this lead yet.</div>`;
+            }
+            return;
+        }
+
+        let html = isAppend ? '' : '<div class="timeline-vertical p-2">';
+        activities.forEach(function (act) {
+            const badgeClass = act.action_badge || 'bg-primary';
+            const iconClass = act.action_icon || 'mdi-information-outline';
+            const actionTitle = act.action_title || 'Lead Activity';
+            const isDescBold = actionTitle === 'Call Log Added' || actionTitle === 'Comment Added';
+            const descStyle = isDescBold ? 'fw-bold text-dark fs-14' : '';
+
+            let commentBoxHtml = '';
+            if (act.comment && act.comment.trim() && act.comment.trim().toLowerCase() !== 'no comment') {
+                commentBoxHtml = `
+                    <div class="mt-2 p-2 rounded bg-light border-start border-3 border-primary text-secondary fs-13">
+                        <i class="mdi mdi-comment-text-outline me-1 text-primary"></i> ${act.comment.trim()}
+                    </div>
+                `;
+            }
+
+            const itemHtml = `
+                <div class="timeline-item d-flex pb-4 position-relative">
+                    <div class="timeline-icon me-3 flex-shrink-0">
+                        <span class="avatar-title rounded-circle ${badgeClass} text-white shadow-sm d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="mdi ${iconClass} fs-5"></i>
+                        </span>
+                    </div>
+                    <div class="timeline-content flex-grow-1 bg-white p-3 rounded-3 border shadow-sm" style="margin-left: 2px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge ${badgeClass} fs-11 px-2 py-1">${actionTitle}</span>
+                            <small class="text-muted"><i class="mdi mdi-clock-outline me-1"></i>${act.created_at_fmt}</small>
+                        </div>
+                        <div class="timeline-desc text-dark mt-1 ${descStyle}">${act.description}</div>
+                        ${commentBoxHtml}
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top text-muted fs-12">
+                            <span><i class="mdi mdi-account-circle-outline me-1 text-primary"></i><strong>${act.user_name}</strong> (${act.user_role})</span>
+                            ${act.ip_address ? `<span class="badge bg-light text-muted border">${act.ip_address}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            if (isAppend) {
+                const wrapper = container.querySelector('.timeline-vertical');
+                if (wrapper) wrapper.insertAdjacentHTML('beforeend', itemHtml);
+                else html += itemHtml;
+            } else {
+                html += itemHtml;
+            }
+        });
+
+        if (!isAppend) {
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    }
+
+    // window.makeClickToCall is centrally handled in base.html
+
+    // Collect all contact rows for Products-style filtering & pagination
+    const allRows = [];
+    document.querySelectorAll('#contactsTable tbody .contact-row').forEach(function (tr, index) {
+        allRows.push({
+            element: tr,
+            originalIndex: index + 1,
+            searchStr: tr.getAttribute('data-search') || '',
+            product: tr.getAttribute('data-product') || '',
+            plan: tr.getAttribute('data-plan') || '',
+            owner: tr.getAttribute('data-owner') || ''
+        });
+    });
+
+    function renderContactsTable() {
+        const searchInput = document.getElementById('contactSearch');
+        const productFilter = document.getElementById('productFilter');
+        const planFilter = document.getElementById('planFilter');
+        const ownerFilter = document.getElementById('ownerFilter');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const productVal = productFilter ? productFilter.value : 'all';
+        const planVal = planFilter ? planFilter.value : 'all';
+        const ownerVal = ownerFilter ? ownerFilter.value : 'all';
+        pageSize = pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10;
+
+        // Filter rows
+        const filtered = allRows.filter(function (item) {
+            const matchesSearch = !searchVal || item.searchStr.includes(searchVal);
+            const matchesProduct = productVal === 'all' || item.product === String(productVal);
+            const matchesPlan = planVal === 'all' || item.plan === String(planVal);
+            const matchesOwner = ownerVal === 'all' || (ownerVal === 'unassigned' ? (!item.owner || item.owner === 'unassigned') : item.owner === String(ownerVal));
+            return matchesSearch && matchesProduct && matchesPlan && matchesOwner;
+        });
+
+        const total = filtered.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        // Hide all rows first
+        allRows.forEach(function (item) {
+            item.element.style.display = 'none';
+        });
+
+        const noContactsRow = document.getElementById('noContactsRow');
+
+        if (total === 0) {
+            if (noContactsRow) {
+                noContactsRow.style.display = '';
+            } else {
+                const tbody = document.querySelector('#contactsTable tbody');
+                if (tbody) {
+                    const emptyTr = document.createElement('tr');
+                    emptyTr.id = 'noContactsRow';
+                    emptyTr.innerHTML = '<td colspan="9" class="text-center py-4 text-muted">No contacts found matching active filters.</td>';
+                    tbody.appendChild(emptyTr);
+                }
+            }
+        } else {
+            if (noContactsRow) noContactsRow.style.display = 'none';
+
+            // Display visible page slice
+            filtered.forEach(function (item, idx) {
+                if (idx >= startIndex && idx < endIndex) {
+                    item.element.style.display = '';
+                }
+            });
+        }
+
+        // Update Pagination Info
+        const infoEl = document.getElementById('paginationInfo');
+        if (infoEl) {
+            if (total > 0) {
+                const showingStart = startIndex + 1;
+                const showingEnd = Math.min(endIndex, total);
+                infoEl.textContent = `Showing ${showingStart} to ${showingEnd} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        // Render Pagination Nav Controls
+        renderPaginationNav(totalPages, total);
+
+        // Re-initialize tooltips for rendered/visible rows
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+            document.querySelectorAll('#contactsTable [data-bs-toggle="tooltip"]').forEach(function (el) {
+                if (!bootstrap.Tooltip.getInstance(el)) {
+                    new bootstrap.Tooltip(el);
+                }
+            });
+        }
+    }
+
+    function renderPaginationNav(totalPages, total) {
+        const navEl = document.getElementById('paginationNav');
+        if (!navEl) return;
+
+        if (total <= 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        navHtml += `<li class="page-item ${prevDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage - 1}">Previous</button></li>`;
+
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            navHtml += `<li class="page-item ${activeClass}"><button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button></li>`;
+        }
+
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+        navHtml += `<li class="page-item ${nextDisabled}"><button type="button" class="page-link btn-page-nav" data-page="${currentPage + 1}">Next</button></li>`;
+
+        navEl.innerHTML = navHtml;
+
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    renderContactsTable();
+                }
+            });
+        });
+    }
+
+    // Attach Event Listeners to Inputs
+    const searchInput = document.getElementById('contactSearch');
+    if (searchInput) {
+        let timer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                currentPage = 1;
+                renderContactsTable();
+            }, 250);
+        });
+    }
+
+    ['productFilter', 'planFilter', 'ownerFilter', 'pageSize'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function () {
+                currentPage = 1;
+                renderContactsTable();
+            });
+        }
+    });
+
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            ['productFilter', 'planFilter', 'ownerFilter'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) el.value = 'all';
+            });
+            currentPage = 1;
+            renderContactsTable();
+        });
+    }
+
+    // ---- Contacts Bulk Actions (Assign & Delete) ----
+    const selectAllContactsCb = document.getElementById('selectAllContacts');
+    if (selectAllContactsCb) {
+        selectAllContactsCb.addEventListener('change', function () {
+            document.querySelectorAll('#contactsTable tbody .contact-checkbox').forEach(cb => {
+                const tr = cb.closest('tr');
+                if (tr && tr.style.display !== 'none') {
+                    cb.checked = selectAllContactsCb.checked;
+                }
+            });
+        });
+    }
+
+    function getCheckedContactLeadUuids() {
+        return Array.from(
+            document.querySelectorAll('#contactsTable tbody .contact-checkbox:checked')
+        ).map(cb => cb.value).filter(Boolean);
+    }
+
+    function getCheckedContactUuids() {
+        return Array.from(
+            document.querySelectorAll('#contactsTable tbody .contact-checkbox:checked')
+        ).map(cb => cb.getAttribute('data-contact-uuid')).filter(Boolean);
+    }
+
+    // ---- DELETE Modal for Contacts ----
+    const deleteModal = document.getElementById('deleteLeadModal');
+    const deleteTitleEl = document.getElementById('deleteLeadModalTitle');
+    const deleteMsgEl = document.getElementById('deleteLeadModalMessage');
+    const confirmDeleteBtn = document.getElementById('btnConfirmDeleteLead');
+    let pendingDeleteContactUuids = [];
+
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function () {
+            pendingDeleteContactUuids = getCheckedContactUuids();
+            if (confirmDeleteBtn) confirmDeleteBtn.disabled = false;
+
+            if (pendingDeleteContactUuids.length > 0) {
+                if (deleteTitleEl) deleteTitleEl.textContent = `Delete ${pendingDeleteContactUuids.length} selected contact(s)?`;
+                if (deleteMsgEl) deleteMsgEl.textContent = `Are you sure you want to permanently delete ${pendingDeleteContactUuids.length} selected contact(s)? This action cannot be undone.`;
+            } else {
+                if (deleteTitleEl) deleteTitleEl.textContent = 'No contacts selected';
+                if (deleteMsgEl) deleteMsgEl.textContent = 'Please select at least one contact checkbox from the table to delete.';
+                if (confirmDeleteBtn) confirmDeleteBtn.disabled = true;
+            }
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (!pendingDeleteContactUuids || pendingDeleteContactUuids.length === 0) {
+                showToastNotification('Please select at least one contact to delete.', 'warning');
+                return;
+            }
+
+            confirmDeleteBtn.disabled = true;
+            const originalHtml = confirmDeleteBtn.innerHTML;
+            confirmDeleteBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Deleting...`;
+
+            fetch('/api/contacts/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contact_uuids: pendingDeleteContactUuids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Contacts deleted successfully.', 'success');
+                    const mi = bootstrap.Modal.getInstance(deleteModal) || new bootstrap.Modal(deleteModal);
+                    if (mi) mi.hide();
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    showToastNotification(data.message || 'Failed to delete contacts.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Delete contacts error:', err);
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while deleting contact(s).', 'danger');
+            });
+        });
+    }
+
+    // ---- ASSIGN Modal for Contacts ----
+    const assignModal = document.getElementById('assignLeadModal');
+    const assignOwnerEl = document.getElementById('assignLeadOwner');
+    const assignSourceEl = document.getElementById('assignLeadSource');
+    const assignResetEl = document.getElementById('assignResetLeadData');
+    const assignAllEl = document.getElementById('assignAllMatchingLeads');
+    const confirmAssignBtn = document.getElementById('btnConfirmAssignLeads');
+
+    if (assignModal) {
+        assignModal.addEventListener('show.bs.modal', function () {
+            if (assignOwnerEl) assignOwnerEl.value = 'keep_same';
+            if (assignSourceEl) assignSourceEl.value = '';
+            if (assignResetEl) assignResetEl.checked = false;
+            if (assignAllEl) assignAllEl.checked = false;
+
+            // Hide Lead Source and Reset Lead Data in Contacts page
+            if (assignSourceEl && assignSourceEl.closest('.mb-3')) assignSourceEl.closest('.mb-3').style.display = 'none';
+            if (assignResetEl && assignResetEl.closest('.mb-3')) assignResetEl.closest('.mb-3').style.display = 'none';
+            if (assignAllEl && assignAllEl.closest('.mb-2')) assignAllEl.closest('.mb-2').style.display = 'none';
+        });
+    }
+
+    if (confirmAssignBtn) {
+        confirmAssignBtn.addEventListener('click', function () {
+            const targetUserUuid = assignOwnerEl ? assignOwnerEl.value : '';
+            if (!targetUserUuid || targetUserUuid === 'keep_same') {
+                showToastNotification('Please select a target user to assign contacts.', 'warning');
+                if (assignOwnerEl) assignOwnerEl.focus();
+                return;
+            }
+
+            const selectedUuids = getCheckedContactLeadUuids();
+            if (selectedUuids.length === 0) {
+                showToastNotification('Please select at least one contact checkbox to assign.', 'warning');
+                return;
+            }
+
+            confirmAssignBtn.disabled = true;
+            const originalHtml = confirmAssignBtn.innerHTML;
+            confirmAssignBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Assigning...`;
+
+            fetch('/api/leads/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    target_user_uuid: targetUserUuid,
+                    lead_uuids: selectedUuids,
+                    apply_all_matching: false
+                })
+            })
+            .then(res => res.json().catch(() => ({ success: false, message: 'Server returned error status ' + res.status })))
+            .then(data => {
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+
+                if (data && data.success) {
+                    showToastNotification(data.message || 'Contacts assigned successfully.', 'success');
+                    const mi = bootstrap.Modal.getInstance(assignModal) || new bootstrap.Modal(assignModal);
+                    if (mi) mi.hide();
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    showToastNotification((data && data.message) || 'Failed to assign contacts.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Assign error:', err);
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while assigning contacts.', 'danger');
+            });
+        });
+    }
+
+    // Initial table render
+    renderContactsTable();
+});
+</script>
+
+{% include 'leads/partials/all_leads_action_modals.html' %}
+
+{% endblock %}

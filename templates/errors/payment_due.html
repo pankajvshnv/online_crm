@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Payment Due | Subscription Expired</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='assets/images/crm_logo.png') }}">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/custom.css') }}" rel="stylesheet" type="text/css">
+    <style>
+        body.payment-due-body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .payment-due-card {
+            background: #ffffff;
+            border-radius: 20px;
+            max-width: 440px;
+            width: 100%;
+            padding: 44px 32px 36px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+        }
+        .icon-pulse-box {
+            width: 84px;
+            height: 84px;
+            background: #fef3c7;
+            color: #d97706;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 44px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body class="payment-due-body">
+    <div class="payment-due-card">
+        <div class="icon-pulse-box">
+            <i class="mdi mdi-credit-card-clock-outline"></i>
+        </div>
+        
+        <h2 class="fw-bold text-dark mb-2">Payment Due</h2>
+
+        <div class="mb-4">
+            <span class="text-muted fs-14">Expired on: </span>
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-13 px-2 py-1 fw-semibold">
+                {% if sub.plan_expiry_date %}
+                    {{ sub.plan_expiry_date.strftime('%d %b %Y') if sub.plan_expiry_date.strftime is defined else sub.plan_expiry_date }}
+                {% else %}
+                    Not Set
+                {% endif %}
+            </span>
+        </div>
+
+        {% if is_admin %}
+            {% set target_pay_url = pay_url if pay_url is defined else ('https://zoibit.com/api/pay?company_uid=' ~ (sub.company_uid or 'CMP-7C5B9D3BCDFB4B12')) %}
+            <a href="{{ target_pay_url }}" target="_blank" class="btn btn-primary btn-lg w-100 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 mb-3" style="border-radius: 10px; font-size: 16px; text-decoration: none;">
+                <i class="mdi mdi-refresh fs-18"></i> Renew Now
+            </a>
+        {% else %}
+            <!-- Non-admin notification -->
+            <div class="alert alert-warning py-2 px-3 fs-13 text-center mb-3" role="alert">
+                <i class="mdi mdi-information-outline me-1"></i>
+                Please contact Administrator to renew the CRM subscription.
+            </div>
+        {% endif %}
+
+        <div class="mt-2">
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-link text-muted text-decoration-none">
+                <i class="mdi mdi-logout me-1"></i> Logout
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<header id="page-topbar">
+    <div class="navbar-header">
+        
+        <!-- Left: Logo Box -->
+        <div class="navbar-logo-box">
+            {% set c_name = company_brand_name or 'ClientOS' %}
+            {% set c_len = c_name | length %}
+            {% set font_class = 'brand-size-sm' if c_len > 22 else ('brand-size-md' if c_len > 12 else 'brand-size-lg') %}
+
+            <!-- Dark Logo for Light Theme -->
+            <a href="{{ url_for('dashboard') }}" class="logo logo-dark">
+                <span class="logo-sm"><img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ c_name }}" height="30"></span>
+                <span class="logo-lg clientos-logo-wrap">
+                    <img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ c_name }}" class="brand-logo-img">
+                    <span class="fw-bold text-dark clientos-logo-brand-text {{ font_class }}" title="{{ c_name }}">{{ c_name }}</span>
+                </span>
+            </a>
+
+            <!-- Light Logo for Dark Theme -->
+            <a href="{{ url_for('dashboard') }}" class="logo logo-light">
+                <span class="logo-sm"><img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ c_name }}" height="30"></span>
+                <span class="logo-lg clientos-logo-wrap">
+                    <img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ c_name }}" class="brand-logo-img">
+                    <span class="fw-bold text-white clientos-logo-brand-text {{ font_class }}" title="{{ c_name }}">{{ c_name }}</span>
+                </span>
+            </a>
+        </div>
+
+        <!-- Center & Right Navigation Section -->
+        <div class="d-flex align-items-center justify-content-between px-2 px-md-3 ms-auto w-100">
+            
+            <!-- Sidebar Toggle Button -->
+            <button type="button" class="btn btn-icon top-icon sidebar-btn me-2" id="sidebar-btn" aria-label="Toggle navigation">
+                <i class="mdi mdi-menu align-middle fs-18"></i>
+            </button>
+
+            <!-- Desktop Announcement Ticker -->
+            <div class="clientos-header-ticker d-none d-xl-flex me-3 flex-shrink-0">
+                <div class="clientos-ticker-icon">
+                    <i class="mdi mdi-bullhorn-outline"></i>
+                </div>
+                <div class="clientos-ticker-window">
+                    <div class="clientos-ticker-list">
+                        <div class="clientos-ticker-item">Welcome Ramesh for new joining today</div>
+                        <div class="clientos-ticker-item">Rs 5,000 payment received by Ajay</div>
+                        <div class="clientos-ticker-item">Vikash has birthday today</div>
+                        <div class="clientos-ticker-item">Top BA today: Amit Sharma with Rs 1.20L sales</div>
+                        <div class="clientos-ticker-item">Priya Manager team achieved 82% target</div>
+                        <div class="clientos-ticker-item">3 sales orders pending for approval</div>
+                        <div class="clientos-ticker-item">Neha TL closed 8 deals this week</div>
+                        <div class="clientos-ticker-item">12 follow-ups scheduled for today</div>
+                        <div class="clientos-ticker-item">Bluefin Labs quotation sent successfully</div>
+                        <div class="clientos-ticker-item">Monthly collection reached Rs 48.75L</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full Width Center Desktop Search Bar -->
+            <div class="flex-grow-1 d-none d-lg-block mx-2 mx-xl-3">
+                <form class="app-search clientos-header-search w-100" method="GET" action="{{ url_for('global_search_page') }}">
+                    <div class="position-relative w-100">
+                        <input type="text" name="q" class="form-control w-100" style="padding-left: 38px;" placeholder="Search by name, mobile, email, or Lead ID..." value="{{ search_query if search_query is defined and search_query else '' }}" autocomplete="off" required>
+                        <i class="mdi mdi-magnify text-muted position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px; pointer-events: none;"></i>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right-Aligned Action Icons (Search Dropdown, Extension, Dark Mode, Notifications, Profile Avatar) -->
+            <div class="d-flex align-items-center gap-1 gap-sm-2 ms-auto flex-shrink-0">
+
+                <!-- Mobile Search Dropdown Toggle -->
+                <div class="dropdown d-inline-block d-lg-none">
+                    <button type="button" class="btn btn-icon top-icon" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Search">
+                        <i class="mdi mdi-magnify fs-18"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-2 shadow-lg" style="min-width: 280px;">
+                        <form class="p-1" method="GET" action="{{ url_for('global_search_page') }}">
+                            <div class="position-relative">
+                                <input type="text" name="q" class="form-control form-control-sm" style="padding-left: 32px;" placeholder="Search by name, mobile, email, or Lead ID..." value="{{ search_query if search_query is defined and search_query else '' }}" autocomplete="off" required>
+                                <i class="mdi mdi-magnify text-muted position-absolute" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none;"></i>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Extension Info (Desktop & Mobile) -->
+                <div class="clientos-header-extension d-flex align-items-center">
+                    <i class="mdi mdi-phone-in-talk-outline"></i>
+                    <div class="d-none d-sm-block">
+                        <span>Extension</span>
+                        <strong>{{ current_user.extension_number if current_user and current_user.extension_number else 'Not Assigned' }}</strong>
+                    </div>
+                    <strong class="d-block d-sm-none fs-12">{{ current_user.extension_number if current_user and current_user.extension_number else 'N/A' }}</strong>
+                </div>
+
+                <!-- Light/Dark Mode Switcher (Desktop & Mobile) -->
+                <button type="button" class="btn btn-icon top-icon" id="light-dark-mode" aria-label="Toggle Light/Dark">
+                    <i class="mdi mdi-brightness-7 align-middle"></i>
+                    <i class="mdi mdi-white-balance-sunny align-middle"></i>
+                </button>
+
+                <!-- Notifications Dropdown (Research Recommendations) -->
+                <div class="dropdown d-inline-block">
+                    <button type="button" class="btn btn-icon top-icon position-relative" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications" id="headerNotificationBtn" title="Research Notifications">
+                        <i class="mdi mdi-bell-ring-outline fs-17"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="headerNotificationBadge" style="margin-top: 6px; margin-left: -6px; font-size: 10px; padding: 2px 5px;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end dropdown-menu-animated p-0 shadow-lg border card-bg-dropdown" style="min-width: 360px; max-width: 420px; width: 380px; z-index: 1055;">
+                        <div class="p-3 border-bottom d-flex align-items-center justify-content-between bg-body-tertiary">
+                            <h6 class="m-0 fs-13 fw-bold text-body d-flex align-items-center"><i class="mdi mdi-bell-outline me-1 fs-15 text-primary"></i> Notifications</h6>
+                            <span class="badge bg-primary-subtle text-primary fw-bold fs-11 d-none" id="headerNotificationCount">0</span>
+                        </div>
+                        <div style="max-height: 330px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin;" id="headerNotificationList" class="p-2 bg-body-tertiary">
+                            <div class="text-center py-4 text-muted fs-12" id="headerNotificationEmptyState">
+                                <i class="mdi mdi-bell-outline fs-20 d-block mb-1 text-secondary"></i>
+                                No notifications today
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Internal CRM Team Chat Button -->
+                {% if has_permission('chat', 'view') %}
+                <button type="button" class="btn btn-icon top-icon position-relative ms-1" data-bs-toggle="offcanvas" data-bs-target="#crmChatDrawer" aria-controls="crmChatDrawer" title="Team Chat" id="headerChatBtn">
+                    <i class="mdi mdi-forum-outline fs-18"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="headerChatUnreadBadge" style="margin-top: 6px; margin-left: -6px; font-size: 10px; padding: 2px 5px;">
+                        0
+                    </span>
+                </button>
+                {% endif %}
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown d-inline-block ms-1">
+                    <button type="button" class="btn header-item p-1 p-sm-2 {{ 'active' if request.endpoint in ['user_profile', 'my_team_page', 'change_password_page'] or active_group == 'profile' else '' }}" data-bs-toggle="dropdown" aria-expanded="false" title="{{ current_user.full_name if current_user else 'User' }}">
+                        <span class="avatar avatar-sm avatar-label-primary avatar-circle">{{ (current_user.full_name if current_user else 'U')[:2]|upper }}</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated shadow-sm" style="min-width: 185px;">
+                        <div class="dropdown-header py-2 border-bottom mb-1 bg-light-subtle">
+                            <div class="fw-bold text-dark fs-13 text-truncate">{{ current_user.full_name if current_user else 'User' }}</div>
+                            <small class="text-muted fs-11 text-truncate d-block">{{ current_user.username if current_user else '' }}</small>
+                        </div>
+                        <a class="dropdown-item py-2 {{ 'active' if request.endpoint == 'user_profile' or active_page == 'profile' else '' }}" href="{{ url_for('user_profile') }}">
+                            <i class="mdi mdi-account-circle-outline me-2 {{ 'text-white' if request.endpoint == 'user_profile' or active_page == 'profile' else 'text-muted' }} fs-15 align-middle"></i>Profile
+                        </a>
+                        <a class="dropdown-item py-2 {{ 'active' if request.endpoint == 'my_team_page' or active_page == 'my_team' else '' }}" href="{{ url_for('my_team_page') }}">
+                            <i class="mdi mdi-account-group-outline me-2 {{ 'text-white' if request.endpoint == 'my_team_page' or active_page == 'my_team' else 'text-muted' }} fs-15 align-middle"></i>My Team
+                        </a>
+                        <a class="dropdown-item py-2 {{ 'active' if request.endpoint == 'change_password_page' or active_page == 'change_password' else '' }}" href="{{ url_for('change_password_page') }}">
+                            <i class="mdi mdi-lock-reset me-2 {{ 'text-white' if request.endpoint == 'change_password_page' or active_page == 'change_password' else 'text-muted' }} fs-15 align-middle"></i>Change Password
+                        </a>
+                        <div class="dropdown-divider my-1"></div>
+                        <a class="dropdown-item py-2 text-danger" href="{{ url_for('logout') }}">
+                            <i class="mdi mdi-logout me-2 text-danger fs-15 align-middle"></i>Logout
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</header>

@@ -1,0 +1,296 @@
+// buttons
+
+button,
+a {
+  outline: none !important;
+}
+
+.btn {
+  position: relative;
+
+  &:active {
+    border-color: transparent;
+  }
+  &.show,
+  &:first-child:active {
+    border-color: transparent;
+  }
+}
+
+// Rounded Buttons
+.btn-rounded {
+  border-radius: 30px;
+}
+
+.btn-dark,
+.btn-secondary {
+  color: $gray-200;
+}
+
+.btn-outline-light {
+  color: $gray-900;
+}
+
+.btn-text-light {
+  color: var(--#{$prefix}body-color) !important;
+  &:active {
+    background-color: var(--#{$prefix}light) !important;
+  }
+}
+
+.btn-flat-light {
+  &:hover,
+  &:active,
+  &:focus {
+    background-color: color-mix(in srgb, var(--#{$prefix}light) 75%, white 10%);
+    color: var(--#{$prefix}body-color) !important;
+  }
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc($grid-gutter-width + 0.8rem + 4.5px);
+  width: calc($grid-gutter-width + 0.8rem + 4.5px);
+  padding: 0;
+  font-size: 1rem !important;
+}
+
+.btn-xs {
+  padding: 0.2813rem 8px;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.btn-xl {
+  padding: 0.625rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 0.5rem;
+}
+
+.btn-icon.btn-sm {
+  width: calc($grid-gutter-width + 0.5rem + 4px) !important;
+  height: calc($grid-gutter-width + 0.5rem + 4px) !important;
+  font-size: 0.8rem !important;
+}
+
+.btn-icon.btn-lg {
+  width: calc($grid-gutter-width + 1.2rem + 2px) !important;
+  height: calc($grid-gutter-width + 1.2rem + 2px) !important;
+  font-size: 1.2rem !important;
+}
+
+.btn-icon > svg {
+  font-size: 1rem;
+  height: 1em;
+}
+
+.btn-wide {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.btn-wider {
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
+}
+
+.btn-widest {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.btn-tall {
+  padding-top: 0.525rem;
+  padding-bottom: 0.525rem;
+}
+
+.btn-taller {
+  padding-top: 0.675rem;
+  padding-bottom: 0.675rem;
+}
+
+.btn-tallest {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
+.btn-marker {
+  display: block;
+  position: absolute !important;
+  z-index: 1;
+  top: -0.625rem !important;
+  right: -0.625rem !important;
+}
+
+.btn .badge {
+  position: relative;
+  top: -1px;
+}
+
+.btn-counter {
+  box-shadow: 0 0 0 2px var(--#{$prefix}secondary-bg);
+}
+
+// Hover Filled
+.hover-filled {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: var(--#{$prefix}secondary-bg); /* Background fill color */
+    z-index: -1;
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    color: var(--bs-btn-bg) !important;
+
+    &::before {
+      top: 0;
+      left: 0;
+    }
+  }
+
+  /* Directions */
+  &.slide-down::before {
+    top: -100%;
+    left: 0;
+  }
+
+  &.slide-up::before {
+    top: 100%;
+    left: 0;
+  }
+
+  &.slide-left::before {
+    top: 0;
+    left: 100%;
+  }
+
+  &.slide-right::before {
+    top: 0;
+    left: -100%;
+  }
+
+  /* Hover animations for each direction */
+  &.slide-down:hover::before {
+    top: 0;
+  }
+
+  &.slide-up:hover::before {
+    top: 0;
+  }
+
+  &.slide-left:hover::before {
+    left: 0;
+  }
+
+  &.slide-right:hover::before {
+    left: 0;
+  }
+}
+
+// Progress Button
+.publish-btn {
+  position: relative;
+  overflow: hidden;
+
+  .btn-text,
+  .btn-success-text {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+  }
+
+  .btn-success-text {
+    display: none;
+    svg{
+      height: 13px;
+      width: 0.8125rem;
+    }
+  }
+  .progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background-color: color-mix(in srgb, var(--#{$prefix}btn-bg) 90%, black 10%);
+    z-index: 1;
+    transition: width 1.15s linear;
+  }
+  &.completed {
+    .btn-text {
+      display: none;
+    }
+    .btn-success-text {
+      display: inline-block;
+    }
+  }
+}
+
+.btn-light {
+  color: var(--#{$prefix}body-color) !important;
+  background-color: var(--#{$prefix}light);
+  border-color: var(--#{$prefix}border-color);
+  &:hover,
+  &:active {
+    background-color: color-mix(in srgb, var(--#{$prefix}light) 75%, white 10%) !important;
+    color: var(--#{$prefix}body-color) !important;
+    border-color: var(--#{$prefix}border-color);
+  }
+}
+
+.btn-dark {
+  color: $white;
+  background-color: var(--#{$prefix}dark);
+  border-color: transparent;
+  &:hover,
+  &:active {
+    background-color: var(--#{$prefix}dark) !important;
+    color: $white;
+    border-color: transparent;
+  }
+}
+
+.btn-outline-light {
+  color: var(--#{$prefix}body-color);
+  border-color: var(--#{$prefix}border-color);
+  &:hover,
+  &:active {
+    background-color: color-mix(in srgb, var(--#{$prefix}light) 75%, white 10%) !important;
+    color: var(--#{$prefix}body-color) !important;
+    border-color: var(--#{$prefix}border-color);
+  }
+}
+
+.btn-label-light {
+  color: var(--#{$prefix}body-color);
+  &:hover,
+  &:active {
+    background-color: color-mix(in srgb, var(--#{$prefix}light) 75%, white 10%) !important;
+    color: var(--#{$prefix}body-color) !important;
+    border-color: var(--#{$prefix}border-color) !important;
+  }
+}
+
+.btn-label-dark{
+  &:active{
+    border-color: transparent !important;
+  }
+}
+
+.btn-check:checked + .btn {
+  color: $white;
+}
+.btn-check + .btn:hover {
+  color: var(--#{$prefix}btn-color) !important;
+}

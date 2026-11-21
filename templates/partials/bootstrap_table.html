@@ -1,0 +1,402 @@
+{% set table_id = table_id|default('allLeadsBootstrapTable') %}
+{% set page_size = page_size|default(25) %}
+
+{% set source_filter = (
+    filters
+    | selectattr('name', 'equalto', 'source')
+    | list
+    | first
+) %}
+
+{% set status_filter = (
+    filters
+    | selectattr('name', 'equalto', 'status')
+    | list
+    | first
+) %}
+
+{% set owner_filter = (
+    filters
+    | selectattr('name', 'equalto', 'owner')
+    | list
+    | first
+) %}
+
+<div
+    class="card"
+    id="{{ table_id }}Wrapper"
+    data-api-url="{{ api_url }}"
+>
+    <div class="card-body">
+
+        <div
+            class="d-flex flex-column flex-xl-row justify-content-between gap-3 mb-3"
+        >
+            <div class="d-flex flex-wrap gap-2">
+                {% for button in source_limit_buttons|default([]) %}
+                <button
+                    type="button"
+                    class="btn btn-outline-primary d-inline-flex align-items-center"
+                    data-source-fetch
+                    data-source-id="{{ button.source_id }}"
+                    data-source-name="{{ button.source_name }}"
+                    data-fetch-limit="{{ button.fetch_lead_limit }}"
+                >
+                    <i class="mdi mdi-cloud-download-outline fs-5 me-2"></i>
+
+                    <span>
+                        <span class="d-block fw-medium">
+                            {{ button.source_name }}
+                        </span>
+
+                        <small>
+                            {{ button.used_count }}/{{ button.daily_lead_limit }}
+                        </small>
+                    </span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <div
+                class="d-flex align-items-end gap-2 ms-xl-auto"
+                style="width: min(100%, 500px);"
+            >
+                <div class="flex-grow-1">
+                    <label
+                        class="form-label"
+                        for="{{ table_id }}Search"
+                    >
+                        Search
+                    </label>
+
+                    <div class="position-relative">
+                        <input
+                            type="search"
+                            class="form-control"
+                            id="{{ table_id }}Search"
+                            placeholder="Search leads"
+                            autocomplete="off"
+                            data-lead-search
+                        >
+
+                        <i
+                            class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"
+                            data-search-icon
+                        ></i>
+
+                        <span
+                            class="position-absolute top-50 end-0 translate-middle-y me-3 d-none"
+                            data-search-loader
+                        >
+                            <span
+                                class="spinner-border spinner-border-sm"
+                                role="status"
+                            ></span>
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn btn-light"
+                    data-reset-table
+                >
+                    <i class="mdi mdi-refresh me-1"></i>
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end mb-3">
+
+            <div class="col-xl-2 col-lg-4 col-md-6">
+                <label
+                    class="form-label"
+                    for="{{ table_id }}Source"
+                >
+                    Source
+                </label>
+
+                <select
+                    class="form-select"
+                    id="{{ table_id }}Source"
+                    data-filter-name="source"
+                >
+                    <option value="">
+                        All Sources
+                    </option>
+
+                    {% for option in source_filter.options|default([]) %}
+                    <option value="{{ option.value }}">
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-md-6">
+                <label
+                    class="form-label"
+                    for="{{ table_id }}Status"
+                >
+                    Status
+                </label>
+
+                <select
+                    class="form-select"
+                    id="{{ table_id }}Status"
+                    data-filter-name="status"
+                >
+                    <option value="">
+                        All Statuses
+                    </option>
+
+                    {% for option in status_filter.options|default([]) %}
+                    <option value="{{ option.value }}">
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-md-6">
+                <label
+                    class="form-label"
+                    for="{{ table_id }}Owner"
+                >
+                    Owner
+                </label>
+
+                <select
+                    class="form-select"
+                    id="{{ table_id }}Owner"
+                    data-filter-name="owner"
+                >
+                    <option value="">
+                        All Owners
+                    </option>
+
+                    {% for option in owner_filter.options|default([]) %}
+                    <option value="{{ option.value }}">
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-md-6">
+                <label
+                    class="form-label"
+                    for="{{ table_id }}CallStatus"
+                >
+                    Call Status
+                </label>
+
+                <select
+                    class="form-select"
+                    id="{{ table_id }}CallStatus"
+                    data-filter-name="call_status"
+                >
+                    <option value="">
+                        All Calls
+                    </option>
+
+                    <option value="1">
+                        Called
+                    </option>
+
+                    <option value="0" selected>
+                        Not Called
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-xl-2 col-lg-4 col-md-6 ms-xl-auto">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary w-100"
+                    data-refresh-table
+                >
+                    <i class="mdi mdi-reload me-1"></i>
+                    Refresh
+                </button>
+            </div>
+
+        </div>
+
+        <div
+            class="alert alert-danger d-none"
+            role="alert"
+            data-table-error
+        ></div>
+
+        <div class="clientos-table-scroll">
+            <table
+                class="table table-bordered table-hover align-middle mb-0"
+                id="{{ table_id }}"
+            >
+                <thead class="table-light">
+                    <tr>
+                        <th
+                            style="min-width: 130px;"
+                            data-sort-field="client_code"
+                        >
+                            Client Code
+                        </th>
+
+                        <th
+                            style="min-width: 190px;"
+                            data-sort-field="name"
+                        >
+                            Name
+                        </th>
+
+                        <th
+                            style="min-width: 160px;"
+                            data-sort-field="mobile_number"
+                        >
+                            Mobile
+                        </th>
+
+                        <th
+                            style="min-width: 150px;"
+                            data-sort-field="status_name"
+                        >
+                            Status
+                        </th>
+
+                        <th
+                            class="text-nowrap"
+                            style="min-width: 190px;"
+                        >
+                            Activity
+                        </th>
+
+                        <th
+                            style="min-width: 150px;"
+                            data-sort-field="source_name"
+                        >
+                            Source
+                        </th>
+
+                        <th
+                            style="min-width: 170px;"
+                            data-sort-field="owner_name"
+                        >
+                            Owner
+                        </th>
+
+                        <th
+                            style="min-width: 280px;"
+                            data-sort-field="latest_comment"
+                        >
+                            Latest Comment
+                        </th>
+
+                        <th
+                            style="min-width: 165px;"
+                            data-sort-field="created_at"
+                        >
+                            Created
+                        </th>
+
+                        <th
+                            style="min-width: 165px;"
+                            data-sort-field="updated_at"
+                        >
+                            Modified
+                        </th>
+
+                        <th
+                            style="min-width: 165px;"
+                            data-sort-field="assigned_at"
+                        >
+                            Assigned
+                        </th>
+
+                        <th
+                            class="text-center text-nowrap"
+                            style="min-width: 130px;"
+                        >
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody data-lead-table-body>
+                    <tr>
+                        <td
+                            colspan="12"
+                            class="text-center py-5"
+                        >
+                            <span
+                                class="spinner-border spinner-border-sm me-2"
+                                role="status"
+                            ></span>
+
+                            Loading records...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div
+            class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3"
+        >
+            <div class="d-flex flex-wrap align-items-center gap-3">
+
+                <div class="d-flex align-items-center gap-2">
+                    <label
+                        class="mb-0 text-muted"
+                        for="{{ table_id }}PageSize"
+                    >
+                        Rows
+                    </label>
+
+                    <select
+                        class="form-select form-select-sm"
+                        id="{{ table_id }}PageSize"
+                        style="width: 90px;"
+                        data-page-size
+                    >
+                        <option value="10">
+                            10
+                        </option>
+
+                        <option
+                            value="25"
+                            selected
+                        >
+                            25
+                        </option>
+
+                        <option value="50">
+                            50
+                        </option>
+
+                        <option value="100">
+                            100
+                        </option>
+                    </select>
+                </div>
+
+                <div
+                    class="text-muted"
+                    data-table-info
+                >
+                    Showing 0 to 0 of 0 records
+                </div>
+
+            </div>
+
+            <nav aria-label="Lead pagination">
+                <ul
+                    class="pagination pagination-sm mb-0"
+                    data-table-pagination
+                ></ul>
+            </nav>
+        </div>
+
+    </div>
+</div>

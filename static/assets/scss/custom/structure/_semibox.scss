@@ -1,0 +1,134 @@
+// menu.scss
+
+[data-layout="semibox"] {
+    #page-topbar {
+        inset: var(--#{$prefix}semibox-width);
+        bottom: auto;
+        border-radius: var(--#{$prefix}border-radius);
+        transition: $transition-base;
+        &.topbar-sticky {
+            top: 0;
+        }
+        .navbar-logo-box{
+            border-radius: var(--#{$prefix}border-radius) 0 0 var(--#{$prefix}border-radius);
+        }
+    }
+    .sidebar-left {
+        &.horizontal-sidebar {
+            display: none;
+        }
+        top: calc(var(--#{$prefix}app-header-height) + var(--#{$prefix}semibox-width) + var(--#{$prefix}semibox-width));
+        bottom: var(--#{$prefix}semibox-width);
+        left: var(--#{$prefix}semibox-width);
+        border-radius: var(--#{$prefix}border-radius);
+        transition: $transition-base;
+
+        &.sidebar-sticky {
+            top: calc(var(--#{$prefix}app-header-height) + var(--#{$prefix}semibox-width));
+        }
+    }
+    .footer {
+        right: 0.9rem;
+        left: calc(var(--#{$prefix}sidebar-width) + var(--#{$prefix}semibox-width) + 1rem);
+        border-radius: var(--#{$prefix}border-radius) var(--#{$prefix}border-radius) 0 0;
+        @include media-breakpoint-down(lg) {
+            left: 16px;
+            right: 16px;
+        }
+    }
+    .main-content {
+        @include media-breakpoint-up(lg) {
+            margin-left: calc(var(--#{$prefix}sidebar-width) + var(--#{$prefix}semibox-width));
+        }
+    }
+    &[data-sidebar="small"] {
+        .main-content {
+            margin-left: calc(var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}semibox-width));
+        }
+        .footer {
+            left: calc(var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}semibox-width) + 1rem);
+        }
+    }
+    .page-title-box {
+        padding-top: 1rem;
+    }
+    &[data-sidebar="medium"] {
+        .main-content {
+            @include media-breakpoint-up(lg) {
+                margin-left: calc(var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}semibox-width));
+            }
+        }
+        .footer {
+            @include media-breakpoint-up(lg) {
+                left: calc(var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}semibox-width) + 14.4px);
+            }
+        }
+    }
+    &[data-content-width="boxed"] {
+        .sidebar-left {
+            @include media-breakpoint-up(xl) {
+                left: calc(var(--#{$prefix}boxed-layout-sm-width) + var(--#{$prefix}semibox-width));
+            }
+            @include media-breakpoint-up(xxl) {
+                left: calc(var(--#{$prefix}boxed-layout-width) + var(--#{$prefix}semibox-width));
+            }
+        }
+        .main-content {
+            margin-left: calc(var(--#{$prefix}sidebar-width) + var(--#{$prefix}semibox-width));
+        }
+        .footer {
+            @include media-breakpoint-up(xl) {
+                left: calc(
+                    var(--#{$prefix}sidebar-width) + var(--#{$prefix}semibox-width) +
+                        var(--#{$prefix}boxed-layout-sm-width) + 1rem
+                );
+                right: calc(var(--#{$prefix}boxed-layout-sm-width) + var(--#{$prefix}semibox-width));
+            }
+            @include media-breakpoint-up(xxl) {
+                left: calc(
+                    var(--#{$prefix}sidebar-width) + var(--#{$prefix}semibox-width) +
+                        var(--#{$prefix}boxed-layout-width) + 1rem
+                );
+                right: calc(var(--#{$prefix}boxed-layout-width) + var(--#{$prefix}semibox-width));
+            }
+        }
+        &[data-sidebar="small"] {
+            .main-content {
+                margin-left: calc(var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}semibox-width));
+            }
+            .footer {
+                @include media-breakpoint-up(xl) {
+                    left: calc(
+                        var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}semibox-width) +
+                            var(--#{$prefix}boxed-layout-sm-width) + 1rem
+                    );
+                }
+                @include media-breakpoint-up(xxl) {
+                    left: calc(
+                        var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}semibox-width) +
+                            var(--#{$prefix}boxed-layout-width) + 1rem
+                    );
+                }
+            }
+        }
+        &[data-sidebar="medium"] {
+            .main-content {
+                margin-left: calc(var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}semibox-width));
+            }
+            .footer {
+                @include media-breakpoint-up(xl) {
+                    left: calc(
+                        var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}semibox-width) +
+                            var(--#{$prefix}boxed-layout-sm-width) + 1rem
+                    );
+                }
+                @include media-breakpoint-up(xxl) {
+                    left: calc(
+                        var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}semibox-width) +
+                            var(--#{$prefix}boxed-layout-width) + 1rem
+                    );
+                }
+            }
+        }
+    }
+}

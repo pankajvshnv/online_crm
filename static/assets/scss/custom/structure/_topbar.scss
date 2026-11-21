@@ -1,0 +1,192 @@
+// topbar.scss
+
+#page-topbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1002;
+    background-color: var(--#{$prefix}secondary-bg);
+    .navbar-header {
+        display: flex;
+        align-items: center;
+        margin: 0 auto;
+        height: var(--#{$prefix}app-header-height);
+        padding: 0;
+        .navbar-logo-box {
+            position: relative;
+            padding: 0 1.5rem;
+            width: var(--#{$prefix}sidebar-width);
+            background: var(--#{$prefix}secondary-bg);
+
+            @include media-breakpoint-down(md) {
+                width: var(--#{$prefix}sidebar-medium-width) !important;
+
+                .logo-lg {
+                    display: none;
+                }
+                .logo-sm {
+                    display: block !important;
+                }
+            }
+            .top-icon{
+                &:hover,
+                &:active{
+                    background-color: transparent !important;
+                    border-color: transparent !important;
+                    
+                }
+            }
+            #sidebar-btn {
+                position: absolute;
+                right: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            .logo {
+                line-height: var(--#{$prefix}app-header-height);
+                .logo-sm {
+                    display: none;
+                }
+            }
+        }
+
+        .menu-sm {
+            width: calc(100% - var(--#{$prefix}sidebar-width));
+            @include media-breakpoint-down(md) {
+                width: 100%;
+            }
+            .contact-widget {
+                &::after {
+                    content: "";
+                    position: absolute;
+                    top: 50%;
+                    right: -30px;
+                    width: 100px;
+                    height: 1px;
+                    background: linear-gradient(to right, transparent, #b3ff00);
+                    transform: rotate(30deg);
+                }
+            }
+            .activities {
+                z-index: 1000;
+            }
+            .notification-item {
+                .d-flex {
+                    padding: 0.75rem 1rem;
+                    transition: $transition-base;
+                    &:hover {
+                        background-color: var(--#{$prefix}light);
+                    }
+                }
+            }
+        }
+    }
+}
+.navbar-logo-box{
+    .logo-light {
+        display: none;
+    }
+}
+.app-search {
+    .form-control {
+        padding-left: 40px;
+        padding-right: 20px;
+        box-shadow: none;
+        position: relative;
+    }
+    svg {
+        position: absolute;
+        z-index: 10;
+        line-height: 38px;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: 18px;
+        width: 18px;
+        fill: $text-muted;
+    }
+}
+.admin-user-info{
+    .admin-name{
+        color: $header-item-color;
+    }
+}
+.top-icon {
+    i {
+        color: $header-item-color;
+    }
+    &:hover,
+    &:active {
+        background-color: var(--#{$prefix}tertiary-bg);
+        border-color: var(--#{$prefix}tertiary-bg) !important;
+    }
+}
+[data-sidebar="small"]{
+    .menu-sm {
+        width: calc(100% - var(--#{$prefix}sidebar-collapsed-width) - 3.5rem) !important;
+    }
+    .navbar-logo-box {
+        width: var(--#{$prefix}sidebar-collapsed-width) !important;
+        .logo {
+            .logo-sm {
+                display: inline-block !important;
+            }
+        }
+        #sidebar-btn {
+            right: -50px !important;
+        }
+    }
+}
+[data-sidebar="medium"] {
+    .menu-sm {
+        width: calc(100% - var(--#{$prefix}sidebar-medium-width) - 3.5rem) !important;
+    }
+    .navbar-logo-box {
+        width: var(--#{$prefix}sidebar-medium-width) !important;
+        #sidebar-btn {
+            right: -50px !important;
+        }
+    }
+}
+
+// Dark
+[data-topbar-color="dark"] {
+    #page-topbar {
+        background: $body-secondary-bg-dark;
+        .app-search .form-control {
+            background-color: $light-dark;
+            border-color: $border-color-dark;
+            &:focus {
+                color: $body-color-dark;
+                border-color: $primary;
+            }
+            &::placeholder {
+                color: $body-color-dark;
+                opacity: 0.75;
+            }
+        }
+        .admin-user-info {
+            border-color: $border-color-dark !important;
+            .avatar {
+                background-color: $light-dark;
+            }
+        }
+        .top-icon {
+            &:hover,
+            &:active {
+                background-color: $light-dark;
+                border-color: $light-dark !important;
+            }
+        }
+    }
+    .navbar-logo-box {
+        background: $body-secondary-bg-dark !important;
+    }
+    .logo-light {
+        display: block !important;
+    }
+    .logo-dark {
+        display: none;
+    }
+}

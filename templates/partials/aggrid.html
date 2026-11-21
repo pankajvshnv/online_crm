@@ -1,0 +1,306 @@
+{% set grid_id = grid_id|default('clientosGrid') %}
+{% set page_size = page_size|default(10) %}
+{% set selected_page_size = page_size|string %}
+{% set wrapper_attrs = grid_wrapper_attrs|default({}) %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="clientos-grid-wrap {{ grid_wrapper_class|default('') }}" id="{{ grid_id }}Wrap"
+             {% for attr, value in wrapper_attrs.items() %}
+             {{ attr }}="{{ value }}"
+             {% endfor %}>
+
+
+           <!-- Filter Section -->
+{% if toolbar_position|default('default') == 'top_with_search' %}
+
+<div class="clientos-grid-filterbar mb-3 d-flex justify-content-between">
+    <div class="d-flex flex-wrap gap-2 flex-grow-1">
+        {% for button in toolbar_buttons|default([]) %}
+            {% if button.type|default('link') == 'button' %}
+            {% set button_attrs = button.attrs|default({}) %}
+    <button
+    type="button"
+    class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center"
+    data-source-id="{{ button.source_id }}"
+    data-source-name="{{ button.source_name }}"
+    data-pending-limit="{{ button.pending_lead_limit }}"
+    data-daily-limit="{{ button.daily_lead_limit }}"
+    data-fetch-limit="{{ button.fetch_lead_limit }}"
+>
+    <span class="d-inline-flex align-items-center justify-content-center me-3">
+        <i class="mdi mdi-cloud-download-outline fs-2 lh-1"></i>
+    </span>
+
+    <span class="d-inline-flex flex-column align-items-center justify-content-center text-center">
+        <span class="fw-medium">
+            {{ button.source_name }}
+        </span>
+
+        <small>
+            {{ button.used_count }}/{{ button.daily_lead_limit }}
+        </small>
+    </span>
+</button>
+            {% else %}
+            {% set button_attrs = button.attrs|default({}) %}
+            <a href="{{ button.url }}"
+               class="{{ button.class|default('btn btn-outline-primary') }}"
+               {% for attr, value in button_attrs.items() %}
+               {{ attr }}="{{ value }}"
+               {% endfor %}>
+                {% if button.icon %}
+                <i class="{{ button.icon }} me-1"></i>
+                {% endif %}
+                {{ button.label }}
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="clientos-grid-search-field ms-auto" style="max-width: 360px; width: 360px;">
+        <label class="form-label" for="{{ grid_id }}Search">Search</label>
+        <div class="clientos-grid-search-box">
+            <i class="mdi mdi-magnify"></i>
+            <input
+                type="search"
+                class="form-control"
+                id="{{ grid_id }}Search"
+                placeholder="Search visible table data"
+                data-grid-search>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="clientos-grid-filterbar mb-3 d-flex justify-content-between 2">
+    {% for filter in filters|default([]) %}
+    <div class="clientos-grid-filter-field">
+        <label class="form-label">{{ filter.label }}</label>
+        <select class="form-select clientos-grid-filter" data-field="{{ filter.name }}">
+            <option value="" {{ 'selected' if not filter.default else '' }}>
+                {{ filter.placeholder|default('All ' ~ filter.label) }}
+            </option>
+
+            {% for option in filter.options %}
+                {% if option is mapping %}
+                <option value="{{ option.value }}" {{ 'selected' if filter.default == option.value else '' }}>
+                    {{ option.label }}
+                </option>
+                {% else %}
+                <option value="{{ option }}" {{ 'selected' if filter.default == option else '' }}>
+                    {{ option }}
+                </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+
+    <div class="clientos-grid-filter-spacer"></div>
+
+    
+
+    <div class="clientos-grid-filter-actions">
+       {% if toolbar_position|default('default') != 'top_with_search' %}
+<div class="clientos-grid-counts">
+    <span class="badge bg-primary-subtle text-primary" data-grid-total>Total: 0</span>
+
+    {% if show_status_counts|default(true) %}
+    <span class="badge bg-success-subtle text-success" data-grid-active>Active: 0</span>
+    <span class="badge bg-warning-subtle text-warning" data-grid-inactive>Inactive: 0</span>
+    {% endif %}
+
+    <span class="badge bg-info-subtle text-info d-none" data-grid-selected>Selected: 0</span>
+</div>
+{% endif %}
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-light" data-grid-reset>
+                <i class="mdi mdi-refresh me-1"></i> Reset Filter
+            </button>
+
+            {% if bulk_delete_url %}
+            <button type="button" class="btn btn-outline-danger" data-grid-bulk-delete disabled>
+                <i class="mdi mdi-trash-can-outline me-1"></i> Delete Selected
+            </button>
+            {% endif %}
+
+            {% if add_url %}
+            <a href="{{ add_url }}" class="btn btn-outline-primary">
+                <i class="{{ add_icon|default('mdi mdi-plus') }} me-1"></i> {{ add_label|default('Add New') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+
+</div>
+
+
+
+
+{% else %}
+
+
+<div class="clientos-grid-filterbar mb-3 d-flex justify-content-between 3">
+
+    {% for filter in filters|default([]) %}
+    <div class="clientos-grid-filter-field">
+        <label class="form-label">{{ filter.label }}</label>
+        <select class="form-select clientos-grid-filter" data-field="{{ filter.name }}">
+            <option value="" {{ 'selected' if not filter.default else '' }}>
+                {{ filter.placeholder|default('All ' ~ filter.label) }}
+            </option>
+
+            {% for option in filter.options %}
+                {% if option is mapping %}
+                <option value="{{ option.value }}" {{ 'selected' if filter.default == option.value else '' }}>
+                    {{ option.label }}
+                </option>
+                {% else %}
+                <option value="{{ option }}" {{ 'selected' if filter.default == option else '' }}>
+                    {{ option }}
+                </option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+
+    <div class="clientos-grid-filter-spacer"></div>
+
+    <div class="clientos-grid-search-field">
+        <label class="form-label" for="{{ grid_id }}Search">Search</label>
+        <div class="clientos-grid-search-box">
+            <i class="mdi mdi-magnify"></i>
+            <input
+                type="search"
+                class="form-control"
+                id="{{ grid_id }}Search"
+                placeholder="Search visible table data"
+                data-grid-search>
+        </div>
+    </div>
+
+    <div class="clientos-grid-filter-actions">
+        <div class="clientos-grid-counts">
+            <span class="badge bg-primary-subtle text-primary" data-grid-total>Total: 0</span>
+            {% if show_status_counts|default(true) %}
+            <span class="badge bg-success-subtle text-success" data-grid-active>Active: 0</span>
+            <span class="badge bg-warning-subtle text-warning" data-grid-inactive>Inactive: 0</span>
+            {% endif %}
+            <span class="badge bg-info-subtle text-info d-none" data-grid-selected>Selected: 0</span>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-light" data-grid-reset>
+                <i class="mdi mdi-refresh me-1"></i> Reset Filter
+            </button>
+
+            {% if bulk_delete_url %}
+            <button type="button" class="btn btn-outline-danger" data-grid-bulk-delete disabled>
+                <i class="mdi mdi-trash-can-outline me-1"></i> Delete Selected
+            </button>
+            {% endif %}
+
+            {% for button in toolbar_buttons|default([]) %}
+                {% if button.type|default('link') == 'button' %}
+                {% set button_attrs = button.attrs|default({}) %}
+                <button type="button"
+                        class="{{ button.class|default('btn btn-outline-primary') }}"
+                        {% for attr, value in button_attrs.items() %}
+                        {{ attr }}="{{ value }}"
+                        {% endfor %}>
+                    {% if button.icon %}
+                    <i class="{{ button.icon }} me-1"></i>
+                    {% endif %}
+                    {{ button.label }}
+                </button>
+                {% else %}
+                {% set button_attrs = button.attrs|default({}) %}
+                <a href="{{ button.url }}"
+                   class="{{ button.class|default('btn btn-outline-primary') }}"
+                   {% for attr, value in button_attrs.items() %}
+                   {{ attr }}="{{ value }}"
+                   {% endfor %}>
+                    {% if button.icon %}
+                    <i class="{{ button.icon }} me-1"></i>
+                    {% endif %}
+                    {{ button.label }}
+                </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if add_url %}
+            <a href="{{ add_url }}" class="btn btn-outline-primary">
+                <i class="{{ add_icon|default('mdi mdi-plus') }} me-1"></i> {{ add_label|default('Add New') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+{% endif %}
+
+            <!-- Table Section -->
+            <div class="clientos-grid-panel">
+                <div class="ag-theme-quartz clientos-ag-grid clientos-users-grid" data-grid-table></div>
+                <div class="clientos-grid-footer">
+                    <div class="clientos-custom-page-size">
+                        <label for="{{ grid_id }}PageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="{{ grid_id }}PageSize" data-grid-page-size>
+                            {% for size in page_size_options|default([10, 20, 50, 100]) %}
+                                {% if size is mapping %}
+                                <option value="{{ size.value }}" {{ 'selected' if size.value|string == selected_page_size else '' }}>{{ size.label }}</option>
+                                {% else %}
+                                <option value="{{ size }}" {{ 'selected' if size|string == selected_page_size else '' }}>{{ size }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="clientos-page-summary" data-grid-row-summary>0 to 0 of 0</div>
+                    <div class="clientos-page-controls">
+                        <button type="button" class="clientos-page-btn" data-grid-first aria-label="First page">
+                            <i class="mdi mdi-page-first"></i>
+                        </button>
+                        <button type="button" class="clientos-page-btn" data-grid-prev aria-label="Previous page">
+                            <i class="mdi mdi-chevron-left"></i>
+                        </button>
+                        <span class="clientos-page-status" data-grid-page-status>Page 1 of 1</span>
+                        <button type="button" class="clientos-page-btn" data-grid-next aria-label="Next page">
+                            <i class="mdi mdi-chevron-right"></i>
+                        </button>
+                        <button type="button" class="clientos-page-btn" data-grid-last aria-label="Last page">
+                            <i class="mdi mdi-page-last"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script type="application/json" class="clientos-grid-config">
+                {{ {
+                    "gridId": grid_id,
+                    "data": data|default([]),
+                    "columns": columns|default([]),
+                    "filters": filters|default([]),
+                    "pageSize": page_size,
+                    "rowIdField": row_id_field|default(action_id_field|default("id")),
+                    "statusField": status_field|default("status"),
+                    "activeValues": active_values|default(["1", 1, "Active", "active", true]),
+                    "actions": {
+                        "viewUrl": view_url|default(""),
+                        "editUrl": edit_url|default(""),
+                        "deleteUrl": delete_url|default(""),
+                        "bulkDeleteUrl": bulk_delete_url|default(""),
+                        "idField": action_id_field|default(row_id_field|default("id"))
+                    }
+                }|tojson }}
+                
+            </script>
+            
+        </div>
+    </div>
+</div>

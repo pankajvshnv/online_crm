@@ -1,0 +1,2567 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="all-leads-page">
+
+    {% include 'leads/partials/all_leads_toolbar.html' %}
+
+    <div class="card all-leads-card">
+        <div class="card-body">
+
+            {% include 'leads/partials/all_leads_filters.html' %}
+
+            {% include 'leads/partials/all_leads_table.html' %}
+
+           
+
+        </div>
+    </div>
+ {% include 'leads/partials/all_leads_pagination.html' %}
+</div>
+
+{% include 'leads/partials/all_leads_activity_modals.html' %}
+
+{% include 'leads/partials/all_leads_action_modals.html' %}
+
+{% include 'leads/partials/all_leads_date_modals.html' %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.CAN_EDIT_LEAD = {{ 'true' if has_permission('leads', 'edit') else 'false' }};
+window.CAN_DISPOSE_LEAD = {{ 'true' if has_permission('leads', 'dispose') else 'false' }};
+window.CAN_ADD_CONTACT = {{ 'true' if has_permission('contacts', 'add') else 'false' }};
+window.CAN_VIEW_CONTACT = {{ 'true' if (has_permission('contacts', 'view') or has_permission('contacts', 'edit')) else 'false' }};
+window.CAN_CREATE_FOLLOWUP = {{ 'true' if has_permission('followups', 'create') else 'false' }};
+window.CAN_CREATE_FREE_TRIAL = {{ 'true' if has_permission('free_trials', 'create') else 'false' }};
+
+$(document).ready(function () {
+    let currentPage = 1;
+    let currentPageSize = 10;
+
+    function getFilterParams(overridePage, overridePageSize) {
+        const urlParams = new URLSearchParams();
+
+        const callStatusEl = document.getElementById('callStatusFilter');
+        const statusEl = document.getElementById('statusFilter');
+        const sourceEl = document.getElementById('sourceFilter');
+        const ownerEl = document.getElementById('ownerFilter');
+        const disposedEl = document.getElementById('disposedFilter');
+        const searchEl = document.getElementById('leadSearch');
+        const pageSizeEl = document.getElementById('pageSize');
+
+        const createdFromEl = document.getElementById('createdDateFrom');
+        const createdToEl = document.getElementById('createdDateTo');
+        const modifiedFromEl = document.getElementById('modifiedDateFrom');
+        const modifiedToEl = document.getElementById('modifiedDateTo');
+        const assignedFromEl = document.getElementById('assignedDateFrom');
+        const assignedToEl = document.getElementById('assignedDateTo');
+
+        const callStatus = callStatusEl ? callStatusEl.value : "";
+        const status = statusEl ? statusEl.value : "";
+        const source = sourceEl ? sourceEl.value : "";
+        const owner = ownerEl ? ownerEl.value : "";
+        const disposed = disposedEl ? disposedEl.value : "0";
+        const search = searchEl ? searchEl.value.trim() : "";
+        
+        currentPage = overridePage !== undefined ? overridePage : currentPage;
+        currentPageSize = overridePageSize !== undefined ? overridePageSize : (pageSizeEl ? parseInt(pageSizeEl.value) || 10 : 10);
+        window.currentPage = currentPage;
+        window.currentPageSize = currentPageSize;
+
+        if (callStatus !== "") urlParams.set('call_status', callStatus);
+        if (status !== "") urlParams.set('status', status);
+        if (source) urlParams.set('source', source);
+        if (owner && owner !== "") {
+            urlParams.set('owner', owner);
+        } else {
+            urlParams.set('owner', 'all');
+        }
+        if (disposed !== "") urlParams.set('disposed', disposed);
+        if (search) urlParams.set('search', search);
+
+        if (createdFromEl && createdFromEl.value) urlParams.set('created_from', createdFromEl.value);
+        if (createdToEl && createdToEl.value) urlParams.set('created_to', createdToEl.value);
+        if (modifiedFromEl && modifiedFromEl.value) urlParams.set('modified_from', modifiedFromEl.value);
+        if (modifiedToEl && modifiedToEl.value) urlParams.set('modified_to', modifiedToEl.value);
+        if (assignedFromEl && assignedFromEl.value) urlParams.set('assigned_from', assignedFromEl.value);
+        if (assignedToEl && assignedToEl.value) urlParams.set('assigned_to', assignedToEl.value);
+
+        urlParams.set('page', currentPage);
+        urlParams.set('page_size', currentPageSize);
+
+        return urlParams;
+    }
+
+    window.applyDateFilter = function() {
+        if (typeof fetchTableDataAJAX === 'function') {
+            fetchTableDataAJAX(1);
+        }
+    };
+
+    window.clearDateFilter = function(type) {
+        var ids = {
+            created: ['createdDateFrom', 'createdDateTo'],
+            modified: ['modifiedDateFrom', 'modifiedDateTo'],
+            assigned: ['assignedDateFrom', 'assignedDateTo']
+        };
+        (ids[type] || []).forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                if (el._flatpickr) {
+                    el._flatpickr.clear();
+                } else {
+                    el.value = '';
+                }
+            }
+        });
+        if (typeof fetchTableDataAJAX === 'function') {
+            fetchTableDataAJAX(1);
+        }
+    };
+
+    // Date Range Modals now use standard HTML5 Bootstrap type="date" inputs
+
+
+    function renderTableRows(rows) {
+        const tbody = document.getElementById('leadTableBody');
+        if (!tbody) return;
+
+        const selectAllCb = document.getElementById('selectAllLeads');
+        if (selectAllCb) {
+            selectAllCb.checked = false;
+        }
+
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center py-4 text-muted">
+                        No leads found.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let html = '';
+        const savedLastUuid = window.lastDialedLeadUuid;
+
+        rows.forEach(function (lead) {
+            const statusTone = lead.status_tone ? lead.status_tone : (lead.status_color ? lead.status_color : 'slate');
+            const isCalled = parseInt(lead.call_status) === 1;
+            const isLast = lead.is_last_dialed || (Boolean(savedLastUuid) && lead.lead_uuid === savedLastUuid);
+
+            const btnClass = (isCalled || isLast) ? 'btn-outline-success' : 'btn-outline-primary';
+            let phoneIcon = '<i class="mdi mdi-phone-outline"></i>';
+            let displayNum = lead.mobile_display || lead.decrypted_mobile || lead.mobile_number || 'NA';
+            let btnTitle = `Click to Call ${lead.name || ''}`;
+
+            if (isLast) {
+                phoneIcon = '<span class="spinner-grow spinner-grow-sm text-success last-dialed-dot me-1" role="status" style="width: 8px; height: 8px;"></span>';
+                btnTitle = `Last Dialed Call: ${displayNum}`;
+            } else if (isCalled) {
+                phoneIcon = '<i class="mdi mdi-phone-check-outline me-1"></i>';
+                btnTitle = `Called: ${displayNum}`;
+            }
+
+            html += `
+                <tr>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" value="${lead.lead_uuid}">
+                    </td>
+
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <button
+                                type="button"
+                                class="btn btn-soft-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center me-1"
+                                style="width: 30px; height: 30px;"
+                                title="View Lead Timeline"
+                                data-lead-uuid="${lead.lead_uuid}"
+                                data-client-code="${lead.client_code || ''}"
+                                data-lead-name="${lead.name && lead.name !== 'NA' ? lead.name : ''}"
+                                onclick="openTargetModal('#timelineModal', '${lead.lead_uuid}', this)"
+                            >
+                                <i class="mdi mdi-clock-outline fs-5"></i>
+                            </button>
+                            <span class="fw-semibold ms-1">
+                                ${lead.client_code || ''}
+                            </span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="fw-medium">${lead.name || 'NA'}</div>
+                                <small class="text-muted">${lead.email || ''}</small>
+                            </div>
+                            ${window.CAN_EDIT_LEAD ? `
+                            <button type="button" class="btn btn-soft-secondary btn-sm rounded-circle ms-2 d-inline-flex align-items-center justify-content-center" style="width: 30px; height: 30px;" data-bs-toggle="tooltip" title="Edit Lead Info" data-lead-uuid="${lead.lead_uuid}" data-client-code="${lead.client_code || lead.id || ''}" data-lead-name="${lead.name || ''}" data-email="${lead.email || ''}" data-address="${lead.address || ''}" data-state="${lead.state || ''}" data-city="${lead.city || ''}" onclick="openQuickEditLeadModal(this)">
+                                <i class="mdi mdi-pencil-outline fs-6"></i>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </td>
+
+                    <td>
+                        ${lead.click_to_call_active !== false ? `
+                        <button type="button" class="btn ${btnClass} btn-sm btn-click-to-call d-inline-flex align-items-center gap-1" data-lead-uuid="${lead.lead_uuid}" data-lead-name="${lead.name || ''}" onclick="makeClickToCall(this)" title="${btnTitle}">
+                            ${phoneIcon}
+                            ${lead.mobile_display || lead.decrypted_mobile || lead.mobile_number || 'NA'}
+                        </button>
+                        ` : `
+                        <span class="fw-medium text-dark">
+                            ${lead.mobile_display || lead.decrypted_mobile || lead.mobile_number || 'NA'}
+                        </span>
+                        `}
+                    </td>
+
+                    <td>
+                        <span class="lead-tone-chip lead-tone-${statusTone}">
+                            ${lead.status_name || 'No Status'}
+                        </span>
+                    </td>
+
+                    <td class="text-nowrap">
+                        ${window.CAN_ADD_CONTACT ? `
+                        <button type="button" class="btn btn-soft-primary btn-sm rounded-circle me-1" style="width: 32px; height: 32px;" data-bs-toggle="tooltip" data-bs-placement="top" data-lead-uuid="${lead.lead_uuid}" data-lead-name="${lead.name || ''}" data-email="${lead.email || ''}" data-status-name="${lead.status_name || ''}" onclick="openSaveContactModalFromBtn(this)" title="Add Contact">
+                            <i class="mdi mdi-account-plus-outline fs-5"></i>
+                        </button>
+                        ` : ''}
+                        ${window.CAN_CREATE_FOLLOWUP ? `
+                        <button type="button" class="btn btn-soft-warning btn-sm rounded-circle me-1" style="width: 32px; height: 32px;" title="Add Follow-up" data-bs-toggle="tooltip" data-bs-placement="top" data-lead-uuid="${lead.lead_uuid}" data-client-code="${lead.client_code || ''}" data-lead-name="${lead.name && lead.name !== 'NA' ? lead.name : ''}" data-email="${lead.email && lead.email !== 'NA' ? lead.email : ''}" data-address="${lead.address && lead.address !== 'NA' ? lead.address : ''}" onclick="openTargetModal('#addFollowupModal', '${lead.lead_uuid}', this)">
+                            <i class="mdi mdi-calendar-clock-outline fs-5"></i>
+                        </button>
+                        ` : ''}
+                        ${window.CAN_CREATE_FREE_TRIAL ? `
+                        <button type="button" class="btn btn-soft-info btn-sm rounded-circle me-1" style="width: 32px; height: 32px;" title="Add Free Trial" data-bs-toggle="tooltip" data-bs-placement="top" onclick="openTargetModal('#addFreeTrialModal', '${lead.lead_uuid}')">
+                            <i class="mdi mdi-flask-outline fs-5"></i>
+                        </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-soft-success btn-sm rounded-circle" style="width: 32px; height: 32px;" title="Create Sales Order" data-bs-toggle="tooltip" data-bs-placement="top" onclick="openTargetModal('#addSalesOrderModal', '${lead.lead_uuid}')">
+                            <i class="mdi mdi-cash-multiple fs-5"></i>
+                        </button>
+                    </td>
+
+                    <td>${lead.source_name || ''}</td>
+
+                    <td class="text-center text-nowrap">
+                        ${(window.CAN_EDIT_LEAD || window.CAN_DISPOSE_LEAD) ? `
+                        <button type="button" class="btn btn-sm btn-primary btn-open-manage-modal" data-bs-toggle="modal" data-bs-target="#manageLeadModal" data-lead-uuid="${lead.lead_uuid}" data-client-code="${lead.client_code || ''}" data-lead-name="${lead.name || ''}" data-status-id="${lead.status_id || lead.lead_status || ''}" data-status-name="${lead.status_name || ''}" data-has-contact="${lead.has_contact || 0}" data-is-disposed="${lead.is_disposed || 0}" data-latest-comment="${(lead.latest_comment && lead.latest_comment !== 'No comment') ? lead.latest_comment : ((lead.comment && lead.comment !== 'No comment') ? lead.comment : '')}">
+                            <i class="mdi mdi-account-edit-outline me-1"></i>
+                            Add Response
+                        </button>
+                        ` : `<span class="text-muted fs-12">-</span>`}
+                    </td>
+
+                    <td>${lead.owner_name || 'Unassigned'}</td>
+
+                    <td class="lead-comment-col align-middle">
+                        ${(() => {
+                            const rawComment = (lead.comment && lead.comment.trim() !== '' && lead.comment.trim() !== 'No comment') 
+                                ? lead.comment.trim() 
+                                : ((lead.latest_comment && lead.latest_comment.trim() !== '' && lead.latest_comment.trim() !== 'No comment') 
+                                    ? lead.latest_comment.trim() 
+                                    : '');
+                            if (!rawComment) {
+                                return '<span class="text-muted fs-12">No comment</span>';
+                            }
+                            const escapeStr = function(str) {
+                                return String(str)
+                                    .replace(/&/g, '&amp;')
+                                    .replace(/</g, '&lt;')
+                                    .replace(/>/g, '&gt;')
+                                    .replace(/"/g, '&quot;')
+                                    .replace(/'/g, '&#039;');
+                            };
+                            const escapedFull = escapeStr(rawComment);
+                            const byUser = lead.latest_comment_by || lead.owner_name || '';
+                            let metaText = '';
+                            if (lead.updated_at && byUser) {
+                                metaText = `${lead.updated_at} • By: ${byUser}`;
+                            } else if (lead.updated_at) {
+                                metaText = lead.updated_at;
+                            } else if (byUser) {
+                                metaText = `By: ${byUser}`;
+                            }
+                            const dateHtml = metaText ? `<small class="text-muted d-block fs-11 mt-1">${metaText}</small>` : '';
+                            const isLong = rawComment.length > 30;
+
+                            return `
+                                <div style="max-width: 235px;">
+                                    <div class="d-flex align-items-center gap-1" style="max-width: 235px;">
+                                        <span class="text-truncate fs-13 text-dark flex-grow-1" 
+                                              style="max-width: 215px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" 
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-placement="top" 
+                                              data-bs-custom-class="lead-comment-tooltip"
+                                              title="${escapedFull}">
+                                            ${escapedFull}
+                                        </span>
+                                        ${isLong ? `
+                                        <i class="mdi mdi-information-outline text-primary fs-14 flex-shrink-0" 
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top" 
+                                           data-bs-custom-class="lead-comment-tooltip"
+                                           title="${escapedFull}" 
+                                           style="cursor: pointer;"></i>
+                                        ` : ''}
+                                    </div>
+                                    ${dateHtml}
+                                </div>
+                            `;
+                        })()}
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+
+        // Re-initialize tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    }
+
+    function renderPagination(total, page, pageSize, totalPages) {
+        const infoEl = document.getElementById('paginationInfo');
+        const navEl = document.getElementById('paginationNav');
+
+        if (infoEl) {
+            if (total > 0) {
+                const startIndex = (page - 1) * pageSize + 1;
+                const endIndex = Math.min(page * pageSize, total);
+                infoEl.textContent = `Showing ${startIndex} to ${endIndex} of ${total} records`;
+            } else {
+                infoEl.textContent = 'Showing 0 to 0 of 0 records';
+            }
+        }
+
+        if (!navEl) return;
+
+        if (total === 0 || totalPages <= 1) {
+            navEl.innerHTML = '';
+            return;
+        }
+
+        let navHtml = '';
+
+        // Previous button
+        const prevDisabled = page <= 1 ? 'disabled' : '';
+        navHtml += `
+            <li class="page-item ${prevDisabled}">
+                <button type="button" class="page-link btn-page-nav" data-page="${page - 1}">Previous</button>
+            </li>
+        `;
+
+        // Page number buttons
+        const startPage = Math.max(1, page - 2);
+        const endPage = Math.min(totalPages, page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === page ? 'active' : '';
+            navHtml += `
+                <li class="page-item ${activeClass}">
+                    <button type="button" class="page-link btn-page-nav" data-page="${i}">${i}</button>
+                </li>
+            `;
+        }
+
+        // Next button
+        const nextDisabled = page >= totalPages ? 'disabled' : '';
+        navHtml += `
+            <li class="page-item ${nextDisabled}">
+                <button type="button" class="page-link btn-page-nav" data-page="${page + 1}">Next</button>
+            </li>
+        `;
+
+        navEl.innerHTML = navHtml;
+
+        // Bind page navigation clicks
+        navEl.querySelectorAll('.btn-page-nav').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const targetPage = parseInt(this.getAttribute('data-page'));
+                if (targetPage && targetPage >= 1 && targetPage <= totalPages && targetPage !== page) {
+                    fetchTableDataAJAX(targetPage);
+                }
+            });
+        });
+    }
+
+    function updateLeadButtons(buttonsData) {
+        if (!buttonsData || !Array.isArray(buttonsData)) return;
+
+        buttonsData.forEach(function (btn) {
+            const btnEl = document.querySelector(`.btn-fetch-lead-source[data-source-id="${btn.source_id}"]`);
+            if (!btnEl) return;
+
+            const countEl = btnEl.querySelector('.lead-button-count');
+            if (countEl) {
+                countEl.textContent = `${btn.remaining_today}/${btn.daily_lead_limit}`;
+            }
+
+            btnEl.setAttribute('title', `Available Unassigned Leads in System: ${btn.unassigned_count}`);
+            btnEl.setAttribute('data-unassigned-count', btn.unassigned_count);
+            btnEl.setAttribute('data-daily-count', btn.daily_fetched_count);
+            btnEl.setAttribute('data-pending-count', btn.pending_lead_count);
+
+            if (btn.is_limit_reached) {
+                btnEl.classList.add('disabled');
+            } else {
+                btnEl.classList.remove('disabled');
+            }
+
+            const tooltip = bootstrap.Tooltip.getInstance(btnEl);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+            new bootstrap.Tooltip(btnEl);
+        });
+    }
+
+    function showToastNotification(message, category) {
+        if (!message) return;
+        
+        let toastEl = document.getElementById('liveToast');
+        if (!toastEl) {
+            const toastContainer = document.createElement('div');
+            toastContainer.innerHTML = `
+                <div id="liveToast" class="toast position-fixed top-0 end-0 m-3 border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000" style="z-index:9999; min-width:350px;">
+                    <div class="toast-header">
+                        <i class="mdi mdi-information text-info me-2 fs-4" id="toastIcon"></i>
+                        <strong class="me-auto" id="toastTitle">Notification</strong>
+                        <small>Now</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body" id="toastBody"></div>
+                </div>
+            `;
+            document.body.appendChild(toastContainer);
+            toastEl = document.getElementById('liveToast');
+        }
+
+        const iconEl = toastEl.querySelector('#toastIcon');
+        const titleEl = toastEl.querySelector('#toastTitle');
+        const bodyEl = toastEl.querySelector('#toastBody');
+
+        if (category === 'success') {
+            if (iconEl) iconEl.className = 'mdi mdi-check-circle text-success me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Success';
+        } else if (category === 'danger' || category === 'error') {
+            if (iconEl) iconEl.className = 'mdi mdi-close-circle text-danger me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Error';
+        } else {
+            if (iconEl) iconEl.className = 'mdi mdi-alert-circle text-warning me-2 fs-4';
+            if (titleEl) titleEl.textContent = 'Warning';
+        }
+
+        if (bodyEl) bodyEl.textContent = message;
+
+        const toast = new bootstrap.Toast(toastEl, { delay: 4000, autohide: true });
+        toast.show();
+    }
+
+    function renderTableSkeleton(count) {
+        const tbody = document.getElementById('leadTableBody');
+        if (!tbody) return;
+        const numRows = Math.min(count || 10, 15);
+        let skeletonHtml = '';
+        for (let i = 0; i < numRows; i++) {
+            skeletonHtml += `
+                <tr class="crm-table-skeleton-row">
+                    <td class="align-middle text-center" style="width: 40px;">
+                        <span class="skeleton-box" style="width: 16px; height: 16px; border-radius: 4px; margin: 0 auto;"></span>
+                    </td>
+                    <td class="align-middle" style="width: 140px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="skeleton-box rounded-circle" style="width: 28px; height: 28px; flex-shrink: 0;"></span>
+                            <span class="skeleton-box" style="width: 75px; height: 14px;"></span>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="skeleton-box rounded-circle" style="width: 34px; height: 34px; flex-shrink: 0;"></span>
+                            <div style="flex: 1; min-width: 110px; max-width: 160px;">
+                                <span class="skeleton-box mb-1" style="width: 85%; height: 14px;"></span>
+                                <span class="skeleton-box" style="width: 55%; height: 10px;"></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle" style="width: 130px;">
+                        <span class="skeleton-box rounded-pill" style="width: 105px; height: 26px;"></span>
+                    </td>
+                    <td class="align-middle" style="width: 110px;">
+                        <span class="skeleton-box rounded-pill" style="width: 75px; height: 20px;"></span>
+                    </td>
+                    <td class="align-middle" style="width: 120px;">
+                        <div class="d-flex gap-1">
+                            <span class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></span>
+                            <span class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></span>
+                            <span class="skeleton-box rounded-circle" style="width: 26px; height: 26px;"></span>
+                        </div>
+                    </td>
+                    <td class="align-middle" style="width: 100px;">
+                        <span class="skeleton-box" style="width: 65px; height: 14px;"></span>
+                    </td>
+                    <td class="align-middle text-center" style="width: 120px;">
+                        <span class="skeleton-box rounded-pill" style="width: 95px; height: 26px; margin: 0 auto;"></span>
+                    </td>
+                    <td class="align-middle" style="width: 110px;">
+                        <span class="skeleton-box" style="width: 80px; height: 14px;"></span>
+                    </td>
+                    <td class="align-middle" style="min-width: 160px;">
+                        <span class="skeleton-box mb-1" style="width: 80%; height: 13px;"></span>
+                        <span class="skeleton-box" style="width: 45%; height: 10px;"></span>
+                    </td>
+                </tr>
+            `;
+        }
+        tbody.innerHTML = skeletonHtml;
+    }
+
+    function fetchTableDataAJAX(overridePage, overridePageSize, keepLastDialed) {
+        if (!keepLastDialed) {
+            window.lastDialedLeadUuid = null;
+        }
+        renderTableSkeleton(currentPageSize || 10);
+        const urlParams = getFilterParams(overridePage, overridePageSize);
+        window.history.pushState(null, '', window.location.pathname);
+
+        const filterObj = {};
+        urlParams.forEach((val, key) => {
+            filterObj[key] = val;
+        });
+
+        fetch('/api/leads/table-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(filterObj)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderTableRows(data.data);
+                renderPagination(data.total, data.page, data.page_size, data.total_pages);
+                if (data.buttons) {
+                    updateLeadButtons(data.buttons);
+                }
+
+                // Refresh tooltips on newly rendered elements
+                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                    if (!bootstrap.Tooltip.getInstance(el)) {
+                        new bootstrap.Tooltip(el);
+                    }
+                });
+            }
+        })
+        .catch(err => console.error('AJAX Error:', err));
+    }
+    window.fetchTableDataAJAX = fetchTableDataAJAX;
+
+    // Initialize pagination render on first load
+    const initialPage = {% if table_data %}{{ table_data.page }}{% else %}1{% endif %};
+    const initialPageSize = {% if table_data %}{{ table_data.page_size }}{% else %}10{% endif %};
+    const initialTotal = {% if table_data %}{{ table_data.total }}{% else %}0{% endif %};
+    const initialTotalPages = {% if table_data %}{{ table_data.total_pages }}{% else %}0{% endif %};
+
+    renderPagination(initialTotal, initialPage, initialPageSize, initialTotalPages);
+
+    // Initial AJAX fetch to replace skeleton with live lead rows
+    fetchTableDataAJAX(1);
+
+    // Event listeners for filter selects
+    document.querySelectorAll('.lead-filter-input').forEach(function (input) {
+        if (input.tagName === 'SELECT') {
+            input.addEventListener('change', function () {
+                fetchTableDataAJAX(1);
+            });
+        } else if (input.id === 'leadSearch') {
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fetchTableDataAJAX(1);
+                }
+            });
+        }
+    });
+
+    // Event listener for Page Size dropdown
+    const pageSizeEl = document.getElementById('pageSize');
+    if (pageSizeEl) {
+        pageSizeEl.addEventListener('change', function () {
+            const newSize = parseInt(this.value) || 10;
+            fetchTableDataAJAX(1, newSize);
+        });
+    }
+
+    // Reset button
+    const resetBtn = document.getElementById('btnResetFilters');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            const callStatusEl = document.getElementById('callStatusFilter');
+            const statusEl = document.getElementById('statusFilter');
+            const sourceEl = document.getElementById('sourceFilter');
+            const ownerEl = document.getElementById('ownerFilter');
+            const disposedEl = document.getElementById('disposedFilter');
+            const searchEl = document.getElementById('leadSearch');
+
+            if (callStatusEl) callStatusEl.value = "";
+            if (statusEl) statusEl.value = "no_status";
+            if (sourceEl) sourceEl.value = "";
+            if (ownerEl) ownerEl.value = "";
+            if (disposedEl) disposedEl.value = "0";
+            if (searchEl) searchEl.value = "";
+
+            fetchTableDataAJAX(1, 10);
+        });
+    }
+
+    // Fetch Lead Source buttons (AJAX fetch without page reload)
+    document.querySelectorAll('.btn-fetch-lead-source').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const sourceId = this.getAttribute('data-source-id');
+            if (!sourceId) return;
+
+            const self = this;
+            self.disabled = true;
+
+            fetch('/api/leads/fetch-from-source', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ source_id: sourceId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                self.disabled = false;
+                const category = data.success ? 'success' : 'warning';
+                showToastNotification(data.message, category);
+
+                // Instantly refresh table data, pagination, and button counters via AJAX!
+                fetchTableDataAJAX();
+            })
+            .catch(err => {
+                console.error(err);
+                self.disabled = false;
+                showToastNotification('An error occurred while fetching leads.', 'danger');
+            });
+        });
+    });
+
+    // window.makeClickToCall is centrally handled in base.html
+
+    window.openTargetModal = function (modalSelector, leadUuid, triggerBtn) {
+        if (modalSelector === '#addSalesOrderModal') {
+            openCreateSalesOrderPage(leadUuid);
+            return;
+        }
+        if (modalSelector === '#timelineModal' && leadUuid) {
+            const subtitleEl = document.getElementById('timelineModalSubtitle');
+            if (subtitleEl) {
+                let clientCode = triggerBtn ? (triggerBtn.getAttribute('data-client-code') || '') : '';
+                if (!clientCode && triggerBtn) {
+                    const row = triggerBtn.closest('tr');
+                    if (row) {
+                        const codeEl = row.querySelector('.fw-semibold');
+                        if (codeEl) clientCode = codeEl.textContent.trim();
+                    }
+                }
+                const rawCode = clientCode ? String(clientCode).replace(/^LEAD[-_\s]*/i, '') : '';
+                subtitleEl.textContent = rawCode ? `Lead Code - ${rawCode}` : 'Lead Code';
+            }
+            currentTimelineLeadUuid = leadUuid;
+            currentTimelinePage = 1;
+            fetchTimelineData(leadUuid, 1);
+        }
+        const modalEl = document.querySelector(modalSelector);
+        if (!modalEl) return;
+        const inputEl = modalEl.querySelector('input[type="hidden"]');
+        if (inputEl) inputEl.value = leadUuid;
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show(triggerBtn || undefined);
+    };
+
+    window.openSaveContactModalFromBtn = function (btn) {
+        if (!btn) return;
+        const leadUuid = btn.getAttribute('data-lead-uuid') || '';
+        const clientCode = btn.getAttribute('data-client-code') || '';
+        const leadName = btn.getAttribute('data-lead-name') || '';
+        const email = btn.getAttribute('data-email') || '';
+        const statusName = btn.getAttribute('data-status-name') || '';
+
+        const modalEl = document.getElementById('saveContactModal');
+        if (!modalEl) return;
+
+        // Subtitle
+        const subtitleEl = document.getElementById('saveContactModalSubtitle');
+        if (subtitleEl) {
+            const rawCode = clientCode ? String(clientCode).replace(/^LEAD/i, '') : '';
+            subtitleEl.textContent = rawCode
+                ? `Lead ${rawCode} • ${leadName}`
+                : `Add contact details for ${leadName || 'lead'}`;
+        }
+
+        const uuidInput = document.getElementById('saveContactLeadUuid');
+        const nameInput = document.getElementById('saveContactName');
+        const emailInput = document.getElementById('saveContactEmail');
+        const addressInput = document.getElementById('saveContactAddress');
+        const productInput = document.getElementById('saveContactProduct');
+        const planInput = document.getElementById('saveContactPlan');
+        const notesInput = document.getElementById('saveContactNotes');
+        const statusInput = document.getElementById('saveContactStatus');
+        const statusContainer = document.getElementById('saveContactStatusContainer');
+
+        const cleanLeadName = (leadName && !['NA', 'N/A', 'NONE', 'NULL'].includes(String(leadName).trim().toUpperCase())) ? String(leadName).trim() : '';
+        const cleanEmail = (email && !['NA', 'N/A', 'NONE', 'NULL'].includes(String(email).trim().toUpperCase())) ? String(email).trim() : '';
+        if (uuidInput) uuidInput.value = leadUuid;
+        if (nameInput) nameInput.value = cleanLeadName;
+        if (emailInput) emailInput.value = cleanEmail;
+        if (addressInput) addressInput.value = '';
+        if (productInput) productInput.value = '';
+        if (planInput) planInput.value = '';
+        if (notesInput) notesInput.value = '';
+
+        if (statusContainer) statusContainer.style.display = 'block';
+        if (statusInput) {
+            statusInput.classList.remove('is-invalid');
+            statusInput.classList.remove('is-valid');
+
+            if (statusName && statusName !== 'No Status') {
+                let matched = false;
+                for (let i = 0; i < statusInput.options.length; i++) {
+                    if (statusInput.options[i].text.trim().toLowerCase() === statusName.trim().toLowerCase()) {
+                        statusInput.selectedIndex = i;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) statusInput.value = '';
+            } else {
+                statusInput.value = '';
+            }
+        }
+
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show(btn);
+    };
+
+    // Dynamic Manage Lead Modal (`#manageLeadModal`) Data Binding & Validation
+    const manageModal = document.getElementById('manageLeadModal');
+    const manageStatusEl = document.getElementById('manageLeadStatus');
+    const saveResponseBtn = document.getElementById('btnSaveLeadResponse');
+
+    const disposeLeadBtn = document.getElementById('btnDisposeLead');
+
+    function validateManageLeadStatus() {
+        if (!manageStatusEl) return false;
+
+        const selectedStatus = manageStatusEl.value ? manageStatusEl.value.trim() : "";
+        const isValidStatus = selectedStatus !== "" && selectedStatus !== null && selectedStatus !== "no_status" && selectedStatus !== "all";
+
+        if (!isValidStatus) {
+            manageStatusEl.classList.add('is-invalid');
+            manageStatusEl.classList.remove('is-valid');
+            manageStatusEl.focus();
+            showToastNotification('Please select a valid Lead Status first.', 'warning');
+            return false;
+        }
+
+        manageStatusEl.classList.remove('is-invalid');
+        manageStatusEl.classList.add('is-valid');
+        return true;
+    }
+
+    function updateManageActionButtonsState() {
+        const selectedStatus = manageStatusEl ? manageStatusEl.value : "";
+        const isValidStatus = selectedStatus !== "" && selectedStatus !== null && selectedStatus !== "no_status" && selectedStatus !== "all";
+
+        if (manageStatusEl) {
+            if (isValidStatus) {
+                manageStatusEl.classList.remove('is-invalid');
+                manageStatusEl.classList.add('is-valid');
+            } else {
+                manageStatusEl.classList.remove('is-valid');
+            }
+        }
+    }
+
+    if (manageStatusEl) {
+        manageStatusEl.addEventListener('change', updateManageActionButtonsState);
+    }
+
+    if (manageModal) {
+        // Intercept submodal action buttons with capture phase validation
+        manageModal.querySelectorAll('.btn-action-submodal').forEach(function (subBtn) {
+            subBtn.addEventListener('click', function (e) {
+                if (!validateManageLeadStatus()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            }, true);
+        });
+
+        manageModal.addEventListener('show.bs.modal', function (event) {
+            const btn = event.relatedTarget;
+            if (!btn) return;
+
+            const leadUuid = btn.getAttribute('data-lead-uuid') || '';
+            const clientCode = btn.getAttribute('data-client-code') || '';
+            const leadName = btn.getAttribute('data-lead-name') || 'Lead';
+            const statusId = btn.getAttribute('data-status-id') || '';
+            const statusName = btn.getAttribute('data-status-name') || '';
+            const comment = btn.getAttribute('data-latest-comment') || '';
+
+            // Update modal header subtitle
+            const subtitleEl = document.getElementById('manageLeadModalSubtitle');
+            if (subtitleEl) {
+                subtitleEl.textContent = `Lead ${clientCode || '--'} • ${leadName}`;
+            }
+
+            // Update hidden lead_uuid input
+            const uuidInput = document.getElementById('manageLeadUuidInput');
+            if (uuidInput) {
+                uuidInput.value = leadUuid;
+            }
+
+            // Pre-select status dropdown with existing status
+            if (manageStatusEl) {
+                manageStatusEl.classList.remove('is-invalid');
+                manageStatusEl.classList.remove('is-valid');
+
+                let matched = false;
+                for (let i = 0; i < manageStatusEl.options.length; i++) {
+                    const opt = manageStatusEl.options[i];
+                    if (
+                        (statusId && opt.value === String(statusId)) ||
+                        (statusName && opt.text.trim().toLowerCase() === String(statusName).trim().toLowerCase()) ||
+                        (statusId && opt.text.trim().toLowerCase() === String(statusId).trim().toLowerCase())
+                    ) {
+                        manageStatusEl.selectedIndex = i;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    manageStatusEl.value = "";
+                }
+            }
+
+            // Display read-only previous comment if exists
+            const prevContainer = document.getElementById('manageLeadPrevCommentContainer');
+            const prevTextEl = document.getElementById('manageLeadPrevCommentText');
+            const commentEl = document.getElementById('manageLeadComment');
+
+            const prevComment = (comment && comment !== 'No comment') ? comment.trim() : '';
+
+            if (prevContainer && prevTextEl) {
+                if (prevComment) {
+                    prevTextEl.textContent = prevComment;
+                    prevContainer.style.display = 'block';
+                } else {
+                    prevTextEl.textContent = '';
+                    prevContainer.style.display = 'none';
+                }
+            }
+
+            // Reset new comment textarea
+            if (commentEl) {
+                commentEl.value = '';
+            }
+
+            // Set lead_uuid on action submodal buttons inside manage modal
+            manageModal.querySelectorAll('.btn-action-submodal').forEach(function (subBtn) {
+                subBtn.setAttribute('data-lead-uuid', leadUuid);
+                subBtn.setAttribute('data-client-code', clientCode);
+                subBtn.setAttribute('data-lead-name', leadName);
+            });
+
+            // Hide Dispose button if lead is already disposed
+            const isDisposed = btn.getAttribute('data-is-disposed') === '1' || btn.getAttribute('data-is-disposed') === 'true';
+            const disposeBtn = document.getElementById('btnDisposeLead');
+            if (disposeBtn) {
+                if (isDisposed) {
+                    disposeBtn.style.display = 'none';
+                } else {
+                    disposeBtn.style.display = '';
+                }
+            }
+
+            // Initial button validation state check
+            updateManageActionButtonsState();
+        });
+    }
+
+    // Save Lead Response Handler
+    if (saveResponseBtn) {
+        saveResponseBtn.addEventListener('click', function () {
+            if (!validateManageLeadStatus()) {
+                return;
+            }
+
+            const uuidInput = document.getElementById('manageLeadUuidInput');
+            const commentEl = document.getElementById('manageLeadComment');
+
+            const leadUuid = uuidInput ? uuidInput.value : "";
+            const statusVal = manageStatusEl ? manageStatusEl.value : "";
+            const commentVal = commentEl ? commentEl.value : "";
+
+            saveResponseBtn.disabled = true;
+            const originalHtml = saveResponseBtn.innerHTML;
+            saveResponseBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Saving...`;
+
+            fetch('/api/leads/save-response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    status_name: statusVal,
+                    comment: commentVal
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                saveResponseBtn.disabled = false;
+                saveResponseBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Lead response updated successfully.', 'success');
+
+                    // Close Manage Lead Modal
+                    if (manageModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(manageModal) || new bootstrap.Modal(manageModal);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    // Instantly refresh table data via AJAX
+                    fetchTableDataAJAX();
+                } else {
+                    showToastNotification(data.message || 'Failed to update lead response.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                saveResponseBtn.disabled = false;
+                saveResponseBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while saving response.', 'danger');
+            });
+        });
+    }
+
+    // Dispose Lead Handler
+    if (disposeLeadBtn) {
+        disposeLeadBtn.addEventListener('click', function () {
+            if (!validateManageLeadStatus()) {
+                return;
+            }
+
+            const uuidInput = document.getElementById('manageLeadUuidInput');
+            const statusEl = document.getElementById('manageLeadStatus');
+            const commentEl = document.getElementById('manageLeadComment');
+
+            const leadUuid = uuidInput ? uuidInput.value : "";
+            const statusVal = statusEl ? statusEl.value : "";
+            const commentVal = commentEl ? commentEl.value : "";
+
+            if (!leadUuid) {
+                showToastNotification('Lead is required.', 'warning');
+                return;
+            }
+
+            
+
+            disposeLeadBtn.disabled = true;
+            const originalHtml = disposeLeadBtn.innerHTML;
+            disposeLeadBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Disposing...`;
+
+            fetch('/api/leads/dispose', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    status_name: statusVal,
+                    reason: commentVal
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                disposeLeadBtn.disabled = false;
+                disposeLeadBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Lead disposed successfully.', 'success');
+
+                    // Close Manage Lead Modal
+                    if (manageModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(manageModal) || new bootstrap.Modal(manageModal);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    // Instantly refresh table data via AJAX
+                    fetchTableDataAJAX();
+                } else {
+                    showToastNotification(data.message || 'Failed to dispose lead.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                disposeLeadBtn.disabled = false;
+                disposeLeadBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while disposing lead.', 'danger');
+            });
+        });
+    }
+
+    // Delete Lead Modal (`#deleteLeadModal`) Binding & AJAX Execution
+    const deleteModal = document.getElementById('deleteLeadModal');
+    const deleteTitleEl = document.getElementById('deleteLeadModalTitle');
+    const deleteMsgEl = document.getElementById('deleteLeadModalMessage');
+    const confirmDeleteBtn = document.getElementById('btnConfirmDeleteLead');
+    let pendingDeleteUuids = [];
+
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const triggerBtn = event.relatedTarget;
+            pendingDeleteUuids = [];
+
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.disabled = false;
+            }
+
+            if (triggerBtn && triggerBtn.hasAttribute('data-lead-uuid')) {
+                // Single Lead Delete from row button
+                const leadUuid = triggerBtn.getAttribute('data-lead-uuid');
+                const clientCode = triggerBtn.getAttribute('data-client-code') || '';
+                const leadName = triggerBtn.getAttribute('data-lead-name') || 'Lead';
+
+                if (leadUuid) {
+                    pendingDeleteUuids = [leadUuid];
+                }
+
+                if (deleteTitleEl) deleteTitleEl.textContent = `Delete lead ${clientCode || ''}?`;
+                if (deleteMsgEl) deleteMsgEl.textContent = `Are you sure you want to delete lead '${clientCode || leadName}' (${leadName})? This action cannot be undone.`;
+            } else {
+                // Bulk Lead Delete from Action toolbar dropdown
+                const checkedBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]:checked');
+                checkedBoxes.forEach(function (box) {
+                    if (box.value) pendingDeleteUuids.push(box.value);
+                });
+
+                if (pendingDeleteUuids.length > 0) {
+                    if (deleteTitleEl) deleteTitleEl.textContent = `Delete ${pendingDeleteUuids.length} selected lead(s)?`;
+                    if (deleteMsgEl) deleteMsgEl.textContent = `Are you sure you want to permanently delete the ${pendingDeleteUuids.length} selected lead(s)? This action cannot be undone.`;
+                } else {
+                    if (deleteTitleEl) deleteTitleEl.textContent = 'No leads selected';
+                    if (deleteMsgEl) deleteMsgEl.textContent = 'Please select at least one lead from the table checkboxes to delete.';
+                    if (confirmDeleteBtn) confirmDeleteBtn.disabled = true;
+                }
+            }
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (!pendingDeleteUuids || pendingDeleteUuids.length === 0) {
+                showToastNotification('Please select at least one lead to delete.', 'warning');
+                return;
+            }
+
+            confirmDeleteBtn.disabled = true;
+            const originalHtml = confirmDeleteBtn.innerHTML;
+            confirmDeleteBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Deleting...`;
+
+            fetch('/api/leads/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lead_uuids: pendingDeleteUuids })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Lead(s) deleted successfully.', 'success');
+
+                    // Close Delete Lead Modal
+                    if (deleteModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(deleteModal) || new bootstrap.Modal(deleteModal);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    // Refresh table via AJAX
+                    fetchTableDataAJAX();
+                } else {
+                    showToastNotification(data.message || 'Failed to delete lead(s).', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Delete error:', err);
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while deleting lead(s).', 'danger');
+            });
+        });
+    }
+
+    // Select All / Bulk Select Header Checkbox Handling
+    const selectAllCb = document.getElementById('selectAllLeads');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function () {
+            const isChecked = this.checked;
+            const rowCheckboxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]');
+            rowCheckboxes.forEach(function (cb) {
+                cb.checked = isChecked;
+            });
+        });
+    }
+
+    const tableBodyEl = document.getElementById('leadTableBody');
+    if (tableBodyEl) {
+        tableBodyEl.addEventListener('change', function (e) {
+            if (e.target && e.target.type === 'checkbox') {
+                const allBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]');
+                const checkedBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]:checked');
+                if (selectAllCb) {
+                    selectAllCb.checked = (allBoxes.length > 0 && checkedBoxes.length === allBoxes.length);
+                }
+            }
+        });
+    }
+
+    // Assign Lead Modal (`#assignLeadModal`) Binding & AJAX Execution
+    const assignModal = document.getElementById('assignLeadModal');
+    const assignOwnerEl = document.getElementById('assignLeadOwner');
+    const assignSourceEl = document.getElementById('assignLeadSource');
+    const assignResetEl = document.getElementById('assignResetLeadData');
+    const assignAllEl = document.getElementById('assignAllMatchingLeads');
+    const confirmAssignBtn = document.getElementById('btnConfirmAssignLeads');
+
+    if (assignModal) {
+        assignModal.addEventListener('show.bs.modal', function () {
+            if (assignOwnerEl) assignOwnerEl.value = "";
+            if (assignSourceEl) assignSourceEl.value = "";
+            if (assignResetEl) assignResetEl.checked = false;
+            if (assignAllEl) assignAllEl.checked = false;
+        });
+    }
+
+    if (confirmAssignBtn) {
+        confirmAssignBtn.addEventListener('click', function () {
+            const targetUserUuid = assignOwnerEl ? assignOwnerEl.value : "";
+            if (!targetUserUuid) {
+                showToastNotification('Please select a target user for assignment.', 'warning');
+                if (assignOwnerEl) assignOwnerEl.focus();
+                return;
+            }
+
+            const newSource = assignSourceEl ? assignSourceEl.value : "";
+            const resetData = assignResetEl ? assignResetEl.checked : false;
+            const applyAllMatching = assignAllEl ? assignAllEl.checked : false;
+
+            const checkedBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]:checked');
+            const selectedUuids = [];
+            checkedBoxes.forEach(cb => {
+                if (cb.value) selectedUuids.push(cb.value);
+            });
+
+            if (!applyAllMatching && selectedUuids.length === 0) {
+                showToastNotification('Please select at least one lead checkbox or check "Apply to ALL matching leads".', 'warning');
+                return;
+            }
+
+            // Read current page filters for global bulk matching
+            const urlParams = getFilterParams();
+            const filterObj = {};
+            urlParams.forEach((val, key) => {
+                filterObj[key] = val;
+            });
+
+            confirmAssignBtn.disabled = true;
+            const originalHtml = confirmAssignBtn.innerHTML;
+            confirmAssignBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Assigning...`;
+
+            fetch('/api/leads/assign', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    target_user_uuid: targetUserUuid,
+                    lead_uuids: selectedUuids,
+                    new_source: newSource,
+                    reset_data: resetData,
+                    apply_all_matching: applyAllMatching,
+                    filters: filterObj
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Leads assigned successfully.', 'success');
+
+                    // Close modal
+                    if (assignModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(assignModal) || new bootstrap.Modal(assignModal);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+
+                    // Refresh table via AJAX
+                    fetchTableDataAJAX();
+                } else {
+                    showToastNotification(data.message || 'Failed to assign leads.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Assign error:', err);
+                confirmAssignBtn.disabled = false;
+                confirmAssignBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while assigning leads.', 'danger');
+            });
+        });
+    }
+
+    // Timeline Modal Pagination Logic
+    let currentTimelineLeadUuid = null;
+    let currentTimelinePage = 1;
+
+    function renderTimelineItems(activities, isAppend) {
+        const container = document.getElementById('timelineItemsContainer');
+        if (!container) return;
+
+        if (!isAppend) {
+            container.innerHTML = '';
+        }
+
+        if (!activities || activities.length === 0) {
+            if (!isAppend) {
+                container.innerHTML = `<div class="text-center text-muted py-5"><i class="mdi mdi-clock-off-outline fs-32 d-block mb-2 text-secondary"></i>No activity logs found for this lead.</div>`;
+            }
+            return;
+        }
+
+        let html = '<div class="timeline-vertical position-relative ms-3 ps-4 border-start border-2 border-primary-subtle">';
+        if (isAppend) {
+            const existingWrapper = container.querySelector('.timeline-vertical');
+            if (existingWrapper) {
+                html = '';
+            }
+        }
+
+        activities.forEach(act => {
+            let iconClass = 'mdi-clock-outline';
+            let badgeBg = 'bg-primary text-white';
+            let borderAccent = 'border-primary';
+
+            const aType = (act.action_type || '').toLowerCase();
+            if (aType.includes('assign')) {
+                iconClass = 'mdi-account-switch-outline';
+                badgeBg = 'bg-info text-white';
+                borderAccent = 'border-info';
+            } else if (aType.includes('delete')) {
+                iconClass = 'mdi-trash-can-outline';
+                badgeBg = 'bg-danger text-white';
+                borderAccent = 'border-danger';
+            } else if (aType.includes('call')) {
+                iconClass = 'mdi-phone-outline';
+                badgeBg = 'bg-primary text-white';
+                borderAccent = 'border-primary';
+            } else if (aType.includes('dispose') || aType.includes('status')) {
+                iconClass = 'mdi-check-circle-outline';
+                badgeBg = 'bg-success text-white';
+                borderAccent = 'border-success';
+            }
+
+            const itemHtml = `
+                <div class="timeline-item position-relative mb-4">
+                    <!-- Icon Badge on Vertical Line -->
+                    <div class="timeline-icon position-absolute rounded-circle ${badgeBg} d-flex align-items-center justify-content-center" 
+                         style="left: -37px; top: 0; width: 32px; height: 32px; font-size: 14px; box-shadow: 0 0 0 4px #fff;">
+                        <i class="mdi ${iconClass}"></i>
+                    </div>
+
+                    <!-- Timeline Card -->
+                    <div class="card shadow-sm border mb-0">
+                        <div class="card-body p-3">
+                            <!-- 1. Action Name & Status -->
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <h6 class="fw-bold mb-0 text-dark fs-15">${act.action_type || 'Activity'}</h6>
+                                ${act.status_name ? `<span class="badge bg-light text-dark border fs-12">${act.status_name}</span>` : ''}
+                            </div>
+
+                            <!-- 2. What Action Happened (Details / Comment) -->
+                            ${act.comment ? `<div class="p-2.5 bg-light rounded text-dark fs-13 mb-3 border-start border-3 ${borderAccent}" style="line-height: 1.5;">${act.comment}</div>` : ''}
+
+                            <!-- 3. Footer: User & Time -->
+                            <div class="d-flex align-items-center justify-content-between text-muted fs-12 pt-2 border-top">
+                                <div>
+                                    <i class="mdi mdi-account-circle-outline me-1 text-primary"></i>
+                                    <span class="fw-semibold text-dark">${act.user_name || 'System'}</span>
+                                </div>
+                                <div>
+                                    <i class="mdi mdi-clock-outline me-1 text-muted"></i>
+                                    <span>${act.created_at}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (isAppend) {
+                const wrapper = container.querySelector('.timeline-vertical');
+                if (wrapper) {
+                    wrapper.insertAdjacentHTML('beforeend', itemHtml);
+                } else {
+                    html += itemHtml;
+                }
+            } else {
+                html += itemHtml;
+            }
+        });
+
+        if (!isAppend) {
+            html += '</div>';
+            container.innerHTML = html;
+        }
+    }
+
+    function fetchTimelineData(leadUuid, page) {
+        const subtitleEl = document.getElementById('timelineModalSubtitle');
+        const loadMoreContainer = document.getElementById('timelineLoadMoreContainer');
+        const btnLoadMore = document.getElementById('btnFetchMoreTimeline');
+
+        if (page === 1) {
+            const container = document.getElementById('timelineItemsContainer');
+            if (container) {
+                container.innerHTML = `<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-primary me-2"></span>Loading activity timeline...</div>`;
+            }
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        } else if (btnLoadMore) {
+            btnLoadMore.disabled = true;
+            btnLoadMore.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Fetching...`;
+        }
+
+        fetch('/api/leads/timeline', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                lead_uuid: leadUuid,
+                page: page,
+                limit: 15
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (btnLoadMore) {
+                    btnLoadMore.disabled = false;
+                    btnLoadMore.innerHTML = `<i class="mdi mdi-download-outline me-1"></i> Fetch More Activities`;
+                }
+
+                if (data.success) {
+                    if (subtitleEl && data.lead) {
+                        const rawCode = data.lead.client_code ? String(data.lead.client_code).replace(/^LEAD[-_\s]*/i, '') : '';
+                        subtitleEl.textContent = rawCode ? `Lead Code - ${rawCode}` : (data.lead.client_code || '');
+                    }
+
+                    renderTimelineItems(data.activities, page > 1);
+
+                    if (loadMoreContainer) {
+                        loadMoreContainer.style.display = data.has_more ? 'block' : 'none';
+                    }
+                } else {
+                    showToastNotification(data.message || 'Failed to load timeline.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Timeline fetch error:', err);
+                if (btnLoadMore) {
+                    btnLoadMore.disabled = false;
+                    btnLoadMore.innerHTML = `<i class="mdi mdi-download-outline me-1"></i> Fetch More Activities`;
+                }
+            });
+    }
+
+    // Modal show listener for timelineModal
+    const timelineModalEl = document.getElementById('timelineModal');
+    if (timelineModalEl) {
+        timelineModalEl.addEventListener('show.bs.modal', function (e) {
+            const btn = e.relatedTarget;
+            if (btn && btn.getAttribute('data-lead-uuid')) {
+                currentTimelineLeadUuid = btn.getAttribute('data-lead-uuid');
+                currentTimelinePage = 1;
+                fetchTimelineData(currentTimelineLeadUuid, 1);
+            }
+        });
+    }
+
+    const btnFetchMore = document.getElementById('btnFetchMoreTimeline');
+    if (btnFetchMore) {
+        btnFetchMore.addEventListener('click', function () {
+            if (currentTimelineLeadUuid) {
+                currentTimelinePage += 1;
+                fetchTimelineData(currentTimelineLeadUuid, currentTimelinePage);
+            }
+        });
+    }
+
+    // Save Contact Modal (`#saveContactModal`) Handling & Execution
+    const saveContactModal = document.getElementById('saveContactModal');
+    const saveContactStatusInput = document.getElementById('saveContactStatus');
+    const saveContactStatusContainer = document.getElementById('saveContactStatusContainer');
+    const saveContactNameInput = document.getElementById('saveContactName');
+    const saveContactMobileInput = document.getElementById('saveContactMobile');
+    const saveContactEmailInput = document.getElementById('saveContactEmail');
+    const saveContactAddressInput = document.getElementById('saveContactAddress');
+    const saveContactProductInput = document.getElementById('saveContactProduct');
+    const saveContactPlanInput = document.getElementById('saveContactPlan');
+    const saveContactNotesInput = document.getElementById('saveContactNotes');
+    const saveContactLeadUuidInput = document.getElementById('saveContactLeadUuid');
+    const confirmSaveContactBtn = document.getElementById('btnConfirmSaveContact');
+
+    const btnSaveContactFromManage = document.getElementById('btnSaveContactFromManage');
+    if (btnSaveContactFromManage) {
+        btnSaveContactFromManage.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!validateManageLeadStatus()) {
+                showToastNotification('Please select a valid Lead Status first.', 'warning');
+                return false;
+            }
+            const modalEl = document.getElementById('saveContactModal');
+            if (modalEl) {
+                const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                bsModal.show(btnSaveContactFromManage);
+            }
+        });
+    }
+
+    if (saveContactModal) {
+        saveContactModal.addEventListener('show.bs.modal', function (event) {
+            const triggerBtn = event.relatedTarget;
+
+            if (triggerBtn && triggerBtn.id === 'btnSaveContactFromManage') {
+                if (!validateManageLeadStatus()) {
+                    event.preventDefault();
+                    showToastNotification('Please select a valid Lead Status first.', 'warning');
+                    return false;
+                }
+
+                // Hide status container since status is already selected in Manage modal
+                if (saveContactStatusContainer) saveContactStatusContainer.style.display = 'none';
+                if (saveContactStatusInput && manageStatusEl) {
+                    saveContactStatusInput.value = manageStatusEl.value;
+                }
+            } else {
+                // Show status container when opened standalone
+                if (saveContactStatusContainer) saveContactStatusContainer.style.display = 'block';
+                if (saveContactStatusInput) saveContactStatusInput.value = "";
+            }
+
+            let targetUuid = "";
+            let targetName = "";
+            let targetMobile = "";
+            let targetEmail = "";
+            let targetAddress = "";
+
+            if (triggerBtn && triggerBtn.hasAttribute('data-lead-uuid')) {
+                targetUuid = triggerBtn.getAttribute('data-lead-uuid') || "";
+                targetName = triggerBtn.getAttribute('data-lead-name') || "";
+                targetEmail = triggerBtn.getAttribute('data-email') || "";
+                targetAddress = triggerBtn.getAttribute('data-address') || "";
+
+                if (targetUuid) {
+                    const rowCb = document.querySelector(`#leadTableBody input[value="${targetUuid}"]`);
+                    if (rowCb) {
+                        const row = rowCb.closest('tr');
+                        if (row) {
+                            if (!targetName) {
+                                const nameEl = row.querySelector('.fw-medium');
+                                if (nameEl) targetName = nameEl.textContent.trim();
+                            }
+                            if (!targetEmail) {
+                                const emailEl = row.querySelector('small.text-muted');
+                                if (emailEl) targetEmail = emailEl.textContent.trim();
+                            }
+                        }
+                    }
+                }
+            } else {
+                // If opened from top action dropdown with checked lead
+                const checkedBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]:checked');
+                if (checkedBoxes.length > 0) {
+                    const firstBox = checkedBoxes[0];
+                    targetUuid = firstBox.value;
+                    const row = firstBox.closest('tr');
+                    if (row) {
+                        const nameEl = row.querySelector('.fw-medium');
+                        if (nameEl) targetName = nameEl.textContent.trim();
+                        const emailEl = row.querySelector('small.text-muted');
+                        if (emailEl) targetEmail = emailEl.textContent.trim();
+                    }
+                }
+            }
+
+            if (targetUuid && saveContactLeadUuidInput) saveContactLeadUuidInput.value = targetUuid;
+            if (saveContactNameInput) {
+                const cleanTargetName = (targetName && !['NA', 'N/A', 'NONE', 'NULL'].includes(String(targetName).trim().toUpperCase())) ? String(targetName).trim() : '';
+                saveContactNameInput.value = cleanTargetName;
+            }
+            if (saveContactEmailInput) {
+                const cleanTargetEmail = (targetEmail && !['NA', 'N/A', 'NONE', 'NULL'].includes(String(targetEmail).trim().toUpperCase())) ? String(targetEmail).trim() : '';
+                saveContactEmailInput.value = cleanTargetEmail;
+            }
+            if (targetAddress && saveContactAddressInput) saveContactAddressInput.value = targetAddress;
+        });
+    }
+
+    if (confirmSaveContactBtn) {
+        confirmSaveContactBtn.addEventListener('click', function () {
+            const leadUuid = saveContactLeadUuidInput ? saveContactLeadUuidInput.value : "";
+            const statusVal = saveContactStatusInput ? saveContactStatusInput.value : "";
+
+            const name = saveContactNameInput ? saveContactNameInput.value.trim() : "";
+            const mobile = saveContactMobileInput ? saveContactMobileInput.value.trim() : "";
+            const email = saveContactEmailInput ? saveContactEmailInput.value.trim() : "";
+            const address = saveContactAddressInput ? saveContactAddressInput.value.trim() : "";
+            const productId = saveContactProductInput ? saveContactProductInput.value : "";
+            const planType = saveContactPlanInput ? saveContactPlanInput.value : "";
+            const notes = saveContactNotesInput ? saveContactNotesInput.value.trim() : "";
+
+            if (!leadUuid) {
+                showToastNotification('Please select a lead from the table to save contact.', 'warning');
+                return;
+            }
+
+            if (!statusVal) {
+                if (saveContactStatusInput) saveContactStatusInput.focus();
+                showToastNotification('Please select a valid Lead Status first.', 'warning');
+                return;
+            }
+
+            if (!name) {
+                if (saveContactNameInput) saveContactNameInput.focus();
+                showToastNotification('Please enter contact full name.', 'warning');
+                return;
+            }
+
+            confirmSaveContactBtn.disabled = true;
+            const originalHtml = confirmSaveContactBtn.innerHTML;
+            confirmSaveContactBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Saving...`;
+
+            fetch('/api/leads/save-contact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    status_name: statusVal,
+                    contact_name: name,
+                    mobile_number: mobile,
+                    email: email,
+                    address: address,
+                    product_id: productId,
+                    plan_type: planType,
+                    notes: notes
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmSaveContactBtn.disabled = false;
+                confirmSaveContactBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Contact saved successfully.', 'success');
+                    if (saveContactModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(saveContactModal) || new bootstrap.Modal(saveContactModal);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    fetchTableDataAJAX(currentPage, currentPageSize, true);
+                } else {
+                    showToastNotification(data.message || 'Failed to save contact.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Save contact error:', err);
+                confirmSaveContactBtn.disabled = false;
+                confirmSaveContactBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while saving contact.', 'danger');
+            });
+        });
+    }
+
+    // Add Follow-up Modal - 9AM to 7PM, 30m gap, no past slots
+    const addFollowupModal = document.getElementById('addFollowupModal');
+    const addFollowupLeadUuidInput = document.getElementById('addFollowupLeadUuid');
+    const addFollowupRemarksInput = document.getElementById('addFollowupRemarks');
+    const confirmAddFollowupBtn = document.getElementById('btnConfirmAddFollowup');
+
+    const FOLLOWUP_TIME_SLOTS = [
+        { value: "09:00", label: "09:00 AM", h: 9, m: 0 },
+        { value: "09:30", label: "09:30 AM", h: 9, m: 30 },
+        { value: "10:00", label: "10:00 AM", h: 10, m: 0 },
+        { value: "10:30", label: "10:30 AM", h: 10, m: 30 },
+        { value: "11:00", label: "11:00 AM", h: 11, m: 0 },
+        { value: "11:30", label: "11:30 AM", h: 11, m: 30 },
+        { value: "12:00", label: "12:00 PM", h: 12, m: 0 },
+        { value: "12:30", label: "12:30 PM", h: 12, m: 30 },
+        { value: "13:00", label: "01:00 PM", h: 13, m: 0 },
+        { value: "13:30", label: "01:30 PM", h: 13, m: 30 },
+        { value: "14:00", label: "02:00 PM", h: 14, m: 0 },
+        { value: "14:30", label: "02:30 PM", h: 14, m: 30 },
+        { value: "15:00", label: "03:00 PM", h: 15, m: 0 },
+        { value: "15:30", label: "03:30 PM", h: 15, m: 30 },
+        { value: "16:00", label: "04:00 PM", h: 16, m: 0 },
+        { value: "16:30", label: "04:30 PM", h: 16, m: 30 },
+        { value: "17:00", label: "05:00 PM", h: 17, m: 0 },
+        { value: "17:30", label: "05:30 PM", h: 17, m: 30 },
+        { value: "18:00", label: "06:00 PM", h: 18, m: 0 },
+        { value: "18:30", label: "06:30 PM", h: 18, m: 30 },
+        { value: "19:00", label: "07:00 PM", h: 19, m: 0 }
+    ];
+
+    function updateAddFollowupTimeOptions(selectedDateStr) {
+        const timeSelect = document.getElementById('addFollowupTime');
+        const dateInput = document.getElementById('addFollowupDate');
+        if (!timeSelect) return;
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+        const isToday = (!selectedDateStr || selectedDateStr === todayStr);
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        let html = '';
+        let firstValidValue = null;
+
+        FOLLOWUP_TIME_SLOTS.forEach(slot => {
+            // If today, hide back times (current se back time nhi dikhe)
+            if (isToday) {
+                if (slot.h < currentHour || (slot.h === currentHour && slot.m <= currentMinute)) {
+                    return; // DO NOT show passed time slot
+                }
+            }
+            if (!firstValidValue) {
+                firstValidValue = slot.value;
+            }
+            html += `<option value="${slot.value}">${slot.label}</option>`;
+        });
+
+        if (!html) {
+            // All slots for today have passed (after 7 PM)
+            if (isToday && dateInput) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowStr = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}`;
+                dateInput.value = tomorrowStr;
+                return updateAddFollowupTimeOptions(tomorrowStr);
+            }
+            html = '<option value="" disabled selected>No slots available</option>';
+        }
+
+        timeSelect.innerHTML = html;
+        if (firstValidValue) {
+            timeSelect.value = firstValidValue;
+        }
+    }
+
+    if (addFollowupModal) {
+        addFollowupModal.addEventListener('show.bs.modal', function (event) {
+            const triggerBtn = event.relatedTarget;
+            let targetUuid = "", clientCode = "", leadName = "", leadEmail = "", leadAddress = "";
+
+            if (triggerBtn && triggerBtn.getAttribute && triggerBtn.getAttribute('data-lead-uuid')) {
+                targetUuid  = triggerBtn.getAttribute('data-lead-uuid') || "";
+                clientCode  = triggerBtn.getAttribute('data-client-code') || "";
+                leadName    = triggerBtn.getAttribute('data-lead-name') || "";
+                leadEmail   = triggerBtn.getAttribute('data-email') || "";
+                leadAddress = triggerBtn.getAttribute('data-address') || "";
+            } else if (addFollowupLeadUuidInput && addFollowupLeadUuidInput.value) {
+                targetUuid = addFollowupLeadUuidInput.value;
+            } else {
+                const cb = document.querySelector('#leadTableBody input[type="checkbox"]:checked');
+                if (cb) targetUuid = cb.value;
+            }
+
+            if (targetUuid && (!clientCode || !leadName)) {
+                const rowCb = document.querySelector(`#leadTableBody input[value="${targetUuid}"]`);
+                if (rowCb) {
+                    const row = rowCb.closest('tr');
+                    if (row) {
+                        const nameEl = row.querySelector('.fw-medium');
+                        if (nameEl && !leadName) leadName = nameEl.textContent.trim();
+                        const emailEl = row.querySelector('small.text-muted');
+                        if (emailEl && !leadEmail) leadEmail = emailEl.textContent.trim();
+                        const codeEl = row.querySelector('.fw-semibold');
+                        if (codeEl && !clientCode) clientCode = codeEl.textContent.trim();
+                    }
+                }
+            }
+
+            const subtitleEl = document.getElementById('addFollowupModalSubtitle');
+            if (subtitleEl) {
+                const rawCode = clientCode ? String(clientCode).replace(/^LEAD/i, '') : '';
+                subtitleEl.textContent = rawCode ? `Lead ${rawCode} • ${leadName || 'Unnamed'}` : `Schedule a follow-up for ${leadName || 'this lead'}`;
+            }
+
+            const nameInput    = document.getElementById('addFollowupName');
+            const emailInput   = document.getElementById('addFollowupEmail');
+            const addressInput = document.getElementById('addFollowupAddress');
+            if (nameInput)    nameInput.value    = (leadName    && leadName    !== 'NA') ? leadName    : "";
+            if (emailInput)   emailInput.value   = (leadEmail   && leadEmail   !== 'NA') ? leadEmail   : "";
+            if (addressInput) addressInput.value = (leadAddress && leadAddress !== 'NA') ? leadAddress : "";
+            if (addFollowupLeadUuidInput) addFollowupLeadUuidInput.value = targetUuid;
+            if (addFollowupRemarksInput)  addFollowupRemarksInput.value  = "";
+
+            // Initialize Date & Time dropdown
+            const dateInput = document.getElementById('addFollowupDate');
+            if (dateInput) {
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                dateInput.min = todayStr;
+
+                let defaultDate = new Date();
+                if (defaultDate.getHours() >= 19) {
+                    defaultDate.setDate(defaultDate.getDate() + 1);
+                }
+                const defaultDateStr = `${defaultDate.getFullYear()}-${pad(defaultDate.getMonth() + 1)}-${pad(defaultDate.getDate())}`;
+                dateInput.value = defaultDateStr;
+
+                updateAddFollowupTimeOptions(defaultDateStr);
+
+                dateInput.onchange = function() {
+                    updateAddFollowupTimeOptions(this.value);
+                };
+            }
+        });
+    }
+
+    if (confirmAddFollowupBtn) {
+        confirmAddFollowupBtn.addEventListener('click', function () {
+            const leadUuid    = addFollowupLeadUuidInput ? addFollowupLeadUuidInput.value : "";
+            const dateInput   = document.getElementById('addFollowupDate');
+            const timeSelect  = document.getElementById('addFollowupTime');
+            const dateVal     = dateInput ? dateInput.value : "";
+            const timeVal     = timeSelect ? timeSelect.value : "";
+            const remarks     = addFollowupRemarksInput ? addFollowupRemarksInput.value.trim() : "";
+            const nameInput   = document.getElementById('addFollowupName');
+            const emailInput  = document.getElementById('addFollowupEmail');
+            const addressInput= document.getElementById('addFollowupAddress');
+            const nameVal     = nameInput    ? nameInput.value.trim()    : "";
+            const emailVal    = emailInput   ? emailInput.value.trim()   : "";
+            const addressVal  = addressInput ? addressInput.value.trim() : "";
+            const statusSelect= document.getElementById('addFollowupLeadStatus');
+            const statusVal   = statusSelect ? statusSelect.value : "";
+
+            if (!leadUuid) { showToastNotification('Please select a lead.', 'warning'); return; }
+            if (!statusVal) { if (statusSelect) statusSelect.focus(); showToastNotification('Please select Lead Status.', 'warning'); return; }
+            if (!nameVal)   { if (nameInput)    nameInput.focus();    showToastNotification('Please enter Lead Name.', 'warning'); return; }
+            if (!dateVal)   { if (dateInput)    dateInput.focus();    showToastNotification('Please select follow-up date.', 'warning'); return; }
+            if (!timeVal)   { if (timeSelect)   timeSelect.focus();   showToastNotification('Please select follow-up time.', 'warning'); return; }
+
+            // Combine date & time: "YYYY-MM-DD HH:MM:00"
+            const fullFollowupDateTime = `${dateVal} ${timeVal}:00`;
+
+            confirmAddFollowupBtn.disabled = true;
+            const originalHtml = confirmAddFollowupBtn.innerHTML;
+            confirmAddFollowupBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Saving...`;
+
+            fetch('/api/leads/add-followup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    followup_date: fullFollowupDateTime,
+                    remarks: remarks,
+                    name: nameVal,
+                    email: emailVal,
+                    address: addressVal,
+                    lead_status: statusVal
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmAddFollowupBtn.disabled = false;
+                confirmAddFollowupBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Follow-up scheduled successfully.', 'success');
+                    if (addFollowupModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(addFollowupModal) || new bootstrap.Modal(addFollowupModal);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    fetchTableDataAJAX(currentPage, currentPageSize, true);
+                } else {
+                    showToastNotification(data.message || 'Failed to schedule follow-up.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Add follow-up error:', err);
+                confirmAddFollowupBtn.disabled = false;
+                confirmAddFollowupBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while scheduling follow-up.', 'danger');
+            });
+        });
+    }
+
+    // Add Free Trial Modal (`#addFreeTrialModal`) Binding & Business-Day Calculation Execution
+    const addFreeTrialModal = document.getElementById('addFreeTrialModal');
+    const addFreeTrialLeadUuidInput = document.getElementById('addFreeTrialLeadUuid');
+    const addFreeTrialProductSelect = document.getElementById('addFreeTrialProduct');
+    const addFreeTrialStartDateInput = document.getElementById('addFreeTrialStartDate');
+    const addFreeTrialExpiryDateInput = document.getElementById('addFreeTrialExpiryDate');
+    const addFreeTrialNotesInput = document.getElementById('addFreeTrialNotes');
+    const confirmAddFreeTrialBtn = document.getElementById('btnConfirmAddFreeTrial');
+    let addFreeTrialFp = null;
+
+    let activeTrialDays = parseInt("{{ settings.get('free_trial_days', '7') if settings else '7' }}", 10) || 7;
+
+    function calculateTrialExpiryDateJS(startDateObj, trialDays) {
+        if (!startDateObj || isNaN(startDateObj.getTime())) {
+            startDateObj = new Date();
+        }
+
+        let curDate = new Date(startDateObj);
+        let daysCounted = 0;
+
+        while (true) {
+            const dayOfWeek = curDate.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Exclude Saturday (6) and Sunday (0)
+                daysCounted++;
+                if (daysCounted >= trialDays) {
+                    break;
+                }
+            }
+            curDate.setDate(curDate.getDate() + 1);
+        }
+
+        const dd = String(curDate.getDate()).padStart(2, '0');
+        const mm = String(curDate.getMonth() + 1).padStart(2, '0');
+        const yyyy = curDate.getFullYear();
+        
+        const isoStr = `${yyyy}-${mm}-${dd}`;
+        const fmtStr = `${dd}/${mm}/${yyyy}`;
+        return { iso: isoStr, fmt: fmtStr };
+    }
+
+    function initFreeTrialDatePicker() {
+        if (!addFreeTrialStartDateInput) return;
+        // Set min = today
+        const today = new Date().toISOString().split('T')[0];
+        addFreeTrialStartDateInput.min = today;
+        addFreeTrialStartDateInput.value = today;
+
+        // Calculate and show expiry
+        const expiry = calculateTrialExpiryDateJS(new Date(), activeTrialDays);
+        if (addFreeTrialExpiryDateInput) addFreeTrialExpiryDateInput.value = expiry.iso;
+
+        addFreeTrialStartDateInput.onchange = function() {
+            if (this.value) {
+                const expiry = calculateTrialExpiryDateJS(new Date(this.value + 'T00:00:00'), activeTrialDays);
+                if (addFreeTrialExpiryDateInput) addFreeTrialExpiryDateInput.value = expiry.iso;
+            }
+        };
+    }
+
+    if (addFreeTrialModal) {
+        addFreeTrialModal.addEventListener('show.bs.modal', function (event) {
+            const triggerBtn = event.relatedTarget;
+            let targetUuid = "", clientCode = "", leadName = "";
+
+            if (triggerBtn && triggerBtn.getAttribute && triggerBtn.getAttribute('data-lead-uuid')) {
+                targetUuid = triggerBtn.getAttribute('data-lead-uuid') || "";
+                clientCode = triggerBtn.getAttribute('data-client-code') || "";
+                leadName   = triggerBtn.getAttribute('data-lead-name') || "";
+            } else if (addFreeTrialLeadUuidInput && addFreeTrialLeadUuidInput.value) {
+                targetUuid = addFreeTrialLeadUuidInput.value;
+            } else {
+                const cb = document.querySelector('#leadTableBody input[type="checkbox"]:checked');
+                if (cb) targetUuid = cb.value;
+            }
+
+            if (targetUuid && (!clientCode || !leadName)) {
+                const rowCb = document.querySelector(`#leadTableBody input[value="${targetUuid}"]`);
+                if (rowCb) {
+                    const row = rowCb.closest('tr');
+                    if (row) {
+                        const nameEl = row.querySelector('.fw-medium');
+                        if (nameEl && !leadName) leadName = nameEl.textContent.trim();
+                        const codeEl = row.querySelector('.fw-semibold');
+                        if (codeEl && !clientCode) clientCode = codeEl.textContent.trim();
+                    }
+                }
+            }
+
+            const subtitleEl = document.getElementById('addFreeTrialModalSubtitle');
+            if (subtitleEl) {
+                const rawCode = clientCode ? String(clientCode).replace(/^LEAD/i, '') : '';
+                subtitleEl.textContent = rawCode ? `Lead ${rawCode} • ${leadName}` : `Activate free trial access for ${leadName || 'this lead'}`;
+            }
+
+            if (addFreeTrialLeadUuidInput) addFreeTrialLeadUuidInput.value = targetUuid;
+            if (addFreeTrialNotesInput) addFreeTrialNotesInput.value = "";
+
+            const trialNameInput = document.getElementById('addFreeTrialName');
+            if (trialNameInput) trialNameInput.value = (leadName && leadName !== 'NA') ? leadName : "";
+
+            // Fetch live free_trial_days & products list from backend
+            fetch('/api/leads/get-free-trial-config', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.free_trial_days) activeTrialDays = parseInt(data.free_trial_days, 10);
+                        if (data.products && addFreeTrialProductSelect) {
+                            let optionsHtml = '<option value="" selected>-- Select Product --</option>';
+                            data.products.forEach(p => {
+                                optionsHtml += `<option value="${p.id}">${p.product_name}</option>`;
+                            });
+                            addFreeTrialProductSelect.innerHTML = optionsHtml;
+                        }
+                    }
+                    initFreeTrialDatePicker();
+                })
+                .catch(err => {
+                    console.error('Error fetching free trial config:', err);
+                    initFreeTrialDatePicker();
+                });
+        });
+    }
+
+    if (confirmAddFreeTrialBtn) {
+        confirmAddFreeTrialBtn.addEventListener('click', function () {
+            const leadUuid = addFreeTrialLeadUuidInput ? addFreeTrialLeadUuidInput.value : "";
+            const productId = addFreeTrialProductSelect ? addFreeTrialProductSelect.value : "";
+            const startDate = addFreeTrialStartDateInput ? addFreeTrialStartDateInput.value : "";
+            const notes = addFreeTrialNotesInput ? addFreeTrialNotesInput.value.trim() : "";
+
+            const statusSelect = document.getElementById('addFreeTrialLeadStatus');
+            const statusVal = statusSelect ? statusSelect.value : "";
+
+            const trialNameInput = document.getElementById('addFreeTrialName');
+            const nameVal = trialNameInput ? trialNameInput.value.trim() : "";
+
+            if (!leadUuid) {
+                showToastNotification('Please select a lead from the table to start free trial.', 'warning');
+                return;
+            }
+
+            if (!statusVal) {
+                if (statusSelect) statusSelect.focus();
+                showToastNotification('Please select Lead Status.', 'warning');
+                return;
+            }
+
+            if (!nameVal) {
+                if (trialNameInput) trialNameInput.focus();
+                showToastNotification('Please enter Lead Name.', 'warning');
+                return;
+            }
+
+            if (!productId) {
+                if (addFreeTrialProductSelect) addFreeTrialProductSelect.focus();
+                showToastNotification('Please select product interested for trial.', 'warning');
+                return;
+            }
+
+            if (!startDate) {
+                if (addFreeTrialStartDateInput) addFreeTrialStartDateInput.focus();
+                showToastNotification('Please select trial start date.', 'warning');
+                return;
+            }
+
+            confirmAddFreeTrialBtn.disabled = true;
+            const originalHtml = confirmAddFreeTrialBtn.innerHTML;
+            confirmAddFreeTrialBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Starting...`;
+
+            fetch('/api/leads/add-free-trial', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    product_id: productId,
+                    start_date: startDate,
+                    notes: notes,
+                    lead_status: statusVal,
+                    name: nameVal
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmAddFreeTrialBtn.disabled = false;
+                confirmAddFreeTrialBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Free trial started successfully.', 'success');
+                    if (addFreeTrialModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(addFreeTrialModal) || new bootstrap.Modal(addFreeTrialModal);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    fetchTableDataAJAX(currentPage, currentPageSize, true);
+                } else {
+                    showToastNotification(data.message || 'Failed to start free trial.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Add free trial error:', err);
+                confirmAddFreeTrialBtn.disabled = false;
+                confirmAddFreeTrialBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while starting free trial.', 'danger');
+            });
+        });
+    }
+
+    // Create Sales Order Modal (`#addSalesOrderModal`) Handling & Calculations
+    const addSalesOrderModal = document.getElementById('addSalesOrderModal');
+    const addSalesOrderLeadUuidInput = document.getElementById('addSalesOrderLeadUuid');
+    const addSalesOrderRawMobileInput = document.getElementById('addSalesOrderRawMobile');
+    const addSalesOrderInvoiceNameInput = document.getElementById('addSalesOrderInvoiceName');
+    const addSalesOrderMobileInput = document.getElementById('addSalesOrderMobile');
+    const addSalesOrderEmailInput = document.getElementById('addSalesOrderEmail');
+    const addSalesOrderGstInput = document.getElementById('addSalesOrderGst');
+    const addSalesOrderAddressInput = document.getElementById('addSalesOrderAddress');
+    const addSalesOrderProductSelect = document.getElementById('addSalesOrderProduct');
+    const addSalesOrderPlanSelect = document.getElementById('addSalesOrderPlan');
+    const addSalesOrderStartDateInput = document.getElementById('addSalesOrderStartDate');
+    const addSalesOrderExpiryDateInput = document.getElementById('addSalesOrderExpiryDate');
+    const addSalesOrderGrossAmountInput = document.getElementById('addSalesOrderGrossAmount');
+    const addSalesOrderTaxPercentInput = document.getElementById('addSalesOrderTaxPercent');
+    const addSalesOrderTaxAmountText = document.getElementById('addSalesOrderTaxAmountText');
+    const addSalesOrderNetAmountInput = document.getElementById('addSalesOrderNetAmount');
+    const addSalesOrderPaymentModeSelect = document.getElementById('addSalesOrderPaymentMode');
+    const addSalesOrderReferenceNumberInput = document.getElementById('addSalesOrderReferenceNumber');
+    const addSalesOrderNotesInput = document.getElementById('addSalesOrderNotes');
+    const confirmAddSalesOrderBtn = document.getElementById('btnConfirmAddSalesOrder');
+
+    let soProductsCache = [];
+    let addSalesOrderStartDateFp = null;
+
+    const planDaysMap = {
+        'weekly': 7,
+        'two_weekly': 14,
+        'monthly': 30,
+        'two_monthly': 60,
+        'quarterly': 90,
+        'six_monthly': 180,
+        'nine_monthly': 270,
+        'yearly': 365,
+        'eighteen_monthly': 545,
+        'twenty_four_monthly': 730
+    };
+
+    function calculateProRataServiceExpiryDate(startDateObj, planName, stdPrice, customNetPrice) {
+        if (!startDateObj || isNaN(startDateObj.getTime())) {
+            startDateObj = new Date();
+        }
+
+        const stdDays = planDaysMap[planName] || 30;
+        let effectiveDays = stdDays;
+
+        if (stdPrice > 0 && customNetPrice > 0) {
+            const ratio = customNetPrice / stdPrice;
+            effectiveDays = Math.max(1, Math.round(stdDays * ratio));
+        }
+
+        let expiry = new Date(startDateObj);
+        expiry.setDate(expiry.getDate() + effectiveDays);
+
+        const dd = String(expiry.getDate()).padStart(2, '0');
+        const mm = String(expiry.getMonth() + 1).padStart(2, '0');
+        const yyyy = expiry.getFullYear();
+        return {
+            iso: `${yyyy}-${mm}-${dd}`,
+            fmt: `${dd}/${mm}/${yyyy}`,
+            days: effectiveDays
+        };
+    }
+
+    const planConfigMap = [
+        { key: 'weekly', label: 'Weekly (7 Days)' },
+        { key: 'two_weekly', label: '2-Weekly (14 Days)' },
+        { key: 'monthly', label: 'Monthly (1 Month)' },
+        { key: 'two_monthly', label: '2-Monthly (2 Months)' },
+        { key: 'quarterly', label: 'Quarterly (3 Months)' },
+        { key: 'six_monthly', label: '6-Monthly (6 Months)' },
+        { key: 'nine_monthly', label: '9-Monthly (9 Months)' },
+        { key: 'yearly', label: 'Yearly (1 Year)' },
+        { key: 'eighteen_monthly', label: '18-Monthly (1.5 Years)' },
+        { key: 'twenty_four_monthly', label: '2-Yearly (2 Years)' }
+    ];
+
+    function updateSalesOrderPlanDropdownForProduct(productId) {
+        if (!addSalesOrderPlanSelect) return;
+        const prod = soProductsCache.find(p => String(p.id) === String(productId));
+
+        let html = '<option value="" selected>-- Select Plan --</option>';
+        if (prod) {
+            planConfigMap.forEach(plan => {
+                const priceVal = parseFloat(prod[plan.key]);
+                if (priceVal > 0) {
+                    html += `<option value="${plan.key}" data-price="${priceVal}">${plan.label} - ₹${priceVal.toLocaleString('en-IN')}</option>`;
+                }
+            });
+        } else {
+            planConfigMap.forEach(plan => {
+                html += `<option value="${plan.key}">${plan.label}</option>`;
+            });
+        }
+        addSalesOrderPlanSelect.innerHTML = html;
+    }
+
+    function calculateSalesOrderExpiry() {
+        const productId = addSalesOrderProductSelect ? addSalesOrderProductSelect.value : "";
+        const planName = addSalesOrderPlanSelect ? addSalesOrderPlanSelect.value : "";
+        const customNetPrice = parseFloat(addSalesOrderNetAmountInput ? addSalesOrderNetAmountInput.value : 0) || 0;
+
+        let startDateObj = new Date();
+        if (addSalesOrderStartDateFp && addSalesOrderStartDateFp.selectedDates.length > 0) {
+            startDateObj = addSalesOrderStartDateFp.selectedDates[0];
+        }
+
+        let stdPrice = 0;
+        if (productId && planName && soProductsCache.length > 0) {
+            const prod = soProductsCache.find(p => String(p.id) === String(productId));
+            if (prod && prod[planName] !== undefined && prod[planName] !== null) {
+                stdPrice = parseFloat(prod[planName]) || 0;
+            }
+        }
+
+        if (planName) {
+            const exp = calculateProRataServiceExpiryDate(startDateObj, planName, stdPrice, customNetPrice);
+            if (addSalesOrderExpiryDateInput) {
+                addSalesOrderExpiryDateInput.value = `${exp.fmt} (${exp.days} Days)`;
+            }
+        } else {
+            if (addSalesOrderExpiryDateInput) addSalesOrderExpiryDateInput.value = "";
+        }
+    }
+
+    function calculateFromNetAmount() {
+        const netVal = parseFloat(addSalesOrderNetAmountInput ? addSalesOrderNetAmountInput.value : 0) || 0;
+        const taxPercent = parseFloat(addSalesOrderTaxPercentInput ? addSalesOrderTaxPercentInput.value : 0) || 0;
+
+        const taxAmount = netVal * (taxPercent / 100.0);
+        const grossAmount = netVal + taxAmount;
+
+        if (addSalesOrderTaxAmountText) {
+            addSalesOrderTaxAmountText.textContent = `Tax Amount (GST): ₹${taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        if (addSalesOrderGrossAmountInput) {
+            addSalesOrderGrossAmountInput.value = grossAmount > 0 ? grossAmount.toFixed(2) : "";
+        }
+        calculateSalesOrderExpiry();
+    }
+
+    function calculateFromGrossAmount() {
+        const grossVal = parseFloat(addSalesOrderGrossAmountInput ? addSalesOrderGrossAmountInput.value : 0) || 0;
+        const taxPercent = parseFloat(addSalesOrderTaxPercentInput ? addSalesOrderTaxPercentInput.value : 0) || 0;
+
+        const netAmount = taxPercent > 0 ? (grossVal / (1 + (taxPercent / 100.0))) : grossVal;
+        const taxAmount = grossVal - netAmount;
+
+        if (addSalesOrderTaxAmountText) {
+            addSalesOrderTaxAmountText.textContent = `Tax Amount (GST): ₹${taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        if (addSalesOrderNetAmountInput) {
+            addSalesOrderNetAmountInput.value = netAmount > 0 ? netAmount.toFixed(2) : "";
+        }
+        calculateSalesOrderExpiry();
+    }
+
+    function onSalesOrderProductChange() {
+        const productId = addSalesOrderProductSelect ? addSalesOrderProductSelect.value : "";
+        updateSalesOrderPlanDropdownForProduct(productId);
+        if (addSalesOrderNetAmountInput) addSalesOrderNetAmountInput.value = "";
+        if (addSalesOrderGrossAmountInput) addSalesOrderGrossAmountInput.value = "";
+        calculateFromNetAmount();
+    }
+
+    function onSalesOrderPlanChange() {
+        const productId = addSalesOrderProductSelect ? addSalesOrderProductSelect.value : "";
+        const planName = addSalesOrderPlanSelect ? addSalesOrderPlanSelect.value : "";
+
+        if (productId && planName && soProductsCache.length > 0) {
+            const prod = soProductsCache.find(p => String(p.id) === String(productId));
+            if (prod && prod[planName] !== undefined && prod[planName] !== null) {
+                const basePrice = parseFloat(prod[planName]) || 0;
+                if (addSalesOrderNetAmountInput) {
+                    addSalesOrderNetAmountInput.value = basePrice > 0 ? basePrice.toFixed(2) : "";
+                }
+            }
+        }
+        calculateFromNetAmount();
+    }
+
+    if (addSalesOrderNetAmountInput) addSalesOrderNetAmountInput.addEventListener('input', calculateFromNetAmount);
+    if (addSalesOrderGrossAmountInput) addSalesOrderGrossAmountInput.addEventListener('input', calculateFromGrossAmount);
+    if (addSalesOrderTaxPercentInput) addSalesOrderTaxPercentInput.addEventListener('input', calculateFromNetAmount);
+    if (addSalesOrderProductSelect) addSalesOrderProductSelect.addEventListener('change', onSalesOrderProductChange);
+    if (addSalesOrderPlanSelect) addSalesOrderPlanSelect.addEventListener('change', onSalesOrderPlanChange);
+
+    function initSalesOrderFlatpickr() {
+        if (!addSalesOrderStartDateInput) return;
+        if (addSalesOrderStartDateFp) addSalesOrderStartDateFp.destroy();
+
+        if (window.flatpickr) {
+            addSalesOrderStartDateFp = flatpickr(addSalesOrderStartDateInput, {
+                enableTime: false,
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                minDate: "today",
+                defaultDate: new Date(),
+                onChange: function (selectedDates) {
+                    calculateSalesOrderExpiry();
+                }
+            });
+        }
+    }
+
+function openCreateSalesOrderPage(leadUuid) {
+    if (!leadUuid) return;
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/leads/select-sales-order-lead';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'lead_uuid';
+    input.value = leadUuid;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-bs-target="#addSalesOrderModal"], .btn-create-so, [data-action="create-so"]');
+    if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        let targetUuid = btn.getAttribute('data-lead-uuid') || "";
+        if (!targetUuid) {
+            const checkedBoxes = document.querySelectorAll('#leadTableBody input[type="checkbox"]:checked');
+            if (checkedBoxes.length > 0) {
+                targetUuid = checkedBoxes[0].value;
+            }
+        }
+        if (targetUuid) {
+            openCreateSalesOrderPage(targetUuid);
+        }
+    }
+});
+
+    if (confirmAddSalesOrderBtn) {
+        confirmAddSalesOrderBtn.addEventListener('click', function () {
+            const leadUuid = addSalesOrderLeadUuidInput ? addSalesOrderLeadUuidInput.value : "";
+            const invoiceName = addSalesOrderInvoiceNameInput ? addSalesOrderInvoiceNameInput.value.trim() : "";
+            const mobileNumber = addSalesOrderRawMobileInput ? (addSalesOrderRawMobileInput.value.trim() || addSalesOrderMobileInput.value.trim()) : (addSalesOrderMobileInput ? addSalesOrderMobileInput.value.trim() : "");
+            const email = addSalesOrderEmailInput ? addSalesOrderEmailInput.value.trim() : "";
+            const gstNumber = addSalesOrderGstInput ? addSalesOrderGstInput.value.trim() : "";
+            const address = addSalesOrderAddressInput ? addSalesOrderAddressInput.value.trim() : "";
+            const productId = addSalesOrderProductSelect ? addSalesOrderProductSelect.value : "";
+            const planName = addSalesOrderPlanSelect ? addSalesOrderPlanSelect.value : "";
+            const startDate = addSalesOrderStartDateInput ? addSalesOrderStartDateInput.value : "";
+            const grossAmount = parseFloat(addSalesOrderGrossAmountInput ? addSalesOrderGrossAmountInput.value : 0) || 0;
+            const taxPercentage = parseFloat(addSalesOrderTaxPercentInput ? addSalesOrderTaxPercentInput.value : 0) || 0;
+            const netAmount = parseFloat(addSalesOrderNetAmountInput ? addSalesOrderNetAmountInput.value : 0) || 0;
+            const taxAmount = grossAmount - netAmount;
+            const paymentMode = addSalesOrderPaymentModeSelect ? addSalesOrderPaymentModeSelect.value : "";
+            const referenceNumber = addSalesOrderReferenceNumberInput ? addSalesOrderReferenceNumberInput.value.trim() : "";
+            const notes = addSalesOrderNotesInput ? addSalesOrderNotesInput.value.trim() : "";
+
+            if (!leadUuid) {
+                showToastNotification('Please select a lead from the table to create sales order.', 'warning');
+                return;
+            }
+            if (!invoiceName) {
+                if (addSalesOrderInvoiceNameInput) addSalesOrderInvoiceNameInput.focus();
+                showToastNotification('Please enter invoice / customer name.', 'warning');
+                return;
+            }
+            if (!mobileNumber) {
+                if (addSalesOrderMobileInput) addSalesOrderMobileInput.focus();
+                showToastNotification('Please enter mobile number.', 'warning');
+                return;
+            }
+            if (!productId) {
+                if (addSalesOrderProductSelect) addSalesOrderProductSelect.focus();
+                showToastNotification('Please select product.', 'warning');
+                return;
+            }
+            if (!planName) {
+                if (addSalesOrderPlanSelect) addSalesOrderPlanSelect.focus();
+                showToastNotification('Please select plan type.', 'warning');
+                return;
+            }
+            if (grossAmount <= 0) {
+                if (addSalesOrderGrossAmountInput) addSalesOrderGrossAmountInput.focus();
+                showToastNotification('Please enter valid gross payment amount.', 'warning');
+                return;
+            }
+
+            let serviceExpiryDate = "";
+            if (startDate && planName) {
+                let sObj = new Date(startDate);
+                let stdPrice = 0;
+                if (productId && soProductsCache.length > 0) {
+                    const prod = soProductsCache.find(p => String(p.id) === String(productId));
+                    if (prod && prod[planName] !== undefined && prod[planName] !== null) {
+                        stdPrice = parseFloat(prod[planName]) || 0;
+                    }
+                }
+                const exp = calculateProRataServiceExpiryDate(sObj, planName, stdPrice, netAmount);
+                serviceExpiryDate = exp.iso;
+            }
+
+            confirmAddSalesOrderBtn.disabled = true;
+            const originalHtml = confirmAddSalesOrderBtn.innerHTML;
+            confirmAddSalesOrderBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> Submitting...`;
+
+            fetch('/api/leads/add-sales-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lead_uuid: leadUuid,
+                    invoice_name: invoiceName,
+                    mobile_number: mobileNumber,
+                    email: email,
+                    address: address,
+                    gst_number: gstNumber,
+                    product_id: productId,
+                    plan_name: planName,
+                    service_start_date: startDate,
+                    service_expiry_date: serviceExpiryDate,
+                    gross_amount: grossAmount,
+                    tax_percentage: taxPercentage,
+                    tax_amount: taxAmount,
+                    net_amount: netAmount,
+                    payment_mode: paymentMode,
+                    reference_number: referenceNumber,
+                    notes: notes
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                confirmAddSalesOrderBtn.disabled = false;
+                confirmAddSalesOrderBtn.innerHTML = originalHtml;
+
+                if (data.success) {
+                    showToastNotification(data.message || 'Sales Order created in PENDING status successfully.', 'success');
+                    if (addSalesOrderModal) {
+                        const modalInstance = bootstrap.Modal.getInstance(addSalesOrderModal) || new bootstrap.Modal(addSalesOrderModal);
+                        if (modalInstance) modalInstance.hide();
+                    }
+                    fetchTableDataAJAX(currentPage, currentPageSize, true);
+                } else {
+                    showToastNotification(data.message || 'Failed to create sales order.', 'warning');
+                }
+            })
+            .catch(err => {
+                console.error('Create sales order error:', err);
+                confirmAddSalesOrderBtn.disabled = false;
+                confirmAddSalesOrderBtn.innerHTML = originalHtml;
+                showToastNotification('An error occurred while creating sales order.', 'danger');
+            });
+        });
+    }
+
+    // Contact List Modal (`#contactListModal`) Handling
+    const contactListModal = document.getElementById('contactListModal');
+    if (contactListModal) {
+        contactListModal.addEventListener('show.bs.modal', function (event) {
+            const triggerBtn = event.relatedTarget;
+            const leadUuid = triggerBtn ? triggerBtn.getAttribute('data-lead-uuid') : "";
+            const tbody = document.getElementById('contactListTableBody');
+            const subtitleEl = document.getElementById('contactListModalSubtitle');
+
+            if (subtitleEl) subtitleEl.textContent = 'Loading contact details...';
+            if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Loading contacts...</td></tr>`;
+
+            if (!leadUuid) return;
+
+            fetch('/api/leads/get-contacts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lead_uuid: leadUuid })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (subtitleEl && data.lead) {
+                        subtitleEl.textContent = `${data.lead.client_code} • ${data.lead.name} (${data.lead.mobile_number || 'N/A'})`;
+                    }
+                    if (tbody) {
+                        if (!data.contacts || data.contacts.length === 0) {
+                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-muted">No contacts saved for this lead yet.</td></tr>`;
+                        } else {
+                            let rowsHtml = '';
+                            data.contacts.forEach(c => {
+                                rowsHtml += `
+                                    <tr>
+                                        <td class="fw-semibold">${c.contact_name || 'NA'}</td>
+                                        <td>${c.mobile_number || 'NA'}</td>
+                                        <td>${c.email || 'NA'}</td>
+                                        <td>${c.address || 'NA'}</td>
+                                        <td><span class="badge bg-soft-info text-info fs-12">${c.product_name || 'None'}</span></td>
+                                        <td><span class="badge bg-soft-primary text-primary fs-12">${c.plan_type || 'None'}</span></td>
+                                        <td><small class="text-muted">${c.created_at || ''}</small></td>
+                                    </tr>
+                                `;
+                            });
+                            tbody.innerHTML = rowsHtml;
+                        }
+                    }
+                } else {
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-danger">${data.message || 'Failed to load contacts.'}</td></tr>`;
+                }
+            })
+            .catch(err => {
+                console.error('Fetch contacts error:', err);
+                if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-danger">An error occurred while fetching contacts.</td></tr>`;
+            });
+        });
+    }
+});
+
+window.openQuickEditLeadModal = function(btn) {
+    const leadUuid = $(btn).attr('data-lead-uuid') || '';
+    const clientCode = $(btn).attr('data-client-code') || '';
+    const name = $(btn).attr('data-lead-name') || '';
+    const email = $(btn).attr('data-email') || '';
+    const address = $(btn).attr('data-address') || '';
+    const state = $(btn).attr('data-state') || '';
+    const city = $(btn).attr('data-city') || '';
+
+    $('#quickEditLeadCodeBadge').text(clientCode ? `#${clientCode}` : '');
+    $('#quickEditLeadUuid').val(leadUuid);
+    $('#quickEditLeadName').val(name === 'NA' ? '' : name);
+    $('#quickEditLeadEmail').val(email === 'NA' ? '' : email);
+    $('#quickEditLeadAddress').val(address === 'NA' ? '' : address);
+
+    if (typeof window.initIndianStateCityDropdowns === 'function') {
+        window.initIndianStateCityDropdowns('quickEditLeadState', 'quickEditLeadCity', state, city);
+    }
+
+    const modalEl = document.getElementById('quickEditLeadModal');
+    let modal = bootstrap.Modal.getInstance(modalEl);
+    if (!modal) {
+        modal = new bootstrap.Modal(modalEl);
+    }
+    modal.show();
+};
+
+window.saveQuickEditLead = function() {
+    const leadUuid = $('#quickEditLeadUuid').val();
+    const name = $('#quickEditLeadName').val().trim();
+    const email = $('#quickEditLeadEmail').val().trim();
+    const address = $('#quickEditLeadAddress').val().trim();
+    const state = $('#quickEditLeadState').val() || '';
+    const city = $('#quickEditLeadCity').val() || '';
+
+    if (!name) {
+        Swal.fire('Error', 'Lead Name is required', 'error');
+        return;
+    }
+
+    const $btn = $('#btnSaveQuickEditLead');
+    $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i> Saving...');
+
+    $.ajax({
+        url: '/api/leads/update-basic-info',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            lead_uuid: leadUuid,
+            name: name,
+            email: email,
+            address: address,
+            state: state,
+            city: city
+        }),
+        success: function(res) {
+            $btn.prop('disabled', false).html('<i class="mdi mdi-check-circle-outline me-1"></i>Save Changes');
+            if (res.success) {
+                const modalEl = document.getElementById('quickEditLeadModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+
+                // 1. Immediately update DOM table row on screen for instant UI reflection
+                const $targetBtn = $(`button[data-lead-uuid="${leadUuid}"]`).first();
+                if ($targetBtn.length) {
+                    const $tr = $targetBtn.closest('tr');
+                    // Col 3 (3rd td) contains Name (.fw-medium) and Email (.text-muted)
+                    $tr.find('td:nth-child(3) .fw-medium').text(name);
+                    $tr.find('td:nth-child(3) .text-muted').text(email);
+
+                    // Update data attributes on edit button for subsequent edits
+                    $tr.find('button[onclick*="openQuickEditLeadModal"]').attr({
+                        'data-lead-name': name,
+                        'data-email': email,
+                        'data-address': address,
+                        'data-state': state,
+                        'data-city': city
+                    });
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Updated!',
+                    text: res.message || 'Lead updated successfully.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                if (typeof window.fetchTableDataAJAX === 'function') {
+                    window.fetchTableDataAJAX(window.currentPage || 1, window.currentPageSize || 10, true);
+                } else {
+                    window.location.reload();
+                }
+            } else {
+                Swal.fire('Error', res.message || 'Failed to update lead.', 'error');
+            }
+        },
+        error: function(err) {
+            $btn.prop('disabled', false).html('<i class="mdi mdi-check-circle-outline me-1"></i>Save Changes');
+            Swal.fire('Error', 'An error occurred while updating lead.', 'error');
+        }
+    });
+};
+</script>
+
+{% endblock %}

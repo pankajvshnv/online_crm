@@ -1,0 +1,57 @@
+//
+// icons.scss
+//
+
+// Icon demo ( Demo only )
+.icon-demo-content {
+  color: $gray-500;
+  svg{
+    padding: 0.25rem;
+  }
+  i,
+  svg {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 1.8;
+    font-size: 15px;
+    color: var(--#{$prefix}secondary-color);
+    border: 2px solid var(--#{$prefix}border-color);
+    border-radius: 4px;
+    transition: all 0.4s;
+    text-align: center;
+    margin-right: 16px;
+    &.mdi-18px {
+      width: 35px;
+      height: 35px;
+      line-height: 1.7;
+    }
+    &.mdi-24px {
+      width: 40px;
+      height: 40px;
+      line-height: 1.5;
+    }
+    &.mdi-36px {
+      width: 45px;
+      height: 45px;
+      line-height: 1.2;
+    }
+    &.mdi-48px {
+      width: 50px;
+      height: 50px;
+      line-height: 1;
+    }
+  }
+
+  .col-lg-4 {
+    margin-top: 24px;
+
+    &:hover {
+      i {
+        color: $white;
+        background-color: $primary;
+        border-color: $primary;
+      }
+    }
+  }
+}

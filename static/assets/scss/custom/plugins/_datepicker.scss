@@ -1,0 +1,134 @@
+//
+// Datepicker
+//
+
+.datepicker,
+.datetimepicker {
+  width: fit-content;
+  border: 1px solid var(--#{$prefix}border-color) !important;
+  border-radius: var(--#{$prefix}border-radius);
+  padding: 8px;
+  z-index: 1061 !important;
+
+  table {
+    tr {
+      &:first-child{
+        th{
+          &:hover{
+            background: var(--#{$prefix}secondary-bg) !important;
+          }
+        }
+      }
+      td {
+        width: 2rem;
+        height: 2rem;
+        span{
+          &:hover{
+            background: var(--#{$prefix}light) !important;
+          }
+        }
+        &.today {
+          color: var(--#{$prefix}primary);
+          background: rgba(var(--#{$prefix}primary-rgb), 0.15);
+          position: relative;
+          &:hover {
+            color: var(--#{$prefix}primary) !important;
+            background: rgba(var(--#{$prefix}primary-rgb), 0.15) !important;
+          }
+          &:after {
+            content: "";
+            position: absolute;
+            display: inline-block;
+            border-bottom: 8px solid currentColor;
+            border-left: 8px solid transparent;
+            bottom: 2px;
+            right: 2px;
+          }
+        }
+        &.day {
+          &.active,
+          &:active {
+            background: var(--#{$prefix}primary) !important;
+            color: $white !important;
+            border-radius: var(--#{$prefix}border-radius-sm) !important;
+            &:hover {
+              background: var(--#{$prefix}primary) !important;
+              color: $white !important;
+            }
+          }
+          &:hover {
+            background: var(--#{$prefix}secondary-bg);
+            color: var(--#{$prefix}primary);
+          }
+        }
+        &.highlighted {
+          background: var(--#{$prefix}secondary-bg);
+        }
+        &.range {
+          background: var(--#{$prefix}secondary-bg);
+        }
+        > span {
+          padding: 2px 0;
+          &:hover {
+            background: var(--#{$prefix}secondary-bg);
+            color: var(--#{$prefix}primary);
+          }
+          &.active {
+            background: var(--#{$prefix}primary) !important;
+          }
+          &.focused{
+            background: var(--#{$prefix}secondary-bg) !important;
+          }
+        }
+      }
+    }
+  }
+  .datepicker-switch,
+  .next,
+  .prev{
+    &:hover{
+        background: var(--#{$prefix}secondary-bg) !important;
+    }
+  }
+}
+
+.table-condensed {
+  > thead > tr > th,
+  > tbody > tr > td {
+    padding: 7px;
+  }
+}
+
+.datepicker-dropdown {
+  &.datepicker-orient-top {
+    &:before {
+      border-top-color: var(--#{$prefix}border-color) !important;
+    }
+  }
+}
+.datepicker table tr td.day.active
+
+.datetimepicker-inline {
+  min-width: 15.2rem;
+  .table-condensed {
+    width: 100%;
+    > thead {
+      > tr {
+        > th {
+          width: 30px;
+          height: 30px;
+          &.prev {
+            ::before {
+              content: "«";
+            }
+          }
+          &.next {
+            ::before {
+              content: "»";
+            }
+          }
+        }
+      }
+    }
+  }
+}

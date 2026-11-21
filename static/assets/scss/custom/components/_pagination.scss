@@ -1,0 +1,108 @@
+// pagination
+
+// Pagination rounded (Custom)
+.page-prev {
+  [dir="ltr"] & .pagination-right {
+    display: none;
+  }
+  [dir="rtl"] & .pagination-left {
+    display: none;
+  }
+}
+
+.page-next {
+  [dir="ltr"] & .pagination-left {
+    display: none;
+  }
+  [dir="rtl"] & .pagination-right {
+    display: none;
+  }
+}
+
+.page-prev,
+.page-next {
+    i{
+        font-size: 18px;
+    }
+}
+
+.pagination {
+    gap: 0.375rem;
+    i {
+        line-height: 0.7;
+    }
+    .page-item {
+        &:first-child,
+        &:last-child {
+            --#{$prefix}pagination-active-bg: transparent;
+            --#{$prefix}pagination-active-border-color: var(--#{$prefix}border-color);
+            --#{$prefix}pagination-active-color: var(--#{$prefix}primary);
+            --#{$prefix}pagination-hover-bg: transparent;
+            --#{$prefix}pagination-focus-bg: transparent;
+            --#{$prefix}pagination-focus-color: var(--#{$prefix}primary);
+        }
+    }
+    &.pagination-rounded {
+        .page-link {
+            border-radius: 30px !important;
+            text-align: center;
+        }
+    }
+    &.pagination-borderless {
+        .page-link {
+            border: none;
+        }
+    }
+    &.pagination-navigate {
+        gap: 0;
+        .page-item {
+            &:first-child {
+                .page-link {
+                    border-top-left-radius: var(--#{$prefix}border-radius);
+                    border-bottom-left-radius: var(--#{$prefix}border-radius);
+                }
+            }
+            &:last-child {
+                .page-link {
+                    border-top-right-radius: var(--#{$prefix}border-radius);
+                    border-bottom-right-radius: var(--#{$prefix}border-radius);
+                }
+            }
+            .page-link {
+                border-radius: 0;
+            }
+            &.disabled {
+                span {
+                    display: none;
+                }
+            }
+        }
+        &.pagination-pill {
+            .page-item {
+                &:first-child {
+                    .page-link {
+                        border-top-left-radius: var(--#{$prefix}border-radius-pill);
+                        border-bottom-left-radius: var(--#{$prefix}border-radius-pill);
+                    }
+                }
+                &:last-child {
+                    .page-link {
+                        border-top-right-radius: var(--#{$prefix}border-radius-pill);
+                        border-bottom-right-radius: var(--#{$prefix}border-radius-pill);
+                    }
+                }
+            }
+        }
+    }
+
+    &.pagination-arrow {
+        .page-item {
+            &:first-child,
+            &:last-child {
+                .page-link {
+                    padding: 0.375rem 6.6px;
+                }
+            }
+        }
+    }
+}

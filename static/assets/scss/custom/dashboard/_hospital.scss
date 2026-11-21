@@ -1,0 +1,25 @@
+// hospital.scss
+
+.appointments-circle {
+    top: 47%;
+    left: 43%;
+    transform: translate(-47%, -43%);
+    @media (max-width: 320px) {
+        left: 49%;
+    }
+}
+.banner-vector {
+    top: -35px;
+    right: 40px;
+}
+[dir="rtl"] {
+    .appointments-circle {
+        left: 56%;
+    }
+}
+[data-content-width="boxed"][data-layout="vertical"],
+[data-content-width="boxed"][data-layout="semibox"] {
+    .appointments-circle {
+        left: 48% !important;
+    }
+}

@@ -1,0 +1,62 @@
+//
+// Custom utilities
+//
+
+$utilities: (
+    "sizes": (
+        property: height width,
+        class: size,
+        values: $custom-sizes
+    ),
+    "width": (
+        property: width,
+        class: w,
+        values: $custom-sizes
+    ),
+    "min-width": (
+        property: min-width,
+        class: min-w,
+        values: $custom-sizes
+    ),
+    "max-width": (
+        property: max-width,
+        class: max-w,
+        values: $custom-sizes
+    ),
+    "height": (
+        property: height,
+        class: h,
+        values: $custom-sizes
+    ),
+    "min-height": (
+        property: min-height,
+        class: min-h,
+        values: $custom-sizes
+    ),
+    "max-height": (
+        property: max-height,
+        class: max-h,
+        values: $custom-sizes
+    ),
+    "bg-opacity": (
+        css-var: true,
+        class: bg-opacity,
+        values: (
+            10: 0.1,
+            20: 0.2,
+            30: 0.3,
+            40: 0.4,
+            50: 0.5,
+            60: 0.6,
+            70: 0.7,
+            80: 0.8,
+            90: 0.9,
+            100: 1
+        )
+    ),
+    "text-opacity": (
+        property: opacity,
+        class: text-opacity,
+        values: $text-opacity
+    ),
+);

@@ -1,0 +1,181 @@
+<!-- Follow-up History Modal -->
+<div class="modal fade" id="followupHistoryModal" tabindex="-1" aria-labelledby="followupHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 8px;">
+
+            <!-- Modal Header -->
+            <div class="modal-header border-bottom py-3 px-4 bg-light">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="followupHistoryModalLabel">
+                        Follow-up History
+                    </h5>
+                    <small class="text-muted fs-12" id="fhModalSubTitle">All scheduled and completed follow-ups</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body p-4">
+
+                <!-- Loading State -->
+                <div id="fhModalLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                    <span class="ms-2 text-muted fs-13">Loading follow-up history...</span>
+                </div>
+
+                <!-- History Content Container -->
+                <div id="fhModalContent" style="display: none;">
+
+                    <!-- Lead Info Bar -->
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded border mb-3 flex-wrap gap-2">
+                        <div>
+                            <span class="text-muted fs-11 text-uppercase fw-semibold d-block">Lead Name</span>
+                            <span class="fw-bold text-dark fs-14" id="fhLeadName">--</span>
+                        </div>
+                        <div>
+                            <span class="text-muted fs-11 text-uppercase fw-semibold d-block">Lead Code</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-12" id="fhLeadCode">--</span>
+                        </div>
+                        <div>
+                            <span class="text-muted fs-11 text-uppercase fw-semibold d-block">Total Records</span>
+                            <span class="badge bg-secondary-subtle text-dark border fs-12" id="fhTotalCount">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Clean Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0 fs-13" id="fhTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40px;" class="text-center">#</th>
+                                    <th class="text-nowrap">Follow-up Date & Time</th>
+                                    <th class="text-nowrap">Created Date & By</th>
+                                    <th class="text-nowrap">Type</th>
+                                    <th class="text-nowrap">Status</th>
+                                    <th>Notes / Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fhTableBody">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer border-top py-2 px-4 bg-light">
+                <button type="button" class="btn btn-secondary btn-sm px-4 fw-medium" data-bs-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+window.openFollowupHistoryModal = function(leadUuid, leadName) {
+    if (!leadUuid) return;
+
+    const modalEl = document.getElementById('followupHistoryModal');
+    if (!modalEl) return;
+
+    const bsModal = new bootstrap.Modal(modalEl);
+    
+    // Reset view states
+    document.getElementById('fhModalLoading').style.display = 'block';
+    document.getElementById('fhModalContent').style.display = 'none';
+    document.getElementById('fhTableBody').innerHTML = '';
+    
+    document.getElementById('fhLeadName').textContent = leadName || 'Lead';
+    document.getElementById('fhModalSubTitle').textContent = `Follow-up history for ${leadName || 'Lead'}`;
+    
+    bsModal.show();
+
+    fetch(`/api/followups/history/${leadUuid}`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('fhModalLoading').style.display = 'none';
+            document.getElementById('fhModalContent').style.display = 'block';
+
+            if (!data.success) {
+                document.getElementById('fhTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-danger fw-semibold">
+                            ${data.message || 'Failed to load history.'}
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const lead = data.lead || {};
+            const history = data.history || [];
+
+            document.getElementById('fhLeadName').textContent = lead.name || leadName || 'Lead';
+            document.getElementById('fhLeadCode').textContent = `#${lead.lead_id || leadUuid}`;
+            document.getElementById('fhTotalCount').textContent = `${history.length} Record(s)`;
+
+            if (history.length === 0) {
+                document.getElementById('fhTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted fs-13">
+                            No follow-up history records found for this lead.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            history.forEach((h, index) => {
+                let statusBadge = '';
+                const st = (h.followup_status || 'pending').toLowerCase();
+                if (st === 'completed') {
+                    statusBadge = '<span class="badge bg-success-subtle text-success fs-11">Completed</span>';
+                } else if (st === 'missed') {
+                    statusBadge = '<span class="badge bg-danger-subtle text-danger fs-11">Missed</span>';
+                } else if (st === 'rescheduled') {
+                    statusBadge = '<span class="badge bg-info-subtle text-info fs-11">Rescheduled</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11">Pending</span>';
+                }
+
+                html += `
+                    <tr>
+                        <td class="text-center fw-semibold text-muted fs-12">${index + 1}</td>
+                        <td class="text-nowrap">
+                            <div class="fw-bold text-dark fs-13">${h.followup_date_fmt || 'N/A'}</div>
+                        </td>
+                        <td class="text-nowrap">
+                            <div class="fw-medium text-dark fs-12">${h.created_at_fmt || 'N/A'}</div>
+                            <small class="text-muted fs-11">${h.created_by_name || 'System'}</small>
+                        </td>
+                        <td class="text-nowrap">
+                            <span class="badge bg-light text-dark border fs-11">${h.followup_type || 'Call'}</span>
+                        </td>
+                        <td class="text-nowrap">${statusBadge}</td>
+                        <td>
+                            <div class="fs-12 text-dark" style="white-space: pre-wrap;">${h.notes ? h.notes : '<span class="text-muted">No remarks provided</span>'}</div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('fhTableBody').innerHTML = html;
+        })
+        .catch(err => {
+            console.error('Error fetching followup history:', err);
+            document.getElementById('fhModalLoading').style.display = 'none';
+            document.getElementById('fhModalContent').style.display = 'block';
+            document.getElementById('fhTableBody').innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-danger">
+                        An error occurred while loading follow-up history.
+                    </td>
+                </tr>
+            `;
+        });
+};
+</script>

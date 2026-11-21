@@ -1,0 +1,67 @@
+// Mixin for Generating Alert Classes Based on Theme Colors
+@mixin generate-alert-classes($colors: $theme-colors, $prefix: "") {
+  @each $name, $color in $colors {
+    // Error handling: Ensure color exists
+    @if not map-has-key($colors, $name) {
+      @error "Color '#{$name}' is missing in the '$colors' map. Please define it in the theme colors.";
+    }
+
+    // Warning for empty color
+    @if not $color {
+      @warn "Color for '#{$name}' is empty. Using a fallback might cause issues.";
+    }
+
+    // Solid Alert Class
+    .alert-#{$name} {
+      --#{$prefix}alert-color: var(--#{$prefix}white);
+      --#{$prefix}alert-bg: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-border-color: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-link-color: var(--#{$prefix}white);
+
+      // Conditionally set text color
+      @if $name == "light" {
+        --#{$prefix}alert-color: var(--#{$prefix}body-color);
+        --#{$prefix}alert-link-color: var(--#{$prefix}body-color);
+      }
+    }
+
+    // Outline Alert Class
+    .alert-outline-#{$name} {
+      --#{$prefix}alert-color: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-border-color: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-link-color: var(--#{$prefix}#{$name});
+
+      // Conditionally set text color
+      @if $name == "light" {
+        --#{$prefix}alert-color: var(--#{$prefix}body-color);
+        --#{$prefix}alert-link-color: var(--#{$prefix}body-color);
+      }
+    }
+
+    // Label Alert Class
+    .alert-label-#{$name} {
+      --#{$prefix}alert-bg: var(--#{$prefix}#{$name}-bg-subtle);
+      --#{$prefix}alert-color: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-border-color: transparent;
+      --#{$prefix}alert-link-color: var(--#{$prefix}#{$name});
+
+      // Conditionally set text color
+      @if $name == "light" {
+        --#{$prefix}alert-color: var(--#{$prefix}body-color);
+        --#{$prefix}alert-link-color: var(--#{$prefix}body-color);
+      }
+    }
+
+    // Border Alert Class
+    .alert-border-#{$name} {
+      --#{$prefix}alert-color: var(--#{$prefix}#{$name});
+      --#{$prefix}alert-border-color: rgba(var(--#{$prefix}#{$name}-rgb), 0.2);
+      border-left: 4px solid rgba(var(--#{$prefix}#{$name}-rgb), 0.7);
+      --#{$prefix}alert-link-color: var(--#{$prefix}#{$name});
+      background: linear-gradient(90deg,rgba(var(--#{$prefix}#{$name}-rgb), 0.15) 0%, rgba(var(--#{$prefix}#{$name}-rgb), 0) 100%);
+    }
+  }
+}
+
+// Example Usage of the Mixin with a theme prefix
+@include generate-alert-classes($theme-colors, $prefix);

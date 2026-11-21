@@ -1,0 +1,70 @@
+// maintenance.scss
+
+.main-vector-section {
+    .maintencance-vector {
+        width: 58%;
+        @include media-breakpoint-only(xl) {
+            width: 65%;
+        }
+    }
+    .circle-shap {
+        bottom: -50px;
+        left: 50%;
+        transform: translate(-50%);
+        height: 480px;
+        width: 510px;
+        @include media-breakpoint-only(md) {
+            height: 410px;
+            width: 450px;
+        }
+    }
+    .card-1 {
+        top: 40px;
+        left: 70px;
+    }
+    .card-2 {
+        bottom: 70px;
+        left: -20px;
+    }
+    .card-3 {
+        bottom: 100px;
+        right: -20px;
+    }
+    .card-4 {
+        top: 40px;
+        left: 130px;
+        @include media-breakpoint-only(md) {
+            left: 80px;
+        }
+    }
+    .card-5 {
+        bottom: 70px;
+        left: 90px;
+        @include media-breakpoint-only(md) {
+            bottom: 40px;
+            left: 40px;
+        }
+    }
+    .card-6 {
+        bottom: 50px;
+        right: 100px;
+        @include media-breakpoint-only(md) {
+            bottom: 30px;
+            right: 60px;
+        }
+    }
+    .card-7 {
+        top: 10px;
+        right: 210px;
+           @include media-breakpoint-only(md){
+            right: 180px;
+        }
+    }
+    .maintencance-arrow {
+        height: 70%;
+        top: -23%;
+        right: 10%;
+        rotate: 180deg;
+        z-index: 0;
+    }
+}

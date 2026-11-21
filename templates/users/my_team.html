@@ -1,0 +1,490 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">My Team</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('user_profile') }}">Profile</a></li>
+                        <li class="breadcrumb-item active">My Team</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card Container -->
+    <div class="card all-leads-card border mb-4">
+        <div class="card-body p-3">
+
+            <!-- Single Row Filter Bar (Standard CRM Layout) -->
+            <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+                
+                <!-- 1. Status Filter -->
+                <div>
+                    <label class="form-label" for="teamStatusFilter">Status</label>
+                    <select class="form-select lead-filter-input" id="teamStatusFilter">
+                        <option value="all" selected>All Status</option>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+
+                <!-- 2. Search + Reset (Pushed to Right with ms-auto) -->
+                <div class="d-flex align-items-end gap-2 ms-auto">
+                    <div>
+                        <label class="form-label" for="teamSearch">Search</label>
+                        <div class="position-relative">
+                            <input
+                                type="search"
+                                class="form-control lead-filter-input"
+                                id="teamSearch"
+                                placeholder="Search member, username, ext..."
+                                autocomplete="off"
+                            >
+                            <i class="mdi mdi-magnify position-absolute top-50 end-0 translate-middle-y me-3 text-muted"></i>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="button" class="btn btn-light" id="btnResetTeamFilters">
+                            <i class="mdi mdi-refresh me-1"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Inner Table Container -->
+            <div class="card all-leads-card border">
+                <div class="card-body p-0">
+
+                    <!-- Standard Table Scroll Container -->
+                    <div class="clientos-table-scroll single-row-filter" style="position:relative;">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="teamTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-nowrap" style="min-width: 180px;">Name</th>
+                                    <th class="text-nowrap" style="min-width: 140px;">User Name</th>
+                                    <th class="text-nowrap" style="min-width: 160px;">Password</th>
+                                    <th class="text-center text-nowrap" style="width: 130px;">Extension</th>
+                                    <th class="text-nowrap" style="min-width: 140px;">Designation</th>
+                                    <th class="text-nowrap" style="min-width: 120px;">Role</th>
+                                    <th class="text-center text-nowrap" style="width: 100px;">Status</th>
+                                    <th class="text-center text-nowrap pe-3" style="min-width: 290px;">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="teamTableBody">
+                                {% if not team_members %}
+                                    <tr id="noTeamRow">
+                                        <td colspan="8" class="text-center py-4 text-muted">
+                                            No team members found.
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    {% for m in team_members %}
+                                    <tr class="team-data-row"
+                                        data-name="{{ (m.full_name or '') | lower }}"
+                                        data-username="{{ (m.username or '') | lower }}"
+                                        data-mobile="{{ (m.mobile or '') | lower }}"
+                                        data-extension="{{ (m.extension_number or '') | lower }}"
+                                        data-role="{{ (m.role_name or '') | lower }}"
+                                        data-designation="{{ (m.designation_name or '') | lower }}"
+                                        data-status="{{ m.status }}">
+
+                                        <!-- 1. Name -->
+                                        <td>
+                                            <div class="fw-bold text-dark">{{ m.full_name or 'Unnamed User' }}</div>
+                                            {% if m.mobile %}
+                                                <div class="text-muted fs-11 mt-1">{{ m.mobile }}</div>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- 2. Username -->
+                                        <td>
+                                            <span class="text-dark fw-medium">{{ m.username or '-' }}</span>
+                                        </td>
+
+                                        <!-- 3. Password (Masked with Eye Toggle & Copy) -->
+                                        <td>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="password-text text-dark font-monospace fs-13 d-none" id="pwdText_{{ m.id }}">{{ m.password or '-' }}</span>
+                                                <span class="password-masked text-muted fs-13" id="pwdMasked_{{ m.id }}">••••••••</span>
+                                                <button type="button" class="btn btn-sm btn-light p-1 text-muted ms-1" onclick="togglePasswordVisibility({{ m.id }})" title="Show / Hide Password">
+                                                    <i class="mdi mdi-eye-outline fs-14" id="pwdIcon_{{ m.id }}"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-light p-1 text-muted" onclick="copyToClipboard('{{ m.password }}', 'Password')" title="Copy Password">
+                                                    <i class="mdi mdi-content-copy fs-14"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                        <!-- 4. Extension Number -->
+                                        <td class="text-center">
+                                            {% if m.extension_number %}
+                                                <span class="badge bg-soft-info text-info border border-info-subtle px-2 py-1 fs-12 fw-bold">
+                                                    <i class="mdi mdi-phone-classic me-1"></i>{{ m.extension_number }}
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-light text-muted border px-2 py-1 fs-11">
+                                                    Not Assigned
+                                                </span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- 5. Designation -->
+                                        <td>
+                                            <div class="text-dark">{{ m.designation_name or 'Not Assigned' }}</div>
+                                        </td>
+
+                                        <!-- 6. Role -->
+                                        <td>
+                                            <div class="text-dark">{{ m.role_name or 'No Role' }}</div>
+                                        </td>
+
+                                        <!-- 7. Status -->
+                                        <td class="text-center">
+                                            {% if m.status == 1 %}
+                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- 8. Action (Listen || Whisper || Barge) -->
+                                        <td class="text-center pe-3 text-nowrap">
+                                            {% if m.extension_number %}
+                                                <div class="d-inline-flex align-items-center gap-1">
+                                                    
+                                                    <!-- Listen Button (*562) -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-info text-dark shadow-sm fw-medium px-2 py-1" 
+                                                            onclick="triggerSupervision('{{ m.user_uuid }}', '{{ m.extension_number }}', 'listen', '{{ m.full_name }}')"
+                                                            title="Listen In (Silent Monitor: *562{{ m.extension_number }})">
+                                                        <i class="mdi mdi-headphones text-info me-1"></i>Listen
+                                                    </button>
+
+                                                    <!-- Whisper Button (*564) -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-warning text-dark shadow-sm fw-medium px-2 py-1" 
+                                                            onclick="triggerSupervision('{{ m.user_uuid }}', '{{ m.extension_number }}', 'whisper', '{{ m.full_name }}')"
+                                                            title="Whisper (Coach Agent: *564{{ m.extension_number }})">
+                                                        <i class="mdi mdi-account-voice text-warning me-1"></i>Whisper
+                                                    </button>
+
+                                                    <!-- Join Call Button (*566) -->
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-success shadow-sm fw-medium px-2 py-1" 
+                                                            onclick="triggerSupervision('{{ m.user_uuid }}', '{{ m.extension_number }}', 'barge', '{{ m.full_name }}')"
+                                                            title="Join Call (Conference / Merge: *566{{ m.extension_number }})">
+                                                        <i class="mdi mdi-phone-plus text-success me-1"></i>Join Call (Merge)
+                                                    </button>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted fs-12 fst-italic">No Extension</span>
+                                            {% endif %}
+                                        </td>
+
+                                    </tr>
+                                    {% endfor %}
+                                    <tr id="noTeamFoundRow" class="d-none">
+                                        <td colspan="8" class="text-center py-4 text-muted">
+                                            No team members match the search / filter criteria.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Standard Pagination Footer -->
+            <div class="all-leads-pagination d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mt-3">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted" for="pageSize">Rows</label>
+                        <select class="form-select form-select-sm" id="pageSize" style="width: 90px;">
+                            <option value="10" selected>10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="text-muted" id="paginationInfo">Loading...</div>
+                </div>
+
+                <nav aria-label="Team pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationNav"></ul>
+                </nav>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const allRows = Array.from(document.querySelectorAll('.team-data-row'));
+    const searchInput = document.getElementById('teamSearch');
+    const statusFilter = document.getElementById('teamStatusFilter');
+    const pageSizeSelect = document.getElementById('pageSize');
+    const resetBtn = document.getElementById('btnResetTeamFilters');
+    const noTeamFoundRow = document.getElementById('noTeamFoundRow');
+    const paginationContainer = document.getElementById('paginationNav');
+    const paginationInfo = document.getElementById('paginationInfo');
+
+    let currentPage = 1;
+    let pageSize = parseInt(pageSizeSelect.value) || 10;
+
+    function getFilteredRows() {
+        const query = (searchInput.value || '').trim().toLowerCase();
+        const status = statusFilter.value || 'all';
+
+        return allRows.filter(row => {
+            const name = row.getAttribute('data-name') || '';
+            const username = row.getAttribute('data-username') || '';
+            const mobile = row.getAttribute('data-mobile') || '';
+            const extension = row.getAttribute('data-extension') || '';
+            const role = row.getAttribute('data-role') || '';
+            const designation = row.getAttribute('data-designation') || '';
+            const rStatus = row.getAttribute('data-status') || '';
+
+            const matchesSearch = !query || 
+                name.includes(query) || 
+                username.includes(query) || 
+                mobile.includes(query) || 
+                extension.includes(query) ||
+                role.includes(query) || 
+                designation.includes(query);
+
+            const matchesStatus = (status === 'all') || (rStatus === status);
+
+            return matchesSearch && matchesStatus;
+        });
+    }
+
+    function renderTable() {
+        const filtered = getFilteredRows();
+        const total = filtered.length;
+
+        pageSize = parseInt(pageSizeSelect.value) || 10;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+
+        allRows.forEach(row => row.style.display = 'none');
+
+        if (total === 0) {
+            if (noTeamFoundRow) noTeamFoundRow.classList.remove('d-none');
+            if (paginationInfo) paginationInfo.textContent = 'Showing 0 to 0 of 0 entries';
+        } else {
+            if (noTeamFoundRow) noTeamFoundRow.classList.add('d-none');
+            const pageRows = filtered.slice(startIndex, endIndex);
+            pageRows.forEach(row => row.style.display = '');
+
+            const showingStart = startIndex + 1;
+            const showingEnd = Math.min(endIndex, total);
+            if (paginationInfo) paginationInfo.textContent = `Showing ${showingStart} to ${showingEnd} of ${total} entries`;
+        }
+
+        renderPaginationControls(totalPages);
+    }
+
+    function renderPaginationControls(totalPages) {
+        if (!paginationContainer) return;
+        paginationContainer.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        // Prev Button
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#"><i class="mdi mdi-chevron-left"></i></a>`;
+        prevLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+        paginationContainer.appendChild(prevLi);
+
+        // Page Numbers
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLi = document.createElement('li');
+            pageLi.className = `page-item ${currentPage === i ? 'active' : ''}`;
+            pageLi.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            const targetPage = i;
+            pageLi.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = targetPage;
+                renderTable();
+            });
+            paginationContainer.appendChild(pageLi);
+        }
+
+        // Next Button
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#"><i class="mdi mdi-chevron-right"></i></a>`;
+        nextLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+        paginationContainer.appendChild(nextLi);
+    }
+
+    // Filter Listeners
+    if (searchInput) searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
+    if (statusFilter) statusFilter.addEventListener('change', () => { currentPage = 1; renderTable(); });
+    if (pageSizeSelect) pageSizeSelect.addEventListener('change', () => { currentPage = 1; renderTable(); });
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () {
+            searchInput.value = '';
+            statusFilter.value = 'all';
+            pageSizeSelect.value = '10';
+            currentPage = 1;
+            renderTable();
+        });
+    }
+
+    // Initial render
+    renderTable();
+});
+
+// Toggle password text vs masked bullets
+function togglePasswordVisibility(userId) {
+    const textEl = document.getElementById(`pwdText_${userId}`);
+    const maskEl = document.getElementById(`pwdMasked_${userId}`);
+    const iconEl = document.getElementById(`pwdIcon_${userId}`);
+
+    if (!textEl || !maskEl || !iconEl) return;
+
+    if (textEl.classList.contains("d-none")) {
+        textEl.classList.remove("d-none");
+        maskEl.classList.add("d-none");
+        iconEl.classList.remove("mdi-eye-outline");
+        iconEl.classList.add("mdi-eye-off-outline");
+    } else {
+        textEl.classList.add("d-none");
+        maskEl.classList.remove("d-none");
+        iconEl.classList.remove("mdi-eye-off-outline");
+        iconEl.classList.add("mdi-eye-outline");
+    }
+}
+
+// Copy password to clipboard
+function copyToClipboard(text, label = "Password") {
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+        showFlashToast(`${label} copied to clipboard!`, "dark");
+    }).catch(err => {
+        console.error("Clipboard copy failed:", err);
+    });
+}
+
+// Trigger Live Telephony Supervision (Listen || Whisper || Barge)
+function triggerSupervision(agentUserUuid, agentExt, mode, agentName) {
+    if (!agentExt) {
+        showFlashToast("Agent does not have an extension configured.", "warning");
+        return;
+    }
+
+    const modeLabels = {
+        'listen': 'Connecting Listen-In (*562' + agentExt + ')...',
+        'whisper': 'Connecting Whisper (*564' + agentExt + ')...',
+        'barge': 'Connecting Join Call (*566' + agentExt + ')...'
+    };
+
+    showFlashToast(modeLabels[mode] || 'Connecting...', 'info');
+
+    fetch('/api/telephony/supervise-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            agent_user_uuid: agentUserUuid,
+            agent_extension: agentExt,
+            mode: mode
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showFlashToast(data.message || `Successfully connected to ${agentName}`, "success");
+        } else {
+            showFlashToast(data.message || "Failed to initiate call supervision.", "danger");
+        }
+    })
+    .catch(err => {
+        console.error("Error triggering supervision:", err);
+        showFlashToast("Network error while connecting call supervision.", "danger");
+    });
+}
+
+// Show standard CRM top-right flash toast
+function showFlashToast(message, category = "info") {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1100';
+        document.body.appendChild(container);
+    }
+
+    const bgMap = {
+        'success': 'bg-success',
+        'danger': 'bg-danger',
+        'error': 'bg-danger',
+        'warning': 'bg-warning',
+        'info': 'bg-info',
+        'primary': 'bg-primary',
+        'dark': 'bg-dark'
+    };
+    const bgClass = bgMap[category] || 'bg-primary';
+
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white ${bgClass} border-0 shadow`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+
+    container.appendChild(toastEl);
+    const toast = new bootstrap.Toast(toastEl, { delay: 4000, autohide: true });
+    toast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+</script>
+{% endblock %}

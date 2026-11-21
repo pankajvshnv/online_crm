@@ -1,0 +1,96 @@
+{% set menu = [
+    ('dashboard', 'compass-outline', 'Dashboard', [
+        ('dashboard', 'Monthly Sales Dashboard')
+    ]),
+    ('add_lead', 'person-add-outline', 'Add Lead', [
+        ('add_lead', 'Add Lead')
+    ]),
+    ('all_leads', 'funnel-outline', 'All Leads', [
+        ('all_leads', 'All Leads')
+    ]),
+    ('followups', 'calendar-outline', 'Follow-ups', [
+        ('all_followups', 'Follow-ups')
+    ]),
+    ('clients', 'briefcase-outline', 'Clients', [
+        ('all_clients', 'Clients')
+    ]),
+    ('payments', 'credit-card-outline', 'Sales Orders', [
+        ('all_payments', 'Sales Orders')
+    ]),
+    ('team', 'people-outline', 'Team Management', [
+        ('all_users', 'Team Members')
+    ]),
+    ('contacts', 'book-open-outline', 'Contacts', [
+        ('view_contacts', 'Contacts')
+    ]),
+    ('handbook', 'book-outline', 'Handbook', [
+        ('handbook_home', 'Handbook')
+    ]),
+    ('reports', 'pie-chart-outline', 'Reports', [
+        ('lead_report', 'Lead Report', 'lead_report'),
+        ('sales_report', 'Sales Report', 'sales_report'),
+        ('employee_report', 'Employee Report', 'employee_report'),
+        ('user_report', 'User Report', 'user_report')
+    ]),
+    ('operations', 'cloud-upload-outline', 'Lead Upload', [
+        ('bulk_upload_leads', 'Upload Leads', 'upload_leads'),
+        ('paste_leads', 'Paste Leads', 'paste_leads')
+    ]),
+    ('settings', 'settings-outline', 'Settings', [
+        ('settings_home', 'Settings')
+    ])
+] %}
+
+<div class="sidebar-left d-flex flex-column justify-content-between">
+    <!-- Mobile Sidebar Header & Close Button -->
+    <div class="sidebar-mobile-header d-flex d-lg-none align-items-center justify-content-between px-3 py-3 border-bottom" style="background: var(--bs-card-bg, #ffffff); min-height: 64px;">
+        <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+            <img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="Logo" style="height: 36px; width: auto; max-width: 42px; object-fit: contain;" class="flex-shrink-0">
+            <div class="text-truncate">
+                <span class="fw-bold fs-16 text-dark d-block text-truncate" style="letter-spacing: -0.2px;">{{ company_brand_name or 'ClientOS' }}</span>
+                <span class="text-muted d-block fw-medium" style="font-size: 11px; margin-top: -1px;">Sales tracking panel</span>
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-light border-0 text-muted rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-none ms-2" id="sidebarMobileCloseBtn" aria-label="Close menu" style="width: 36px; height: 36px; background: rgba(0,0,0,0.06);">
+            <i class="mdi mdi-close fs-18"></i>
+        </button>
+    </div>
+    <div class="sidebar-slide flex-grow-1" data-simplebar style="overflow-y: auto;">
+        <div id="sidebar-menu">
+            <ul class="left-menu list-unstyled" id="side-menu">
+                {% for group, icon, label, items in menu %}
+                {% set is_group_active = (active_group == group) or (group == 'payments' and (active_group == 'payments' or request.path.startswith('/payments') or request.path.startswith('/leads/create-sales-order') or request.path.startswith('/leads/edit-sales-order'))) or (group == 'settings' and (active_group == 'settings' or request.path.startswith('/settings'))) or (group == 'operations' and (active_group == 'operations' or request.path.startswith('/leads/bulk-upload') or request.path.startswith('/leads/paste-leads'))) or (group == 'reports' and (active_group == 'reports' or request.path.startswith('/reports') or request.path.startswith('/leads/lead-operation'))) %}
+                {% if group == 'dashboard' or group == 'clients' or group == 'payments' or group == 'team' or (group == 'add_lead' and has_permission('leads', 'add')) or (group == 'all_leads' and has_permission('leads', 'view')) or has_permission(group, 'view') or (group == 'reports' and (has_permission('reports', 'view') or has_permission('reports', 'lead_report') or has_permission('reports', 'sales_report') or has_permission('reports', 'employee_report') or has_permission('reports', 'user_report') or has_permission('operations', 'lead_monitor'))) or (group == 'operations' and (has_permission('operations', 'view') or has_permission('operations', 'upload_leads') or has_permission('operations', 'paste_leads'))) %}
+                <li class="{{ 'mm-active' if is_group_active else '' }}">
+                    {% if group in ['dashboard', 'handbook', 'followups', 'clients', 'payments', 'team', 'settings', 'add_lead', 'all_leads', 'contacts'] %}
+                    <a href="{{ url_for(items[0][0]) }}" class="{{ 'active' if is_group_active else '' }} d-flex align-items-center">
+                        <i data-eva="{{ icon }}"></i>
+                        <span>{{ label }}</span>
+                        {% if group == 'followups' %}
+                            <span class="ms-auto badge rounded-pill bg-success-subtle text-success fs-11 px-2 py-0-5 border border-success border-opacity-25 {{ 'd-none' if not (today_followups_count and today_followups_count > 0) else '' }}" id="sidebarFollowupsCountBadge" title="Today's scheduled follow-ups">{{ today_followups_count or '' }}</span>
+                        {% endif %}
+                    </a>
+                    {% else %}
+                    <a href="javascript: void(0);" class="has-arrow {{ 'active' if is_group_active else '' }}" aria-expanded="{{ 'true' if is_group_active else 'false' }}">
+                        <i data-eva="{{ icon }}"></i>
+                        <span>{{ label }}</span>
+                    </a>
+                    <ul class="sub-menu {{ 'mm-show' if is_group_active else '' }}" aria-expanded="{{ 'true' if is_group_active else 'false' }}">
+                        {% for item in items %}
+                            {% set endpoint = item[0] %}
+                            {% set item_label = item[1] %}
+                            {% set req_action = item[2] if item | length > 2 else none %}
+                            
+                            {% if not req_action or has_permission(group, req_action) or (endpoint == 'lead_monitor' and has_permission('operations', 'lead_monitor')) %}
+                            <li><a href="{{ url_for(endpoint) }}" class="{{ 'active' if (active_page == endpoint) or (endpoint in ('user_report', 'lead_monitor') and active_page in ('user_report', 'lead_monitor')) else '' }}">{{ item_label }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

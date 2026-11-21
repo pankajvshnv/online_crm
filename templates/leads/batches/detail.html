@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">{{ batch.batch_name }}</h4>
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('lead_batches') }}">Lead Batches</a></li>
+                    <li class="breadcrumb-item active">Detail</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <h5 class="card-title mb-1">{{ batch.batch_name }}</h5>
+            <div class="text-muted small">
+                {{ 'File Upload' if batch.upload_type == 'file' else 'Quick Paste' }} ·
+                Uploaded by {{ batch.uploaded_by_name or 'System' }} ·
+                {{ batch.created_at.strftime('%d %b %Y %I:%M %p') if batch.created_at else '-' }}
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('bulk_upload_leads') }}" class="btn btn-outline-primary btn-sm">
+                <i class="mdi mdi-cloud-upload-outline me-1"></i> Upload More
+            </a>
+            {% if raw_available and has_permission('global_access_scope', 'global_data_export') %}
+            <a href="{{ url_for('download_batch_duplicates', batch_uuid=batch.batch_uuid) }}" class="btn btn-outline-warning btn-sm btn-export-csv">
+                <i class="mdi mdi-download-outline me-1"></i> Duplicates
+            </a>
+            <a href="{{ url_for('download_batch_invalid', batch_uuid=batch.batch_uuid) }}" class="btn btn-outline-danger btn-sm btn-export-csv">
+                <i class="mdi mdi-download-outline me-1"></i> Invalid
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="lead-result-summary row g-3">
+            <div class="col-md-3 col-6">
+                <a href="{{ url_for('lead_batch_metric_list', batch_uuid=batch.batch_uuid, metric='total_uploaded') }}" class="lead-result-metric">
+                    <i class="mdi mdi-format-list-numbered"></i>
+                    <span>Total Tried</span>
+                    <strong>{{ batch.total_count }}</strong>
+                </a>
+            </div>
+            <div class="col-md-3 col-6">
+                <a href="{{ url_for('lead_batch_metric_list', batch_uuid=batch.batch_uuid, metric='fresh_imported') }}" class="lead-result-metric success">
+                    <i class="mdi mdi-check-circle-outline"></i>
+                    <span>Uploaded</span>
+                    <strong>{{ batch.imported_count }}</strong>
+                </a>
+            </div>
+            <div class="col-md-3 col-6">
+                <a href="{{ url_for('lead_batch_metric_list', batch_uuid=batch.batch_uuid, metric='duplicate') }}" class="lead-result-metric warning">
+                    <i class="mdi mdi-content-duplicate"></i>
+                    <span>Duplicate</span>
+                    <strong>{{ batch.duplicate_count }}</strong>
+                </a>
+            </div>
+            <div class="col-md-3 col-6">
+                <a href="{{ url_for('lead_batch_metric_list', batch_uuid=batch.batch_uuid, metric='invalid') }}" class="lead-result-metric danger">
+                    <i class="mdi mdi-alert-circle-outline"></i>
+                    <span>Invalid</span>
+                    <strong>{{ batch.invalid_count }}</strong>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Batch Performance</h5>
+    </div>
+    <div class="card-body">
+        <div class="lead-performance-grid">
+            {% for key, label, field, value in performance_metrics %}
+            <a href="{{ url_for('lead_batch_metric_list', batch_uuid=batch.batch_uuid, metric=key) }}" class="lead-performance-card">
+                <span>{{ label }}</span>
+                <strong>{{ performance[key] }}</strong>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

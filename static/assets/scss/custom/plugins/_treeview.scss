@@ -1,0 +1,52 @@
+// Treeview.scss
+
+.jstree-anchor {
+    margin-bottom: 0.5rem;
+    padding-inline: 12px;
+    font-size: 0.875rem;
+    &:link {
+        color: var(--#{$prefix}body-color);
+    }
+    &:hover,
+    &.jstree-clicked {
+        color: var(--#{$prefix}body-color);
+        box-shadow: none;
+        background-color: transparent;
+    }
+}
+.jstree-icon {
+    &::before {
+        font-size: 15.5px;
+        color: rgba(var(--#{$prefix}body-color-rgb), 0.5);
+    }
+    &:empty {
+        line-height: 31px !important;
+    }
+}
+.jstree-anchor:has(.mdi-folder-open) {
+    font-weight: 500 !important;
+}
+.jstree-node.jstree-closed {
+    .jstree-anchor {
+        .jstree-icon {
+            &::before {
+                content: "\f024b";
+                font-family: "Material Design Icons";
+                color: rgba(var(--#{$prefix}body-color-rgb), 0.2);
+            }
+        }
+    }
+}
+.jstree-default .jstree-wholerow-clicked {
+    background: var(--#{$prefix}light);
+}
+.jstree-default > .jstree-no-dots .jstree-node {
+    background: none;
+}
+.jstree-default .jstree-anchor {
+    height: 30px;
+    line-height: 30px;
+}
+.jstree-default .jstree-node {
+    margin-left: 37px;
+}

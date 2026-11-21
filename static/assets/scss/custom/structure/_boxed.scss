@@ -1,0 +1,81 @@
+//
+// _boxed.scss
+//
+
+[data-content-width="boxed"] {
+  #layout-wrapper {
+    background-color: var(--#{$prefix}body-bg);
+    box-shadow: $box-shadow-lg;
+    min-height: 100vh;
+  }
+  .footer {
+    @include media-breakpoint-up(xl){
+      left: calc(var(--#{$prefix}sidebar-width) + var(--#{$prefix}boxed-layout-sm-width));
+      right: var(--#{$prefix}boxed-layout-sm-width);
+    }
+    @include media-breakpoint-up(xxl){
+      left: calc(var(--#{$prefix}sidebar-width) + var(--#{$prefix}boxed-layout-width));
+      right: var(--#{$prefix}boxed-layout-width);
+    }
+  }
+  &[data-sidebar="small"] {
+    .footer {
+      @include media-breakpoint-up(xl){
+        left: calc(var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}boxed-layout-sm-width));
+      }
+      @include media-breakpoint-up(xxl){
+        left: calc(var(--#{$prefix}sidebar-collapsed-width) + var(--#{$prefix}boxed-layout-width));
+      }
+    }
+  }
+  &[data-sidebar="medium"] {
+    .footer {
+      @include media-breakpoint-up(xl){
+        left: calc(var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}boxed-layout-sm-width));
+      }
+      @include media-breakpoint-up(xxl){
+        left: calc(var(--#{$prefix}sidebar-medium-width) + var(--#{$prefix}boxed-layout-width));
+      }
+    }
+  }
+  &[data-layout="vertical"],
+  &[data-layout="semibox"] {
+    #layout-wrapper,
+    #page-topbar {
+      @include media-breakpoint-up(xl) {
+        margin: 0 var(--#{$prefix}boxed-layout-sm-width);
+      }
+      @include media-breakpoint-up(xxl) {
+        margin: 0 var(--#{$prefix}boxed-layout-width);
+      }
+    }
+  }
+  &[data-layout="horizontal"] {
+    .left-menu {
+      width: 100% !important;
+    }
+    #page-topbar .navbar-header,
+    #sidebar-menu,
+    .container-fluid {
+      @include media-breakpoint-up(xl) {
+        padding-inline: var(--#{$prefix}boxed-layout-sm-width);
+      }
+      @include media-breakpoint-up(xxl) {
+        padding-inline: var(--#{$prefix}boxed-layout-width);
+      }
+    }
+    #sidebar-menu {
+      @include media-breakpoint-up(xl) {
+        padding-inline: calc(var(--#{$prefix}boxed-layout-sm-width) + 16px) !important;
+      }
+      @include media-breakpoint-up(xxl) {
+        padding-inline: calc(var(--#{$prefix}boxed-layout-width) + 16px) !important;
+      }
+    }
+    [data-sidebar="small"] {
+      .footer {
+        max-width: calc(var(--#{$prefix}boxed-layout-width) - #{$sidebar-collapsed-width});
+      }
+    }
+  }
+}

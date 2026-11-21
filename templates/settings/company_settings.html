@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-fluid" style="margin-bottom: 65px;">
+
+    <!-- Page Title & Breadcrumbs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                <h4 class="mb-sm-0">Company Settings</h4>
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{{ url_for('settings_home') }}">Settings</a></li>
+                        <li class="breadcrumb-item">System Controls</li>
+                        <li class="breadcrumb-item active">Company Settings</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section Card -->
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h5 class="card-title mb-0">Company Profile Information</h5>
+            <a href="{{ url_for('settings_home') }}" class="btn btn-sm btn-outline-primary">
+                <i class="mdi mdi-arrow-left me-1"></i> Back to Settings
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('company_settings') }}" enctype="multipart/form-data">
+                <div class="row g-4">
+
+                    <!-- Company Name -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Company Name <span class="text-danger">*</span></label>
+                        <input type="text" 
+                               value="{{ settings.get('company_name', 'ClientOS Pvt Ltd') }}" 
+                               class="form-control" 
+                               name="company_name" 
+                               required 
+                               minlength="2" 
+                               maxlength="120" 
+                               placeholder="Enter company name">
+                        <small class="text-muted fs-12">Used across titles, login screen, and header brand name.</small>
+                    </div>
+
+                    <!-- Tax Dropdown (% GST) -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Tax Percentage (% GST)</label>
+                        {% set tax_val = settings.get('tax_percentage', '18') %}
+                        <select class="form-select" name="tax_percentage" required>
+                            <option value="0" {% if tax_val == '0' %}selected{% endif %}>0% (Exempted)</option>
+                            <option value="5" {% if tax_val == '5' %}selected{% endif %}>5% GST</option>
+                            <option value="12" {% if tax_val == '12' %}selected{% endif %}>12% GST</option>
+                            <option value="18" {% if tax_val == '18' %}selected{% endif %}>18% GST (Standard)</option>
+                            <option value="28" {% if tax_val == '28' %}selected{% endif %}>28% GST</option>
+                        </select>
+                    </div>
+
+                    <!-- Company Logo Upload -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Company Logo</label>
+                        <input type="file" class="form-control" name="company_logo" accept="image/*">
+                        {% set logo_path = settings.get('company_logo') %}
+                        {% if logo_path %}
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <small class="text-muted fs-12">Current Logo:</small>
+                                <img src="{{ logo_path }}" alt="Company Logo" height="32" class="border rounded p-1 bg-light">
+                            </div>
+                        {% else %}
+                            <small class="text-muted fs-12">Default: ClientOS Logo</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Company Favicon Upload -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Company Favicon</label>
+                        <input type="file" class="form-control" name="company_favicon" accept="image/*">
+                        {% set fav_path = settings.get('company_favicon') %}
+                        {% if fav_path %}
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <small class="text-muted fs-12">Current Favicon:</small>
+                                <img src="{{ fav_path }}" alt="Company Favicon" height="24" class="border rounded p-1 bg-light">
+                            </div>
+                        {% else %}
+                            <small class="text-muted fs-12">Default: ClientOS Favicon</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Sales Display with GST -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Sales Display with GST</label>
+                        {% set sales_gst_val = settings.get('sales_display_with_gst', '1') %}
+                        <select class="form-select" name="sales_display_with_gst" required>
+                            <option value="1" {% if sales_gst_val == '1' %}selected{% endif %}>Show Sales with GST (With GST)</option>
+                            <option value="0" {% if sales_gst_val == '0' %}selected{% endif %}>Hide GST / Without GST</option>
+                        </select>
+                    </div>
+
+                    <!-- Free Trial Days Dropdown -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Free Trial Duration (Days)</label>
+                        {% set trial_days_val = settings.get('free_trial_days', '7') %}
+                        <select class="form-select" name="free_trial_days" required>
+                            <option value="1" {% if trial_days_val == '1' %}selected{% endif %}>1 Day</option>
+                            <option value="2" {% if trial_days_val == '2' %}selected{% endif %}>2 Days</option>
+                            <option value="3" {% if trial_days_val == '3' %}selected{% endif %}>3 Days</option>
+                            <option value="4" {% if trial_days_val == '4' %}selected{% endif %}>4 Days</option>
+                            <option value="5" {% if trial_days_val == '5' %}selected{% endif %}>5 Days</option>
+                            <option value="7" {% if trial_days_val == '7' %}selected{% endif %}>7 Days (1 Week)</option>
+                            <option value="10" {% if trial_days_val == '10' %}selected{% endif %}>10 Days</option>
+                            <option value="15" {% if trial_days_val == '15' %}selected{% endif %}>15 Days</option>
+                            <option value="30" {% if trial_days_val == '30' %}selected{% endif %}>30 Days (1 Month)</option>
+                        </select>
+                        <small class="text-muted fs-12">Default duration for free trial allocation.</small>
+                    </div>
+
+
+
+                    <!-- Dashboard Designation Charts Selection with Position Reordering -->
+                    <div class="col-md-6 border-top pt-3 mt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <label class="form-label fw-bold text-dark mb-0">
+                                <i class="mdi mdi-chart-box-outline text-primary me-1"></i> Dashboard Visible Designation Charts & Display Order
+                            </label>
+                            <small class="text-muted fs-12"><i class="mdi mdi-information-outline me-1"></i>Check to enable, use ▲ ▼ to re-order position</small>
+                        </div>
+
+                        <!-- Hidden Input storing exact ordered list -->
+                        <input type="hidden" name="dashboard_chart_designations" id="chartDesignationsOrderedInput" value="{{ saved_chart_designations|join(',') }}">
+
+                        <!-- Reorderable List Container -->
+                        <div class="card border bg-light-subtle shadow-none mb-2">
+                            <ul class="list-group list-group-flush" id="desigReorderList">
+                                {% for desig in ordered_designations_list %}
+                                {% set is_checked = desig.id|string in saved_chart_designations %}
+                                <li class="list-group-item d-flex align-items-center justify-content-between p-2 px-3 desig-item-row bg-white border-bottom" data-desig-id="{{ desig.id }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <i class="mdi mdi-drag-vertical text-muted fs-18 drag-handle cursor-grab"></i>
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input desig-checkbox cursor-pointer" type="checkbox" value="{{ desig.id }}" id="desig_cb_{{ loop.index }}" {% if is_checked %}checked{% endif %} onchange="updateDesignationsOrder()">
+                                        </div>
+                                        <label class="form-check-label fw-medium text-dark cursor-pointer mb-0" for="desig_cb_{{ loop.index }}">
+                                            {{ desig.designation_name }}
+                                        </label>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle pos-badge {% if not is_checked %}d-none{% endif %}">
+                                            Position #<span class="pos-num">1</span>
+                                        </span>
+                                        <div class="btn-group btn-group-sm ms-2">
+                                            <button type="button" class="btn btn-light btn-icon border" onclick="moveDesigItem(this, 'up')" title="Move Up"><i class="mdi mdi-arrow-up fs-14"></i></button>
+                                            <button type="button" class="btn btn-light btn-icon border" onclick="moveDesigItem(this, 'down')" title="Move Down"><i class="mdi mdi-arrow-down fs-14"></i></button>
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <small class="text-muted fs-12">Checked designations will appear as charts on the main Dashboard in the exact order listed above.</small>
+                    </div>
+
+                    <!-- System Notification Controls -->
+                    <div class="col-12 border-top pt-3 mt-3">
+                        <h6 class="fw-bold text-dark mb-3">System Notification Controls</h6>
+                    </div>
+
+                    <!-- 1. Employee Birthday Alert -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Employee Birthday Alert</label>
+                        {% set bday_val = settings.get('enable_birthday_alert', '1') %}
+                        <select class="form-select" name="enable_birthday_alert" required>
+                            <option value="1" {% if bday_val == '1' %}selected{% endif %}>Enabled (Show Birthday Greetings)</option>
+                            <option value="0" {% if bday_val == '0' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <small class="text-muted fs-12">Automated birthday greeting alert for staff.</small>
+                    </div>
+
+                    <!-- 2. SO Approved & Payment Alert -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Sales Order Approved & Payment Alert</label>
+                        {% set so_app_val = settings.get('enable_so_approved_alert', '1') %}
+                        <select class="form-select" name="enable_so_approved_alert" required>
+                            <option value="1" {% if so_app_val == '1' %}selected{% endif %}>Enabled (Show Payment Celebration)</option>
+                            <option value="0" {% if so_app_val == '0' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <small class="text-muted fs-12">Automated celebration alert on SO approval.</small>
+                    </div>
+
+                    <!-- 3. Target Achieved Alert -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Target Achieved Alert</label>
+                        {% set tgt_val = settings.get('enable_target_achieved_alert', '1') %}
+                        <select class="form-select" name="enable_target_achieved_alert" required>
+                            <option value="1" {% if tgt_val == '1' %}selected{% endif %}>Enabled (Show Target Congratulation)</option>
+                            <option value="0" {% if tgt_val == '0' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <small class="text-muted fs-12">Automated alert when sales targets are met.</small>
+                    </div>
+
+                    <!-- 4. Employee Joining Day Alert -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">New Employee Joining Alert</label>
+                        {% set join_val = settings.get('enable_joining_day_alert', '1') %}
+                        <select class="form-select" name="enable_joining_day_alert" required>
+                            <option value="1" {% if join_val == '1' %}selected{% endif %}>Enabled (Show Welcome Alert)</option>
+                            <option value="0" {% if join_val == '0' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <small class="text-muted fs-12">Automated welcome alert for new joining employees.</small>
+                    </div>
+
+                    <!-- 5. Work Anniversary Alert -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Work Anniversary Alert</label>
+                        {% set anniv_val = settings.get('enable_work_anniversary_alert', '1') %}
+                        <select class="form-select" name="enable_work_anniversary_alert" required>
+                            <option value="1" {% if anniv_val == '1' %}selected{% endif %}>Enabled (Show Anniversary Milestone)</option>
+                            <option value="0" {% if anniv_val == '0' %}selected{% endif %}>Disabled</option>
+                        </select>
+                        <small class="text-muted fs-12">Automated celebration alert for office work anniversary.</small>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="col-12 pt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="mdi mdi-content-save-outline me-1"></i> Save Company Settings
+                        </button>
+                        <a href="{{ url_for('settings_home') }}" class="btn btn-light ms-2">
+                            Cancel
+                        </a>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function moveDesigItem(btn, direction) {
+    const row = btn.closest('.desig-item-row');
+    if (!row) return;
+    if (direction === 'up') {
+        const prev = row.previousElementSibling;
+        if (prev) {
+            row.parentNode.insertBefore(row, prev);
+        }
+    } else if (direction === 'down') {
+        const next = row.nextElementSibling;
+        if (next) {
+            row.parentNode.insertBefore(next, row);
+        }
+    }
+    updateDesignationsOrder();
+}
+
+function updateDesignationsOrder() {
+    const selectedVals = [];
+    let position = 1;
+    document.querySelectorAll('#desigReorderList .desig-item-row').forEach(row => {
+        const cb = row.querySelector('.desig-checkbox');
+        const badge = row.querySelector('.pos-badge');
+        const posNum = row.querySelector('.pos-num');
+
+        if (cb && cb.checked) {
+            selectedVals.push(cb.value);
+            if (badge) badge.classList.remove('d-none');
+            if (posNum) posNum.textContent = position++;
+            row.classList.add('bg-primary-subtle', 'bg-opacity-10');
+        } else {
+            if (badge) badge.classList.add('d-none');
+            row.classList.remove('bg-primary-subtle', 'bg-opacity-10');
+        }
+    });
+
+    const hiddenInput = document.getElementById('chartDesignationsOrderedInput');
+    if (hiddenInput) {
+        hiddenInput.value = selectedVals.join(',');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateDesignationsOrder();
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+//
+// Page-title
+//
+
+.page-title-box {
+    padding-bottom: $grid-gutter-width;
+
+    .breadcrumb {
+        padding: 0;
+        margin-bottom: 0;
+        --#{$prefix}breadcrumb-item-padding-x: 0.3125rem;
+    }
+
+    h4 {
+        font-size: 15px;
+        text-transform: capitalize;
+        font-weight: 500;
+    }
+
+    .page-title-right {
+        @include media-breakpoint-down(md) {
+            display: none;
+        }
+    }
+}

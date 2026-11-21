@@ -1,0 +1,70 @@
+// chat.scss
+
+.main-chat-content {
+    .chat-wrapper {
+        @include media-breakpoint-up(xl) {
+            height: calc(100vh - 186px);
+            min-height: calc(100vh - 186px);
+        }
+        overflow-y: auto;
+    }
+    .chat-contact {
+        width: 100%;
+        @include media-breakpoint-up(xl) {
+            width: 55%;
+        }
+        @include media-breakpoint-up(xxl) {
+            width: 40%;
+        }
+        .message-badge {
+            padding: 5px;
+            line-height: 0.6;
+        }
+        .nav-link {
+            color: $text-muted;
+            &.active,
+            &:hover {
+                color: var(--#{$prefix}body-color);
+            }
+        }
+    }
+    .chat-area {
+        .chat-bubble {
+            max-width: 600px;
+        }
+        .chat-icon {
+            height: 19px;
+            width: 19px;
+        }
+        .chat-conversation {
+            min-height: calc(100vh - 120px);
+            max-height: calc(100vh - 120px);
+            @include media-breakpoint-up(xl) {
+                min-height: calc(100vh - 320px);
+                max-height: calc(100vh - 320px);
+            }
+        }
+    }
+    .user-info {
+        width: 100%;
+        @include media-breakpoint-up(xl) {
+            width: 43%;
+        }
+        @include media-breakpoint-up(xxl) {
+            width: 33%;
+        }
+        min-height: calc(100vh - 186px);
+    }
+}
+
+[data-content-width="boxed"][data-layout="vertical"],
+[data-content-width="boxed"][data-layout="semibox"] {
+    .chat-area {
+        @include media-breakpoint-up(xl) {
+            width: 42% !important;
+        }
+        @include media-breakpoint-up(xxl) {
+            width: 52% !important;
+        }
+    }
+}
