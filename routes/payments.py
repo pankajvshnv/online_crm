@@ -493,11 +493,11 @@ def get_payments_data(cursor, logged_user_uuid, mode="all", target_lead_uuid="")
     }
 
 
-def resolve_selected_owner(logged_user_uuid):
+def resolve_selected_owner(logged_user_uuid=None):
     owner_req = request.args.get("owner")
     if owner_req is not None and owner_req != "":
         return owner_req
-    return logged_user_uuid or "all"
+    return "all"
 
 
 def payments_routes(app):

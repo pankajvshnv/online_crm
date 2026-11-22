@@ -43,11 +43,11 @@
     <div>
         <label class="form-label" for="ownerFilter">Owner</label>
         <select class="form-select lead-filter-input" id="ownerFilter" name="owner" style="min-width: 140px;">
-            <option value="all" {% if selected_owner == 'all' %}selected{% endif %}>All Owners</option>
+            <option value="all" {% if not request.args.get('owner') or selected_owner in ['all', 'ALL', '', None] %}selected{% endif %}>All Owners</option>
             <option value="unassigned" {% if selected_owner == 'unassigned' %}selected{% endif %}>Unassigned</option>
             {% if owners %}
                 {% for o in owners %}
-                    <option value="{{ o.user_uuid }}" {% if selected_owner == o.user_uuid %}selected{% endif %}>{{ o.full_name }}</option>
+                    <option value="{{ o.user_uuid }}" {% if request.args.get('owner') == o.user_uuid %}selected{% endif %}>{{ o.full_name }}</option>
                 {% endfor %}
             {% endif %}
         </select>

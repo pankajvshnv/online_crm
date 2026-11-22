@@ -161,6 +161,11 @@ def get_lead_table_data(
 
             from utils.permissions import has_permission
             is_global = has_permission("global_access_scope", "global_data_access")
+            if not is_global and logged_user_uuid:
+                cursor.execute("SELECT id, is_admin, role_id FROM users WHERE user_uuid = %s LIMIT 1", (logged_user_uuid,))
+                u_chk = cursor.fetchone() or {}
+                if u_chk.get("is_admin") == 1 or u_chk.get("role_id") == 1:
+                    is_global = True
 
             where_clauses = [
                 "NOT EXISTS (SELECT 1 FROM sales_orders so WHERE so.lead_id = l.id AND (so.order_status IS NULL OR LOWER(so.order_status) != 'rejected'))"

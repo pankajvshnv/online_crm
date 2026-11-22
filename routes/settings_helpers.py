@@ -617,10 +617,10 @@ def fetch_lead_source_limit_buttons(
     return buttons
 
 
-def resolve_selected_owner(logged_user_uuid):
+def resolve_selected_owner(logged_user_uuid=None):
     from flask import request
     owner_req = request.args.get("owner")
     if owner_req is not None and owner_req != "":
         return owner_req
-    return logged_user_uuid or "all"
+    return "all"
 

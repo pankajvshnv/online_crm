@@ -242,10 +242,11 @@ def get_filter_request_values(
     owner_param = request_args.get("owner")
     disposed_param = request_args.get("disposed")
 
-    if owner_param in (None, ""):
-        owner_param = logged_user_uuid or "all"
-    elif str(owner_param).lower() in ("all", "all_owners"):
+    if owner_param in (None, "") or str(owner_param).lower() in ("all", "all_owners"):
         owner_param = "all"
+
+    if status_param in (None, ""):
+        status_param = "no_status"
 
     if disposed_param is None:
         disposed_param = "0"
