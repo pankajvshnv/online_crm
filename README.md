@@ -59,13 +59,16 @@ Open your browser at:
 
 ---
 
-## 🔑 Default Login Credentials
+## 🔑 Login & Account Creation
 
-| Role | Username | Password |
+You can log in using existing default accounts **or** click **"Sign Up / Create Account"** on the login page (`/register`) to create your own account:
+
+| Role | Username (ID) | Password |
 |---|---|---|
 | **Administrator** | `admin` | `admin123` |
 | **Sales Manager** | `rahul.sharma` | `password123` |
 | **Sales Executive** | `priya.patel` | `password123` |
+| **New Account** | *Create your own ID at `/register`* | *Create your own password* |
 
 ---
 

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ page_title|default('Create Account') }} | {{ company_brand_name or 'ClientOS' }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{{ company_brand_favicon or url_for('static', filename='assets/images/crm_logo.png') }}">
+    <link href="{{ url_for('static', filename='assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/icons.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/app.min.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='assets/css/custom.css') }}" rel="stylesheet" type="text/css">
+</head>
+<body class="clientos-auth-body">
+    <main class="clientos-auth-shell">
+        <section class="clientos-auth-panel shadow-lg rounded-3">
+            <div class="clientos-auth-brand text-center mb-4">
+                <img src="{{ company_brand_logo or url_for('static', filename='assets/images/crm_logo.png') }}" alt="{{ company_brand_name or 'ClientOS' }}" style="max-height: 48px;" class="mb-2">
+                <div>
+                    <h1 class="h4 fw-bold text-dark mb-1">{{ company_brand_name or 'ClientOS' }}</h1>
+                    <p class="text-muted fs-13 mb-0">Create your new administrator account</p>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show py-2 px-3 fs-13 mb-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-13">Full Name</label>
+                    <input type="text" class="form-control" name="full_name" value="{{ full_name or '' }}" placeholder="e.g. John Doe" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-13">Username (Login ID)</label>
+                    <input type="text" class="form-control" name="username" value="{{ username or '' }}" placeholder="Choose a username" required autocomplete="username">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-13">Mobile (Optional)</label>
+                    <input type="tel" class="form-control" name="mobile" value="{{ mobile or '' }}" placeholder="e.g. 9876543210">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-13">Password</label>
+                    <input type="password" class="form-control" name="password" placeholder="Create a password" required autocomplete="new-password">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted fs-13">Confirm Password</label>
+                    <input type="password" class="form-control" name="confirm_password" placeholder="Confirm your password" required autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <i class="mdi mdi-account-plus me-1 fs-16 align-middle"></i> Create Account
+                </button>
+
+                <div class="text-center mt-3 pt-3 border-top">
+                    <p class="text-muted fs-13 mb-0">Already have an account? <a href="{{ url_for('login') }}" class="fw-semibold text-primary text-decoration-none">Sign In</a></p>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

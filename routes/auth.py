@@ -397,6 +397,68 @@ def auth_routes(app):
 
         return render_template("auth/login.html", page_title="Login", require_otp_step=False)
 
+    @app.route("/register", methods=["GET", "POST"])
+    @app.route("/signup", methods=["GET", "POST"])
+    def register():
+        if session.get("user_uuid"):
+            return redirect(url_for("dashboard"))
+
+        if request.method == "POST":
+            full_name = (request.form.get("full_name") or "").strip()
+            username = (request.form.get("username") or "").strip()
+            password = request.form.get("password") or ""
+            confirm_password = request.form.get("confirm_password") or ""
+            mobile = (request.form.get("mobile") or "").strip()
+
+            if not username or not password:
+                flash("Username (ID) and Password are required.", "danger")
+                return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+
+            if len(password) < 4:
+                flash("Password must be at least 4 characters long.", "danger")
+                return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+
+            if password != confirm_password:
+                flash("Passwords do not match. Please re-enter your password.", "danger")
+                return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+
+            conn = get_db_connection()
+            if not conn:
+                flash("Cannot connect to database. Please make sure MySQL is running.", "danger")
+                return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+
+            try:
+                with conn.cursor() as cursor:
+                    # Check if username already exists
+                    cursor.execute("SELECT id FROM users WHERE LOWER(username) = LOWER(%s) LIMIT 1", (username,))
+                    existing = cursor.fetchone()
+                    if existing:
+                        flash(f"Username '{username}' is already in use. Please choose another username.", "warning")
+                        return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+
+                    new_uuid = f"usr-{uuid.uuid4().hex[:12]}"
+                    user_name_display = full_name if full_name else username
+
+                    cursor.execute("""
+                        INSERT INTO users (
+                            user_uuid, full_name, username, mobile, password,
+                            role_id, is_admin, status, click_to_call, number_show_hide,
+                            require_otp_for_login, outside_login
+                        ) VALUES (%s, %s, %s, %s, %s, 1, 1, 1, '1', '1', 0, 1)
+                    """, (new_uuid, user_name_display, username, mobile or None, password))
+                    conn.commit()
+
+                flash("Account created successfully! Please sign in with your ID and password.", "success")
+                return redirect(url_for("login"))
+            except Exception as e:
+                print("[REGISTER ERROR]", e)
+                flash(f"Error creating account: {str(e)}", "danger")
+                return render_template("auth/register.html", page_title="Create Account", full_name=full_name, username=username, mobile=mobile)
+            finally:
+                conn.close()
+
+        return render_template("auth/register.html", page_title="Create Account")
+
     @app.route("/logout")
     def logout():
         terminate_user_session()

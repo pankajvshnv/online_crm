@@ -124,8 +124,8 @@ def require_login():
     if request.path == "/logout" or request.endpoint == "logout":
         return None
 
-    public_endpoints = {"login"}
-    if request.endpoint in public_endpoints:
+    public_endpoints = {"login", "register", "signup"}
+    if request.endpoint in public_endpoints or request.path in ("/login", "/register", "/signup"):
         return None
 
     user_uuid = session.get("user_uuid")

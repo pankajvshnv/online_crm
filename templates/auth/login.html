@@ -104,26 +104,14 @@
                     <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                         <i class="mdi mdi-login me-1 fs-16 align-middle"></i> Login
                     </button>
+
+                    <div class="text-center mt-3 pt-3 border-top">
+                        <p class="text-muted fs-13 mb-0">Don't have an account? <a href="{{ url_for('register') }}" class="fw-semibold text-primary text-decoration-none">Sign Up / Create Account</a></p>
+                    </div>
                 </form>
             {% endif %}
 
         </section>
     </main>
-
-    <script>
-    (function () {
-        fetch('https://api.ipify.org?format=json')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data && data.ip) {
-                    var inputs = document.querySelectorAll('.client_public_ip_input');
-                    for (var i = 0; i < inputs.length; i++) {
-                        inputs[i].value = data.ip;
-                    }
-                }
-            })
-            .catch(function() {});
-    })();
-    </script>
 </body>
 </html>
