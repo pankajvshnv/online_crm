@@ -92,16 +92,18 @@ def get_service_settings_data():
 def is_client_office_ip(client_ip, ips_list_raw):
     """
     Checks if client_ip is present in the configured ips_list in service_settings.
-    If ips_list is empty/blank, NO IP is considered office IP (returns False).
-    Only explicit matching IPs are considered office network.
+    Localhost / loopback is always considered an office IP.
+    If no IP list is configured, office IP check is not enforced.
     """
+    if client_ip in ("127.0.0.1", "::1", "localhost", "0.0.0.0"):
+        return True
     if not ips_list_raw or not ips_list_raw.strip():
-        return False
-    
+        return True
+
     parts = re.split(r"[\s,;]+", ips_list_raw.strip())
     allowed_ips = {p.strip() for p in parts if p.strip()}
-    
-    return client_ip in allowed_ips
+
+    return client_ip in allowed_ips or "127.0.0.1" in allowed_ips
 
 
 def format_whatsapp_phone(raw_phone):
@@ -347,30 +349,50 @@ def auth_routes(app):
             password = request.form.get("password") or ""
 
             conn = get_db_connection()
+            if not conn:
+                flash("Cannot connect to MySQL database. Please make sure MySQL is running and database.sql is imported.", "danger")
+                return render_template("auth/login.html", page_title="Login", require_otp_step=False)
+
             user = None
-            if conn:
-                with conn.cursor() as cursor:
-                        cursor.execute("""
-                            SELECT
-                                u.id,
-                                u.user_uuid,
-                                u.username,
-                                u.password,
-                                u.mobile,
-                                u.require_otp_for_login,
-                                u.outside_login,
-                                u.is_admin,
-                                r.permissions
-                            FROM users u
-                            LEFT JOIN roles r ON r.id = u.role_id
-                            WHERE u.username = %s AND u.status = 1
-                            LIMIT 1
-                        """, (username,))
-                        user = cursor.fetchone()
-                conn.close()
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT
+                        u.id,
+                        u.user_uuid,
+                        u.username,
+                        u.password,
+                        u.mobile,
+                        u.require_otp_for_login,
+                        u.outside_login,
+                        u.is_admin,
+                        r.permissions
+                    FROM users u
+                    LEFT JOIN roles r ON r.id = u.role_id
+                    WHERE u.username = %s AND u.status = 1
+                    LIMIT 1
+                """, (username,))
+                user = cursor.fetchone()
+            conn.close()
 
             if user and user["password"] == password:
                 client_ip = get_client_ip()
+
+                # Administrator (is_admin == 1) bypasses IP restriction and outside WhatsApp OTP
+                if int(user.get("is_admin") or 0) == 1:
+                    conn = get_db_connection()
+                    if conn:
+                        with conn.cursor() as cursor:
+                            log_user_login_activity(cursor, user["id"], user["username"], client_ip, via_otp=False)
+                            conn.commit()
+                        conn.close()
+
+                    session.clear()
+                    set_user_session(user["user_uuid"])
+                    create_user_session(user["id"], user["user_uuid"], user["username"], client_ip)
+                    next_url = request.args.get("next")
+                    if not next_url or not next_url.startswith("/") or next_url.startswith("//"):
+                        next_url = url_for("dashboard")
+                    return redirect(next_url)
 
                 # 1. Check Service Block
                 service_settings = get_service_settings_data()

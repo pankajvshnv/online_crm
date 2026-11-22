@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, ".env"))
 
-# System & Database Configuration strictly from .env
-SECRET_KEY = os.getenv("SECRET_KEY")
-DB_HOST = os.getenv("DB_HOST")
+# System & Database Configuration strictly from .env (with sensible defaults for new installations)
+SECRET_KEY = os.getenv("SECRET_KEY", "crm-default-secret-key-xyz123")
+DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", 3306))
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER", "root")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_NAME = os.getenv("DB_NAME", "online_crm")
 
 
 class Config:
