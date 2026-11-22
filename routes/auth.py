@@ -11,61 +11,15 @@ from utils.permissions import set_user_session
 from utils.session_manager import create_user_session, terminate_user_session, validate_user_session
 
 
-_machine_public_ip_cache = {"ip": None, "ts": 0}
-
-
-def get_cached_machine_public_ip():
-    """Fallback for localhost: resolves machine's real public IPv4."""
-    import time
-    now = time.time()
-    if _machine_public_ip_cache["ip"] and (now - _machine_public_ip_cache["ts"] < 300):
-        return _machine_public_ip_cache["ip"]
-    try:
-        resp = requests.get("https://api.ipify.org?format=json", timeout=2)
-        if resp.status_code == 200:
-            ip = (resp.json().get("ip") or "").strip()
-            if ip:
-                _machine_public_ip_cache["ip"] = ip
-                _machine_public_ip_cache["ts"] = now
-                return ip
-    except Exception:
-        pass
-    return _machine_public_ip_cache["ip"]
-
-
 def get_client_ip():
-    """Extract real client public IPv4 from Cloudflare, reverse proxy headers, browser, or resolver."""
-    # 1. Cloudflare header
-    cf_ip = (request.headers.get("CF-Connecting-IP") or "").strip()
-    if cf_ip and cf_ip not in ("127.0.0.1", "::1", "localhost"):
-        return cf_ip
-
-    # 2. X-Forwarded-For
-    xff = request.headers.get("X-Forwarded-For")
-    if xff:
-        parts = [p.strip() for p in xff.split(",") if p.strip()]
-        for p in parts:
-            if p not in ("127.0.0.1", "::1", "localhost"):
-                return p
-
-    # 3. X-Real-IP
-    x_real = (request.headers.get("X-Real-IP") or "").strip()
-    if x_real and x_real not in ("127.0.0.1", "::1", "localhost"):
-        return x_real
-
-    # 4. Form submitted public IP from browser
-    form_ip = (request.form.get("client_public_ip") or "").strip()
-    if form_ip and form_ip not in ("127.0.0.1", "::1", "localhost"):
-        return form_ip
-
-    # 5. Remote address
-    remote = (request.remote_addr or "").strip()
-    if remote in ("127.0.0.1", "::1", "localhost", ""):
-        pub_ip = get_cached_machine_public_ip()
-        if pub_ip:
-            return pub_ip
-
-    return remote
+    """Extract client IP address for activity logging."""
+    if request.headers.get("CF-Connecting-IP"):
+        return request.headers.get("CF-Connecting-IP").strip()
+    if request.headers.get("X-Forwarded-For"):
+        return request.headers.get("X-Forwarded-For").split(",")[0].strip()
+    if request.headers.get("X-Real-IP"):
+        return request.headers.get("X-Real-IP").strip()
+    return (request.remote_addr or "127.0.0.1").strip()
 
 
 def get_service_settings_data():
@@ -89,21 +43,9 @@ def get_service_settings_data():
     return row or {}
 
 
-def is_client_office_ip(client_ip, ips_list_raw):
-    """
-    Checks if client_ip is present in the configured ips_list in service_settings.
-    Localhost / loopback is always considered an office IP.
-    If no IP list is configured, office IP check is not enforced.
-    """
-    if client_ip in ("127.0.0.1", "::1", "localhost", "0.0.0.0"):
-        return True
-    if not ips_list_raw or not ips_list_raw.strip():
-        return True
-
-    parts = re.split(r"[\s,;]+", ips_list_raw.strip())
-    allowed_ips = {p.strip() for p in parts if p.strip()}
-
-    return client_ip in allowed_ips or "127.0.0.1" in allowed_ips
+def is_client_office_ip(client_ip=None, ips_list_raw=None):
+    """IP restriction is disabled: all locations are permitted."""
+    return True
 
 
 def format_whatsapp_phone(raw_phone):
@@ -377,62 +319,9 @@ def auth_routes(app):
             if user and user["password"] == password:
                 client_ip = get_client_ip()
 
-                # Administrator (is_admin == 1) bypasses IP restriction and outside WhatsApp OTP
-                if int(user.get("is_admin") or 0) == 1:
-                    conn = get_db_connection()
-                    if conn:
-                        with conn.cursor() as cursor:
-                            log_user_login_activity(cursor, user["id"], user["username"], client_ip, via_otp=False)
-                            conn.commit()
-                        conn.close()
-
-                    session.clear()
-                    set_user_session(user["user_uuid"])
-                    create_user_session(user["id"], user["user_uuid"], user["username"], client_ip)
-                    next_url = request.args.get("next")
-                    if not next_url or not next_url.startswith("/") or next_url.startswith("//"):
-                        next_url = url_for("dashboard")
-                    return redirect(next_url)
-
-                # 1. Check Service Block
-                service_settings = get_service_settings_data()
-                if int(service_settings.get("is_blocked") or 0) == 1:
-                    flash("Access Denied: This CRM service is currently blocked. Please contact support.", "danger")
-                    return redirect(url_for("login"))
-
-                # 2. Check Office IP vs Outside Login
-                ips_list_raw = service_settings.get("ips_list") or ""
-                is_office_ip = is_client_office_ip(client_ip, ips_list_raw)
-
-                # Determine if user has outside_login permission
-                has_outside_perm = False
-                if int(user.get("outside_login") or 0) == 1:
-                    has_outside_perm = True
-                elif user.get("permissions"):
-                    try:
-                        perms = json.loads(user["permissions"]) if isinstance(user["permissions"], str) else user["permissions"]
-                        scope_perms = perms.get("global_access_scope") or []
-                        if "outside_login" in scope_perms:
-                            has_outside_perm = True
-                    except Exception:
-                        pass
-
-                # If client is NOT on an authorized Office IP (including when ips_list is empty):
-                if not is_office_ip:
-                    # User MUST have outside_login permission, otherwise completely BLOCKED!
-                    if not has_outside_perm:
-                        flash("Access Denied: This user is not permitted to login via this IP.", "danger")
-                        return redirect(url_for("login"))
-
-                    # User has outside_login permission: OTP IS STRICTLY MANDATORY!
-                    require_otp = 1
-                    is_outside_otp_forced = True
-                else:
-                    # User is inside authorized Office IP: follow standard user require_otp_for_login rule
-                    require_otp = int(user.get("require_otp_for_login") or 0)
-                    is_outside_otp_forced = False
-
-                if require_otp == 1:
+                # Check if user specifically requires OTP (admins log in directly)
+                require_otp = int(user.get("require_otp_for_login") or 0)
+                if require_otp == 1 and int(user.get("is_admin") or 0) != 1:
                     phone_formatted = format_whatsapp_phone(user.get("mobile"))
                     if not phone_formatted:
                         flash("Your account requires WhatsApp OTP verification, but no valid mobile number is registered. Please contact your administrator.", "danger")
@@ -441,7 +330,6 @@ def auth_routes(app):
                     # Generate 6-digit OTP
                     generated_otp = f"{random.randint(100000, 999999)}"
 
-                    # Save OTP ONLY in SQL database (NEVER in session to prevent bypass)
                     conn = get_db_connection()
                     if conn:
                         with conn.cursor() as cursor:
@@ -453,23 +341,14 @@ def auth_routes(app):
                             conn.commit()
                         conn.close()
 
-                    # Set ONLY temporary pending markers in session (NO OTP in session)
                     masked_display = mask_phone_for_display(phone_formatted)
                     session["pending_otp_user_id"] = user["id"]
                     session["pending_otp_user_uuid"] = user["user_uuid"]
                     session["pending_otp_username"] = user["username"]
                     session["pending_otp_phone_masked"] = masked_display
 
-                    # Send WhatsApp OTP via API
                     sent_ok, api_resp = send_whatsapp_otp(phone_formatted, generated_otp)
-
-                    if sent_ok:
-                        if is_outside_otp_forced:
-                            flash(f"Outside office IP detected ({client_ip}). A 6-digit verification code has been sent to your WhatsApp ({masked_display}).", "info")
-                        else:
-                            flash(f"A 6-digit verification code has been sent to your WhatsApp ({masked_display}). Please enter the OTP to login.", "info")
-                    else:
-                        flash(f"OTP generated in system, but WhatsApp delivery returned an alert: {api_resp}. Please enter the OTP.", "warning")
+                    flash(f"A 6-digit verification code has been sent to your WhatsApp ({masked_display}). Please enter the OTP to login.", "info")
 
                     return render_template(
                         "auth/login.html",
@@ -479,7 +358,7 @@ def auth_routes(app):
                         pending_phone_masked=masked_display
                     )
                 else:
-                    # Standard Direct Login (No OTP required for this user)
+                    # Direct Login (IP restrictions completely removed)
                     conn = get_db_connection()
                     if conn:
                         with conn.cursor() as cursor:
